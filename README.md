@@ -3,10 +3,10 @@
 PROJETO EDUCACIONAL  - SPORT MVP
 ALUNOS:
 
-Daniel Siqueira da Silva
-Estevam Carvalho
-Lucas Azeredo
-Gustavo Barbosa
+Daniel Siqueira da Silva, 
+Estevam Carvalho, 
+Lucas Azeredo, 
+Gustavo Barbosa, 
 Vinicius 
 
 ## Get started
