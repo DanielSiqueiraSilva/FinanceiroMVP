@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 
 import CadastroDespesaScreen from "../screens/CadastroDespesaScreen";
 
-export default function HomeScreen() {
+export default function App() {
   return (
     <>
       <StatusBar style="dark" />
