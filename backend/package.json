@@ -1,11 +1,7 @@
 {
-  "name": "financeiromvp-api",
+  "name": "financeiro-mvp-backend",
   "private": true,
-  "type": "module",
   "engines": {
-    "node": ">=22"
-  },
-  "scripts": {
-    "dev": "vercel dev"
+    "node": "22.x"
   }
 }
