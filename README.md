@@ -8,23 +8,26 @@ Lucas Azeredo,
 Gustavo Barbosa, 
 Vinicius 
 
-## Get started
+## Inicio
+1. Acesse o Link para pagina FinaMVP:
+   
+https://financeiro-mvp-drts1wgb1-danielsiqueira2018-2422s-projects.vercel.app/
 
-1. Install dependencies
+2. Instale as dependencias
 
    ```bash
    npm install
    ```
 
-2. Start the app
+3. Rode o app
 
    ```bash
    npx expo start
    ```
 
-## Get a fresh project
+## Atualize o projeto
 
-When you're ready, run:
+So rodar o projeto:
 
 ```bash
 npm run reset-project
