@@ -64,3 +64,24 @@ export function excluirLancamento(id: string) {
 export function buscarResumo(mes: number, ano: number) {
   return request<ResumoFinanceiro>(`/api/resumo?mes=${mes}&ano=${ano}`);
 }
+
+export interface LimiteMensal {
+  mes: number;
+  ano: number;
+  valor: number;
+}
+
+export function buscarLimite(mes: number, ano: number) {
+  return request<LimiteMensal>(`/api/limite?mes=${mes}&ano=${ano}`);
+}
+
+export function salvarLimite(mes: number, ano: number, valor: number) {
+  return request<LimiteMensal>('/api/limite', {
+    method: 'PUT',
+    body: JSON.stringify({
+      mes,
+      ano,
+      valor,
+    }),
+  });
+}
