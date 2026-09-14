@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Lancamento, LancamentoInput, TipoLancamento } from '../../types/finance';
 import { AppButton } from './AppButton';
 
-const CATEGORIAS = [
+export const CATEGORIAS = [
+  'Salário',
   'Contas',
   'Alimentação',
   'Lazer',
@@ -22,19 +23,8 @@ type TransactionFormProps = {
   onCancelarEdicao: () => void;
 };
 
-function dataHoje() {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-  const dia = String(hoje.getDate()).padStart(2, '0');
-  return `${ano}-${mes}-${dia}`;
-}
-
-function dataValida(data: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return false;
-  const [ano, mes, dia] = data.split('-').map(Number);
-  const d = new Date(Date.UTC(ano, mes - 1, dia));
-  return d.getUTCFullYear() === ano && d.getUTCMonth() === mes - 1 && d.getUTCDate() === dia;
+function dataAtual() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export function TransactionForm({
@@ -43,15 +33,16 @@ export function TransactionForm({
   onSalvar,
   onCancelarEdicao,
 }: TransactionFormProps) {
-  const [descricao, setDescricao] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [valor, setValor] = useState('');
-  const [data, setData] = useState(dataHoje());
   const [tipo, setTipo] = useState<TipoLancamento>('despesa');
+  const [descricao, setDescricao] = useState('');
+  const [categoria, setCategoria] = useState<string>('Outros');
+  const [valor, setValor] = useState('');
+  const [data, setData] = useState(dataAtual());
   const [erro, setErro] = useState('');
 
   useEffect(() => {
     if (lancamentoEmEdicao) {
+      setTipo(lancamentoEmEdicao.tipo);
       setDescricao(lancamentoEmEdicao.descricao);
       setCategoria(
         CATEGORIAS.includes(lancamentoEmEdicao.categoria as (typeof CATEGORIAS)[number])
@@ -60,88 +51,99 @@ export function TransactionForm({
       );
       setValor(String(lancamentoEmEdicao.valor).replace('.', ','));
       setData(lancamentoEmEdicao.data);
-      setTipo(lancamentoEmEdicao.tipo);
       setErro('');
       return;
     }
-    limparCampos();
+
+    limparFormulario();
   }, [lancamentoEmEdicao]);
 
-  function limparCampos() {
-    setDescricao('');
-    setCategoria('');
-    setValor('');
-    setData(dataHoje());
+  function limparFormulario() {
     setTipo('despesa');
+    setDescricao('');
+    setCategoria('Outros');
+    setValor('');
+    setData(dataAtual());
     setErro('');
+  }
+
+  function alterarTipo(novoTipo: TipoLancamento) {
+    setTipo(novoTipo);
+    if (novoTipo === 'receita' && categoria === 'Outros') {
+      setCategoria('Salário');
+    }
+    if (novoTipo === 'despesa' && categoria === 'Salário') {
+      setCategoria('Outros');
+    }
   }
 
   async function salvar() {
     setErro('');
-    if (!descricao.trim() || !categoria || !valor.trim() || !data.trim()) {
-      setErro('Preencha todos os campos obrigatórios.');
-      return;
-    }
-
     const valorNumerico = Number(valor.replace(',', '.'));
+
+    if (!descricao.trim()) {
+      setErro('Informe uma descrição.');
+      return;
+    }
+    if (!categoria) {
+      setErro('Selecione uma categoria.');
+      return;
+    }
     if (!Number.isFinite(valorNumerico) || valorNumerico <= 0) {
-      setErro('Informe um valor numérico maior que zero.');
+      setErro('Informe um valor maior que zero.');
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+      setErro('Informe a data no formato AAAA-MM-DD.');
       return;
     }
 
-    if (!dataValida(data)) {
-      setErro('Informe uma data válida no formato AAAA-MM-DD.');
-      return;
-    }
+    await onSalvar({
+      descricao: descricao.trim(),
+      categoria,
+      valor: valorNumerico,
+      data,
+      tipo,
+    });
 
-    try {
-      await onSalvar({
-        descricao: descricao.trim(),
-        categoria,
-        valor: valorNumerico,
-        data,
-        tipo,
-      });
-      if (!lancamentoEmEdicao) limparCampos();
-    } catch {
-      // O componente pai exibe o erro retornado pela API.
-    }
-  }
-
-  function cancelar() {
-    limparCampos();
-    onCancelarEdicao();
+    if (!lancamentoEmEdicao) limparFormulario();
   }
 
   return (
     <View style={styles.card}>
       <View style={styles.cabecalho}>
         <Text style={styles.titulo}>{lancamentoEmEdicao ? 'Editar lançamento' : 'Novo lançamento'}</Text>
-        <Text style={styles.subtitulo}>Preencha os dados abaixo para manter seu mês organizado.</Text>
+        <Text style={styles.subtitulo}>
+          {lancamentoEmEdicao
+            ? 'Atualize os dados e salve as alterações.'
+            : 'Registre uma entrada ou saída de forma rápida.'}
+        </Text>
       </View>
 
       <View style={styles.tipoContainer}>
-        <Pressable
-          style={[styles.tipoBotao, tipo === 'receita' && styles.tipoAtivo]}
-          onPress={() => setTipo('receita')}
-        >
-          <Text style={[styles.tipoTexto, tipo === 'receita' && styles.tipoTextoAtivo]}>Receita</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.tipoBotao, tipo === 'despesa' && styles.tipoAtivo]}
-          onPress={() => setTipo('despesa')}
-        >
-          <Text style={[styles.tipoTexto, tipo === 'despesa' && styles.tipoTextoAtivo]}>Despesa</Text>
-        </Pressable>
+        {(['receita', 'despesa'] as TipoLancamento[]).map((opcao) => {
+          const ativo = tipo === opcao;
+          return (
+            <Pressable
+              key={opcao}
+              style={[styles.tipoBotao, ativo && styles.tipoAtivo]}
+              onPress={() => alterarTipo(opcao)}
+            >
+              <Text style={[styles.tipoTexto, ativo && styles.tipoTextoAtivo]}>
+                {opcao === 'receita' ? 'Receita' : 'Despesa'}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.campo}>
         <Text style={styles.rotulo}>Descrição</Text>
         <TextInput
-          style={styles.input}
-          placeholder="Ex.: Supermercado"
           value={descricao}
           onChangeText={setDescricao}
+          placeholder={tipo === 'receita' ? 'Ex.: Salário mensal' : 'Ex.: Supermercado'}
+          style={styles.input}
           maxLength={120}
         />
       </View>
@@ -149,16 +151,15 @@ export function TransactionForm({
       <View style={styles.campo}>
         <Text style={styles.rotulo}>Categoria</Text>
         <View style={styles.categorias}>
-          {CATEGORIAS.map((item) => {
-            const ativa = categoria === item;
+          {CATEGORIAS.map((opcao) => {
+            const ativa = categoria === opcao;
             return (
               <Pressable
-                key={item}
-                accessibilityRole="button"
-                onPress={() => setCategoria(item)}
+                key={opcao}
                 style={[styles.categoria, ativa && styles.categoriaAtiva]}
+                onPress={() => setCategoria(opcao)}
               >
-                <Text style={[styles.categoriaTexto, ativa && styles.categoriaTextoAtiva]}>{item}</Text>
+                <Text style={[styles.categoriaTexto, ativa && styles.categoriaTextoAtiva]}>{opcao}</Text>
               </Pressable>
             );
           })}
@@ -169,23 +170,16 @@ export function TransactionForm({
         <View style={[styles.campo, styles.campoFlex]}>
           <Text style={styles.rotulo}>Valor</Text>
           <TextInput
-            style={styles.input}
-            placeholder="0,00"
             value={valor}
             onChangeText={setValor}
+            placeholder="Ex.: 250,00"
             keyboardType="decimal-pad"
+            style={styles.input}
           />
         </View>
         <View style={[styles.campo, styles.campoFlex]}>
           <Text style={styles.rotulo}>Data</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="AAAA-MM-DD"
-            value={data}
-            onChangeText={setData}
-            autoCapitalize="none"
-            maxLength={10}
-          />
+          <TextInput value={data} onChangeText={setData} placeholder="AAAA-MM-DD" style={styles.input} />
         </View>
       </View>
 
@@ -193,7 +187,13 @@ export function TransactionForm({
 
       <View style={styles.acoes}>
         {lancamentoEmEdicao ? (
-          <AppButton title="Cancelar" variant="secondary" onPress={cancelar} disabled={salvando} style={styles.botaoAcao} />
+          <AppButton
+            title="Cancelar"
+            variant="secondary"
+            onPress={onCancelarEdicao}
+            disabled={salvando}
+            style={styles.botaoAcao}
+          />
         ) : null}
         <AppButton
           title={salvando ? 'Salvando...' : lancamentoEmEdicao ? 'Salvar alterações' : 'Cadastrar lançamento'}
@@ -207,52 +207,20 @@ export function TransactionForm({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#ECE8F1',
-    gap: 18,
-  },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20, borderWidth: 1, borderColor: '#ECE8F1', gap: 18 },
   cabecalho: { gap: 4 },
   titulo: { color: '#111827', fontSize: 21, fontWeight: '800' },
   subtitulo: { color: '#6B7280', fontSize: 13, lineHeight: 19 },
   tipoContainer: { flexDirection: 'row', gap: 10 },
-  tipoBotao: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 14,
-    backgroundColor: '#F4F1F8',
-    borderWidth: 1,
-    borderColor: '#E6E0EC',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  tipoBotao: { flex: 1, minHeight: 44, borderRadius: 14, backgroundColor: '#F4F1F8', borderWidth: 1, borderColor: '#E6E0EC', alignItems: 'center', justifyContent: 'center' },
   tipoAtivo: { backgroundColor: '#EDE9FE', borderColor: '#8B5CF6' },
   tipoTexto: { color: '#6B7280', fontWeight: '700' },
   tipoTextoAtivo: { color: '#5B21B6' },
   campo: { gap: 8 },
   rotulo: { fontSize: 13, color: '#4B5563', fontWeight: '700' },
-  input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: '#DDD6E6',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    backgroundColor: '#FCFBFD',
-    fontSize: 16,
-    color: '#111827',
-  },
+  input: { minHeight: 48, borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 14, paddingHorizontal: 14, backgroundColor: '#FCFBFD', fontSize: 16, color: '#111827' },
   categorias: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  categoria: {
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#DDD6E6',
-    backgroundColor: '#FFFFFF',
-  },
+  categoria: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: '#DDD6E6', backgroundColor: '#FFFFFF' },
   categoriaAtiva: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
   categoriaTexto: { color: '#4B5563', fontSize: 13, fontWeight: '700' },
   categoriaTextoAtiva: { color: '#FFFFFF' },
