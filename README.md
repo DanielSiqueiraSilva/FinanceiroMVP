@@ -13,6 +13,8 @@ Vinicius
    
 https://financeiro-mvp-drts1wgb1-danielsiqueira2018-2422s-projects.vercel.app/
 
+OU
+
 2. Instale as dependencias
 
    ```bash
