@@ -11,15 +11,16 @@ Vinicius
 ## Inicio
 1. Acesse o Link para pagina FinaMVP:
    https://financeiro-mvp-1283.vercel.app
+   
 OU
 
-2. Instale as dependencias
+3. Instale as dependencias
 
    ```bash
    npm install
    ```
 
-3. Rode o app
+4. Rode o app
 
    ```bash
    npx expo start
