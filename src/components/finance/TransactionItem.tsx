@@ -1,5 +1,6 @@
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { Lancamento } from '../../types/finance';
+import { AppButton } from './AppButton';
 
 type TransactionItemProps = {
   lancamento: Lancamento;
@@ -8,10 +9,7 @@ type TransactionItemProps = {
 };
 
 function formatarMoeda(valor: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(valor);
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
 }
 
 function formatarData(data: string) {
@@ -21,11 +19,10 @@ function formatarData(data: string) {
 
 export function TransactionItem({ lancamento, onEditar, onExcluir }: TransactionItemProps) {
   function confirmarExclusao() {
-    if (Platform.OS === 'web') {
-      const confirmou = (globalThis as any).confirm?.(
-        `Excluir \"${lancamento.descricao}\"? Esta ação não pode ser desfeita.`
-      );
-      if (confirmou) onExcluir(lancamento.id);
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm(`Excluir "${lancamento.descricao}"?\n\nEsta ação não pode ser desfeita.`)) {
+        onExcluir(lancamento.id);
+      }
       return;
     }
 
@@ -41,23 +38,21 @@ export function TransactionItem({ lancamento, onEditar, onExcluir }: Transaction
     <View style={styles.container}>
       <View style={styles.informacoes}>
         <View style={styles.linhaTitulo}>
-          <Text style={styles.descricao}>{lancamento.descricao}</Text>
+          <View style={styles.textos}>
+            <Text style={styles.descricao}>{lancamento.descricao}</Text>
+            <View style={styles.metaLinha}>
+              <View style={styles.categoriaBadge}><Text style={styles.categoriaTexto}>{lancamento.categoria}</Text></View>
+              <Text style={styles.meta}>{formatarData(lancamento.data)}</Text>
+            </View>
+          </View>
           <Text style={[styles.valor, receita ? styles.receita : styles.despesa]}>
             {receita ? '+' : '-'} {formatarMoeda(lancamento.valor)}
           </Text>
         </View>
-        <Text style={styles.meta}>
-          {lancamento.categoria} • {formatarData(lancamento.data)}
-        </Text>
       </View>
-
       <View style={styles.acoes}>
-        <Pressable style={styles.botaoSecundario} onPress={() => onEditar(lancamento)}>
-          <Text style={styles.botaoSecundarioTexto}>Editar</Text>
-        </Pressable>
-        <Pressable style={styles.botaoExcluir} onPress={confirmarExclusao}>
-          <Text style={styles.botaoExcluirTexto}>Excluir</Text>
-        </Pressable>
+        <AppButton title="Editar" variant="secondary" onPress={() => onEditar(lancamento)} style={styles.botao} />
+        <AppButton title="Excluir" variant="danger" onPress={confirmarExclusao} style={styles.botao} />
       </View>
     </View>
   );
@@ -66,44 +61,23 @@ export function TransactionItem({ lancamento, onEditar, onExcluir }: Transaction
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#ECE8F1',
     gap: 14,
   },
   informacoes: { gap: 6 },
-  linhaTitulo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  descricao: {
-    flex: 1,
-    color: '#111827',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  linhaTitulo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 },
+  textos: { flex: 1, gap: 8 },
+  descricao: { color: '#111827', fontSize: 16, fontWeight: '700' },
   valor: { fontSize: 15, fontWeight: '800' },
   receita: { color: '#15803D' },
   despesa: { color: '#B91C1C' },
-  meta: { color: '#6B7280', fontSize: 13 },
-  acoes: { flexDirection: 'row', gap: 10 },
-  botaoSecundario: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 999,
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-  },
-  botaoSecundarioTexto: { color: '#374151', fontWeight: '700' },
-  botaoExcluir: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 999,
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-  },
-  botaoExcluirTexto: { color: '#991B1B', fontWeight: '700' },
+  metaLinha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  categoriaBadge: { backgroundColor: '#F4F1F8', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
+  categoriaTexto: { color: '#5B21B6', fontSize: 12, fontWeight: '700' },
+  meta: { color: '#6B7280', fontSize: 12 },
+  acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  botao: { flexGrow: 1, flexBasis: 120 },
 });

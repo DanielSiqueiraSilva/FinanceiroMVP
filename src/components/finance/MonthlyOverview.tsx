@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { AppButton } from './AppButton';
 
 type Props = {
   totalDespesas: number;
@@ -39,15 +40,20 @@ export function MonthlyOverview({ totalDespesas, limite, salvando, onSalvarLimit
 
   return (
     <View style={styles.card}>
-      <Text style={styles.rotulo}>Fatura atual</Text>
-      <Text style={styles.fatura}>{moeda(totalDespesas)}</Text>
+      <View style={styles.topo}>
+        <View>
+          <Text style={styles.rotulo}>Fatura atual</Text>
+          <Text style={styles.fatura}>{moeda(totalDespesas)}</Text>
+        </View>
+        <View style={styles.status}><Text style={styles.statusTexto}>{limite > 0 ? `${Math.round((totalDespesas / limite) * 100)}% usado` : 'Sem limite'}</Text></View>
+      </View>
 
       <View style={styles.linhaResumo}>
-        <View>
+        <View style={styles.resumoItem}>
           <Text style={styles.miniRotulo}>Limite do mês</Text>
           <Text style={styles.miniValor}>{limite > 0 ? moeda(limite) : 'Não definido'}</Text>
         </View>
-        <View style={styles.alinharDireita}>
+        <View style={[styles.resumoItem, styles.alinharDireita]}>
           <Text style={styles.miniRotulo}>Disponível</Text>
           <Text style={[styles.miniValor, estourou && styles.alerta]}>
             {estourou ? `Excedido em ${moeda(totalDespesas - limite)}` : moeda(disponivel)}
@@ -55,10 +61,8 @@ export function MonthlyOverview({ totalDespesas, limite, salvando, onSalvarLimit
         </View>
       </View>
 
-      <View style={styles.barraFundo}>
-        <View style={[styles.barraUso, { width: `${percentual}%` }]} />
-      </View>
-      <Text style={styles.percentual}>{limite > 0 ? `${Math.round((totalDespesas / limite) * 100)}% do limite utilizado` : 'Defina um limite mensal para acompanhar seus gastos'}</Text>
+      <View style={styles.barraFundo}><View style={[styles.barraUso, { width: `${percentual}%` }]} /></View>
+      <Text style={styles.percentual}>{limite > 0 ? `${Math.round((totalDespesas / limite) * 100)}% do limite utilizado` : 'Defina um limite mensal para acompanhar seus gastos.'}</Text>
 
       {editando ? (
         <View style={styles.edicao}>
@@ -71,52 +75,36 @@ export function MonthlyOverview({ totalDespesas, limite, salvando, onSalvarLimit
           />
           {erro ? <Text style={styles.erro}>{erro}</Text> : null}
           <View style={styles.acoes}>
-            {limite > 0 ? (
-              <Pressable style={styles.cancelar} onPress={() => setEditando(false)} disabled={salvando}>
-                <Text style={styles.cancelarTexto}>Cancelar</Text>
-              </Pressable>
-            ) : null}
-            <Pressable style={styles.salvar} onPress={salvar} disabled={salvando}>
-              <Text style={styles.salvarTexto}>{salvando ? 'Salvando...' : 'Salvar limite'}</Text>
-            </Pressable>
+            {limite > 0 ? <AppButton title="Cancelar" variant="secondary" onPress={() => setEditando(false)} disabled={salvando} style={styles.botao} /> : null}
+            <AppButton title={salvando ? 'Salvando...' : 'Salvar limite'} onPress={salvar} disabled={salvando} style={styles.botao} />
           </View>
         </View>
       ) : (
-        <Pressable style={styles.alterar} onPress={() => setEditando(true)}>
-          <Text style={styles.alterarTexto}>Alterar limite do mês</Text>
-        </Pressable>
+        <AppButton title="Alterar limite do mês" variant="secondary" onPress={() => setEditando(true)} />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: '#ECE8F1',
-    gap: 12,
-  },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 22, borderWidth: 1, borderColor: '#ECE8F1', gap: 14 },
+  topo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 },
   rotulo: { fontSize: 15, color: '#6B7280', fontWeight: '600' },
-  fatura: { fontSize: 34, color: '#111827', fontWeight: '800' },
-  linhaResumo: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginTop: 4 },
-  alinharDireita: { alignItems: 'flex-end', flex: 1 },
+  fatura: { fontSize: 34, color: '#111827', fontWeight: '800', marginTop: 3 },
+  status: { backgroundColor: '#EDE9FE', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  statusTexto: { color: '#6D28D9', fontSize: 12, fontWeight: '800' },
+  linhaResumo: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginTop: 2 },
+  resumoItem: { flex: 1 },
+  alinharDireita: { alignItems: 'flex-end' },
   miniRotulo: { fontSize: 12, color: '#6B7280' },
   miniValor: { fontSize: 14, color: '#111827', fontWeight: '700', marginTop: 3 },
   alerta: { color: '#B91C1C' },
-  barraFundo: { height: 8, borderRadius: 99, backgroundColor: '#EDE9FE', overflow: 'hidden', marginTop: 4 },
+  barraFundo: { height: 9, borderRadius: 99, backgroundColor: '#EDE9FE', overflow: 'hidden', marginTop: 2 },
   barraUso: { height: '100%', borderRadius: 99, backgroundColor: '#7C3AED' },
   percentual: { fontSize: 12, color: '#6B7280' },
-  alterar: { alignSelf: 'flex-start', paddingVertical: 8 },
-  alterarTexto: { color: '#7C3AED', fontWeight: '800' },
-  edicao: { gap: 8, marginTop: 4 },
-  input: { minHeight: 46, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, paddingHorizontal: 14, fontSize: 16, backgroundColor: '#FFFFFF' },
+  edicao: { gap: 10, marginTop: 2 },
+  input: { minHeight: 48, borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 14, paddingHorizontal: 14, fontSize: 16, backgroundColor: '#FCFBFD' },
   erro: { color: '#B91C1C', fontSize: 13 },
-  acoes: { flexDirection: 'row', gap: 10 },
-  cancelar: { flex: 1, paddingVertical: 11, borderRadius: 999, alignItems: 'center', backgroundColor: '#F3F4F6' },
-  cancelarTexto: { fontWeight: '700', color: '#4B5563' },
-  salvar: { flex: 1, paddingVertical: 11, borderRadius: 999, alignItems: 'center', backgroundColor: '#7C3AED' },
-  salvarTexto: { color: '#FFFFFF', fontWeight: '800' },
+  acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  botao: { flexGrow: 1, flexBasis: 150 },
 });
