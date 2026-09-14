@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "SportMVP",
-    "slug": "SportMVP",
+    "name": "FinanceiroMVP",
+    "slug": "FinanceiroMVP",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "sportmvp",
+    "scheme": "financeiromvp",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"

@@ -1,4 +1,4 @@
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Lancamento } from '../../types/finance';
 
 type TransactionItemProps = {
@@ -21,6 +21,14 @@ function formatarData(data: string) {
 
 export function TransactionItem({ lancamento, onEditar, onExcluir }: TransactionItemProps) {
   function confirmarExclusao() {
+    if (Platform.OS === 'web') {
+      const confirmou = (globalThis as any).confirm?.(
+        `Excluir \"${lancamento.descricao}\"? Esta ação não pode ser desfeita.`
+      );
+      if (confirmou) onExcluir(lancamento.id);
+      return;
+    }
+
     Alert.alert('Excluir lançamento', 'Deseja realmente excluir este lançamento?', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Excluir', style: 'destructive', onPress: () => onExcluir(lancamento.id) },
@@ -38,7 +46,6 @@ export function TransactionItem({ lancamento, onEditar, onExcluir }: Transaction
             {receita ? '+' : '-'} {formatarMoeda(lancamento.valor)}
           </Text>
         </View>
-
         <Text style={styles.meta}>
           {lancamento.categoria} • {formatarData(lancamento.data)}
         </Text>
@@ -59,15 +66,13 @@ export function TransactionItem({ lancamento, onEditar, onExcluir }: Transaction
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     gap: 14,
   },
-  informacoes: {
-    gap: 6,
-  },
+  informacoes: { gap: 6 },
   linhaTitulo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -78,46 +83,27 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#111827',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  valor: {
-    fontSize: 15,
     fontWeight: '700',
   },
-  receita: {
-    color: '#15803D',
-  },
-  despesa: {
-    color: '#B91C1C',
-  },
-  meta: {
-    color: '#6B7280',
-    fontSize: 13,
-  },
-  acoes: {
-    flexDirection: 'row',
-    gap: 10,
-  },
+  valor: { fontSize: 15, fontWeight: '800' },
+  receita: { color: '#15803D' },
+  despesa: { color: '#B91C1C' },
+  meta: { color: '#6B7280', fontSize: 13 },
+  acoes: { flexDirection: 'row', gap: 10 },
   botaoSecundario: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 999,
     alignItems: 'center',
     backgroundColor: '#F3F4F6',
   },
-  botaoSecundarioTexto: {
-    color: '#374151',
-    fontWeight: '600',
-  },
+  botaoSecundarioTexto: { color: '#374151', fontWeight: '700' },
   botaoExcluir: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 999,
     alignItems: 'center',
     backgroundColor: '#FEE2E2',
   },
-  botaoExcluirTexto: {
-    color: '#991B1B',
-    fontWeight: '600',
-  },
+  botaoExcluirTexto: { color: '#991B1B', fontWeight: '700' },
 });
