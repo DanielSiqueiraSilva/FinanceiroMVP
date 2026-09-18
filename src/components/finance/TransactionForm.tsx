@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Lancamento, LancamentoInput, TipoLancamento } from '../../types/finance';
+import { AppColors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
 import { AppButton } from './AppButton';
 
 export const CATEGORIAS = [
@@ -33,6 +35,9 @@ export function TransactionForm({
   onSalvar,
   onCancelarEdicao,
 }: TransactionFormProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [tipo, setTipo] = useState<TipoLancamento>('despesa');
   const [descricao, setDescricao] = useState('');
   const [categoria, setCategoria] = useState<string>('Outros');
@@ -143,6 +148,7 @@ export function TransactionForm({
           value={descricao}
           onChangeText={setDescricao}
           placeholder={tipo === 'receita' ? 'Ex.: Salário mensal' : 'Ex.: Supermercado'}
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
           maxLength={120}
         />
@@ -173,13 +179,20 @@ export function TransactionForm({
             value={valor}
             onChangeText={setValor}
             placeholder="Ex.: 250,00"
+            placeholderTextColor={colors.placeholder}
             keyboardType="decimal-pad"
             style={styles.input}
           />
         </View>
         <View style={[styles.campo, styles.campoFlex]}>
           <Text style={styles.rotulo}>Data</Text>
-          <TextInput value={data} onChangeText={setData} placeholder="AAAA-MM-DD" style={styles.input} />
+          <TextInput
+            value={data}
+            onChangeText={setData}
+            placeholder="AAAA-MM-DD"
+            placeholderTextColor={colors.placeholder}
+            style={styles.input}
+          />
         </View>
       </View>
 
@@ -206,27 +219,29 @@ export function TransactionForm({
   );
 }
 
-const styles = StyleSheet.create({
-  card: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20, borderWidth: 1, borderColor: '#ECE8F1', gap: 18 },
-  cabecalho: { gap: 4 },
-  titulo: { color: '#111827', fontSize: 21, fontWeight: '800' },
-  subtitulo: { color: '#6B7280', fontSize: 13, lineHeight: 19 },
-  tipoContainer: { flexDirection: 'row', gap: 10 },
-  tipoBotao: { flex: 1, minHeight: 44, borderRadius: 14, backgroundColor: '#F4F1F8', borderWidth: 1, borderColor: '#E6E0EC', alignItems: 'center', justifyContent: 'center' },
-  tipoAtivo: { backgroundColor: '#EDE9FE', borderColor: '#8B5CF6' },
-  tipoTexto: { color: '#6B7280', fontWeight: '700' },
-  tipoTextoAtivo: { color: '#5B21B6' },
-  campo: { gap: 8 },
-  rotulo: { fontSize: 13, color: '#4B5563', fontWeight: '700' },
-  input: { minHeight: 48, borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 14, paddingHorizontal: 14, backgroundColor: '#FCFBFD', fontSize: 16, color: '#111827' },
-  categorias: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  categoria: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: '#DDD6E6', backgroundColor: '#FFFFFF' },
-  categoriaAtiva: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
-  categoriaTexto: { color: '#4B5563', fontSize: 13, fontWeight: '700' },
-  categoriaTextoAtiva: { color: '#FFFFFF' },
-  linhaCampos: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  campoFlex: { flexGrow: 1, flexBasis: 220 },
-  erro: { color: '#B91C1C', fontSize: 14 },
-  acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  botaoAcao: { flexGrow: 1, flexBasis: 180 },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    card: { backgroundColor: colors.surface, borderRadius: 22, padding: 20, borderWidth: 1, borderColor: colors.border, gap: 18 },
+    cabecalho: { gap: 4 },
+    titulo: { color: colors.textPrimary, fontSize: 21, fontWeight: '800' },
+    subtitulo: { color: colors.textSecondary, fontSize: 13, lineHeight: 19 },
+    tipoContainer: { flexDirection: 'row', gap: 10 },
+    tipoBotao: { flex: 1, minHeight: 44, borderRadius: 14, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+    tipoAtivo: { backgroundColor: colors.accentSoftBg, borderColor: colors.accent },
+    tipoTexto: { color: colors.textSecondary, fontWeight: '700' },
+    tipoTextoAtivo: { color: colors.accentSoftText },
+    campo: { gap: 8 },
+    rotulo: { fontSize: 13, color: colors.textMuted, fontWeight: '700' },
+    input: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 14, backgroundColor: colors.inputBg, fontSize: 16, color: colors.textPrimary },
+    categorias: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    categoria: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+    categoriaAtiva: { backgroundColor: colors.accentStrong, borderColor: colors.accentStrong },
+    categoriaTexto: { color: colors.textMuted, fontSize: 13, fontWeight: '700' },
+    categoriaTextoAtiva: { color: colors.onAccent },
+    linhaCampos: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    campoFlex: { flexGrow: 1, flexBasis: 220 },
+    erro: { color: colors.negative, fontSize: 14 },
+    acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    botaoAcao: { flexGrow: 1, flexBasis: 180 },
+  });
+}

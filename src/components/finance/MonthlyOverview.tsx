@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { AppColors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
 import { AppButton } from './AppButton';
 
 type Props = {
@@ -14,6 +16,9 @@ function moeda(valor: number) {
 }
 
 export function MonthlyOverview({ totalDespesas, limite, salvando, onSalvarLimite }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [valor, setValor] = useState(limite > 0 ? String(limite).replace('.', ',') : '');
   const [editando, setEditando] = useState(limite <= 0);
   const [erro, setErro] = useState('');
@@ -70,6 +75,7 @@ export function MonthlyOverview({ totalDespesas, limite, salvando, onSalvarLimit
             value={valor}
             onChangeText={setValor}
             placeholder="Ex.: 3000,00"
+            placeholderTextColor={colors.placeholder}
             keyboardType="decimal-pad"
             style={styles.input}
           />
@@ -86,25 +92,27 @@ export function MonthlyOverview({ totalDespesas, limite, salvando, onSalvarLimit
   );
 }
 
-const styles = StyleSheet.create({
-  card: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 22, borderWidth: 1, borderColor: '#ECE8F1', gap: 14 },
-  topo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 },
-  rotulo: { fontSize: 15, color: '#6B7280', fontWeight: '600' },
-  fatura: { fontSize: 34, color: '#111827', fontWeight: '800', marginTop: 3 },
-  status: { backgroundColor: '#EDE9FE', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
-  statusTexto: { color: '#6D28D9', fontSize: 12, fontWeight: '800' },
-  linhaResumo: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginTop: 2 },
-  resumoItem: { flex: 1 },
-  alinharDireita: { alignItems: 'flex-end' },
-  miniRotulo: { fontSize: 12, color: '#6B7280' },
-  miniValor: { fontSize: 14, color: '#111827', fontWeight: '700', marginTop: 3 },
-  alerta: { color: '#B91C1C' },
-  barraFundo: { height: 9, borderRadius: 99, backgroundColor: '#EDE9FE', overflow: 'hidden', marginTop: 2 },
-  barraUso: { height: '100%', borderRadius: 99, backgroundColor: '#7C3AED' },
-  percentual: { fontSize: 12, color: '#6B7280' },
-  edicao: { gap: 10, marginTop: 2 },
-  input: { minHeight: 48, borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 14, paddingHorizontal: 14, fontSize: 16, backgroundColor: '#FCFBFD' },
-  erro: { color: '#B91C1C', fontSize: 13 },
-  acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  botao: { flexGrow: 1, flexBasis: 150 },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    card: { backgroundColor: colors.surface, borderRadius: 22, padding: 22, borderWidth: 1, borderColor: colors.border, gap: 14 },
+    topo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 },
+    rotulo: { fontSize: 15, color: colors.textSecondary, fontWeight: '600' },
+    fatura: { fontSize: 34, color: colors.textPrimary, fontWeight: '800', marginTop: 3 },
+    status: { backgroundColor: colors.accentSoftBg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+    statusTexto: { color: colors.accentSoftText, fontSize: 12, fontWeight: '800' },
+    linhaResumo: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginTop: 2 },
+    resumoItem: { flex: 1 },
+    alinharDireita: { alignItems: 'flex-end' },
+    miniRotulo: { fontSize: 12, color: colors.textSecondary },
+    miniValor: { fontSize: 14, color: colors.textPrimary, fontWeight: '700', marginTop: 3 },
+    alerta: { color: colors.negative },
+    barraFundo: { height: 9, borderRadius: 99, backgroundColor: colors.accentSoftBg, overflow: 'hidden', marginTop: 2 },
+    barraUso: { height: '100%', borderRadius: 99, backgroundColor: colors.accentStrong },
+    percentual: { fontSize: 12, color: colors.textSecondary },
+    edicao: { gap: 10, marginTop: 2 },
+    input: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 14, fontSize: 16, backgroundColor: colors.inputBg, color: colors.textPrimary },
+    erro: { color: colors.negative, fontSize: 13 },
+    acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    botao: { flexGrow: 1, flexBasis: 150 },
+  });
+}

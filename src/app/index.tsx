@@ -16,6 +16,8 @@ import { SummaryCard } from '../components/finance/SummaryCard';
 import { CATEGORIAS, TransactionForm } from '../components/finance/TransactionForm';
 import { TransactionItem } from '../components/finance/TransactionItem';
 import { AppButton } from '../components/finance/AppButton';
+import { AppColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import {
   atualizarLancamento,
   buscarLimite,
@@ -37,6 +39,9 @@ function periodoAtual() {
 }
 
 export default function App() {
+  const { colors, isDark, toggleTheme } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const periodoInicial = periodoAtual();
   const [mes, setMes] = useState(periodoInicial.mes);
   const [ano, setAno] = useState(periodoInicial.ano);
@@ -174,7 +179,17 @@ export default function App() {
           <Text style={styles.saudacao}>Seu controle financeiro</Text>
           <Text style={styles.titulo}>FinanMVP</Text>
         </View>
-        <View style={styles.avatar}><Text style={styles.avatarTexto}>F</Text></View>
+        <View style={styles.acoesCabecalho}>
+          <Pressable
+            style={styles.temaBotao}
+            onPress={toggleTheme}
+            accessibilityRole="button"
+            accessibilityLabel={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
+          >
+            <Text style={styles.temaBotaoTexto}>{isDark ? '☀️' : '🌙'}</Text>
+          </Pressable>
+          <View style={styles.avatar}><Text style={styles.avatarTexto}>F</Text></View>
+        </View>
       </View>
 
       <PeriodSelector mes={mes} ano={ano} onAnterior={() => mudarMes(-1)} onProximo={() => mudarMes(1)} />
@@ -192,7 +207,7 @@ export default function App() {
 
       {carregando ? (
         <View style={styles.carregando}>
-          <ActivityIndicator size="large" color="#7C3AED" />
+          <ActivityIndicator size="large" color={colors.accentStrong} />
           <Text style={styles.carregandoTexto}>Carregando dados...</Text>
         </View>
       ) : (
@@ -234,6 +249,7 @@ export default function App() {
               value={busca}
               onChangeText={setBusca}
               placeholder="Buscar por descrição..."
+              placeholderTextColor={colors.placeholder}
               style={styles.buscaInput}
             />
             <View style={styles.categoriasFiltro}>
@@ -276,45 +292,50 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#F7F5FA' },
-  container: { width: '100%', maxWidth: 880, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 38, paddingBottom: 48, gap: 18 },
-  cabecalho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  saudacao: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
-  titulo: { fontSize: 30, fontWeight: '900', color: '#111827', marginTop: 2 },
-  avatar: { width: 42, height: 42, borderRadius: 99, backgroundColor: '#7C3AED', alignItems: 'center', justifyContent: 'center' },
-  avatarTexto: { color: '#FFFFFF', fontWeight: '900', fontSize: 18 },
-  resumoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  analiseGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  analiseCard: { flexGrow: 1, flexBasis: 280, backgroundColor: '#FFFFFF', borderRadius: 18, borderWidth: 1, borderColor: '#ECE8F1', padding: 18, gap: 5 },
-  analiseRotulo: { color: '#6B7280', fontSize: 12, fontWeight: '700' },
-  analiseValor: { color: '#111827', fontSize: 21, fontWeight: '900' },
-  analiseDetalhe: { color: '#6B7280', fontSize: 12 },
-  carregando: { paddingVertical: 48, alignItems: 'center', gap: 12 },
-  carregandoTexto: { color: '#6B7280' },
-  sucessoCard: { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0', borderWidth: 1, borderRadius: 14, padding: 13 },
-  sucessoTexto: { color: '#047857', fontWeight: '700' },
-  erroCard: { backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1, borderRadius: 14, padding: 14, gap: 10 },
-  erroTexto: { color: '#991B1B' },
-  tentarNovamente: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: '#FFFFFF' },
-  tentarNovamenteTexto: { color: '#991B1B', fontWeight: '700' },
-  filtrosCard: { backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#ECE8F1', padding: 18, gap: 13 },
-  filtroCabecalho: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
-  filtroTitulo: { fontSize: 17, fontWeight: '800', color: '#111827' },
-  filtroSubtitulo: { fontSize: 12, color: '#6B7280', marginTop: 3 },
-  buscaInput: { minHeight: 46, borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 14, paddingHorizontal: 14, backgroundColor: '#FCFBFD', fontSize: 15, color: '#111827' },
-  categoriasFiltro: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  filtroChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#DDD6E6', backgroundColor: '#FFFFFF' },
-  filtroChipAtivo: { backgroundColor: '#EDE9FE', borderColor: '#8B5CF6' },
-  filtroChipTexto: { color: '#4B5563', fontSize: 12, fontWeight: '700' },
-  filtroChipTextoAtivo: { color: '#5B21B6' },
-  secaoLista: { gap: 12 },
-  listaCabecalho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  listaTitulo: { fontSize: 21, fontWeight: '800', color: '#111827' },
-  listaSubtitulo: { fontSize: 12, color: '#6B7280', marginTop: 3 },
-  listaQuantidade: { minWidth: 30, textAlign: 'center', color: '#6D28D9', backgroundColor: '#EDE9FE', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999, fontWeight: '800' },
-  lista: { gap: 10 },
-  vazio: { padding: 24, borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', alignItems: 'center', gap: 6 },
-  vazioTitulo: { fontWeight: '700', color: '#374151' },
-  vazioTexto: { color: '#6B7280', textAlign: 'center' },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    tela: { flex: 1, backgroundColor: colors.background },
+    container: { width: '100%', maxWidth: 880, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 38, paddingBottom: 48, gap: 18 },
+    cabecalho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    saudacao: { fontSize: 13, color: colors.textSecondary, fontWeight: '600' },
+    titulo: { fontSize: 30, fontWeight: '900', color: colors.textPrimary, marginTop: 2 },
+    acoesCabecalho: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    temaBotao: { width: 42, height: 42, borderRadius: 99, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+    temaBotaoTexto: { fontSize: 18 },
+    avatar: { width: 42, height: 42, borderRadius: 99, backgroundColor: colors.accentStrong, alignItems: 'center', justifyContent: 'center' },
+    avatarTexto: { color: colors.onAccent, fontWeight: '900', fontSize: 18 },
+    resumoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    analiseGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    analiseCard: { flexGrow: 1, flexBasis: 280, backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border, padding: 18, gap: 5 },
+    analiseRotulo: { color: colors.textSecondary, fontSize: 12, fontWeight: '700' },
+    analiseValor: { color: colors.textPrimary, fontSize: 21, fontWeight: '900' },
+    analiseDetalhe: { color: colors.textSecondary, fontSize: 12 },
+    carregando: { paddingVertical: 48, alignItems: 'center', gap: 12 },
+    carregandoTexto: { color: colors.textSecondary },
+    sucessoCard: { backgroundColor: colors.positiveSoftBg, borderColor: colors.positiveSoftBorder, borderWidth: 1, borderRadius: 14, padding: 13 },
+    sucessoTexto: { color: colors.positive, fontWeight: '700' },
+    erroCard: { backgroundColor: colors.negativeSoftBg, borderColor: colors.negativeSoftBorder, borderWidth: 1, borderRadius: 14, padding: 14, gap: 10 },
+    erroTexto: { color: colors.negative },
+    tentarNovamente: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: colors.surface },
+    tentarNovamenteTexto: { color: colors.negative, fontWeight: '700' },
+    filtrosCard: { backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 18, gap: 13 },
+    filtroCabecalho: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
+    filtroTitulo: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
+    filtroSubtitulo: { fontSize: 12, color: colors.textSecondary, marginTop: 3 },
+    buscaInput: { minHeight: 46, borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 14, backgroundColor: colors.inputBg, fontSize: 15, color: colors.textPrimary },
+    categoriasFiltro: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    filtroChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+    filtroChipAtivo: { backgroundColor: colors.accentSoftBg, borderColor: colors.accent },
+    filtroChipTexto: { color: colors.textMuted, fontSize: 12, fontWeight: '700' },
+    filtroChipTextoAtivo: { color: colors.accentSoftText },
+    secaoLista: { gap: 12 },
+    listaCabecalho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    listaTitulo: { fontSize: 21, fontWeight: '800', color: colors.textPrimary },
+    listaSubtitulo: { fontSize: 12, color: colors.textSecondary, marginTop: 3 },
+    listaQuantidade: { minWidth: 30, textAlign: 'center', color: colors.accentSoftText, backgroundColor: colors.accentSoftBg, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999, fontWeight: '800' },
+    lista: { gap: 10 },
+    vazio: { padding: 24, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', gap: 6 },
+    vazioTitulo: { fontWeight: '700', color: colors.textPrimary },
+    vazioTexto: { color: colors.textSecondary, textAlign: 'center' },
+  });
+}

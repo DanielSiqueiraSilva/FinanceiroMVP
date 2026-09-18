@@ -1,6 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Lancamento } from '../../types/finance';
+import { AppColors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
 
 type Props = { lancamentos: Lancamento[] };
 
@@ -11,6 +14,9 @@ function moeda(valor: number) {
 }
 
 export function ExpensePieChart({ lancamentos }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const despesas = lancamentos.filter((item) => item.tipo === 'despesa');
   const porCategoria = despesas.reduce<Record<string, number>>((acc, item) => {
     acc[item.categoria] = (acc[item.categoria] ?? 0) + item.valor;
@@ -41,7 +47,7 @@ export function ExpensePieChart({ lancamentos }: Props) {
       <View style={styles.conteudo}>
         <View style={styles.graficoWrap}>
           <Svg width={150} height={150} viewBox="0 0 120 120">
-            <Circle cx="60" cy="60" r={raio} stroke="#F3F4F6" strokeWidth="18" fill="none" />
+            <Circle cx="60" cy="60" r={raio} stroke={colors.chartTrack} strokeWidth="18" fill="none" />
             {dados.map((item, index) => {
               const fracao = item.valor / total;
               const dash = fracao * circunferencia;
@@ -86,19 +92,21 @@ export function ExpensePieChart({ lancamentos }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20, borderWidth: 1, borderColor: '#ECE8F1', gap: 16 },
-  titulo: { fontSize: 19, fontWeight: '800', color: '#111827' },
-  conteudo: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 20 },
-  graficoWrap: { width: 150, height: 150, alignItems: 'center', justifyContent: 'center' },
-  centroGrafico: { position: 'absolute', alignItems: 'center', width: 100 },
-  centroRotulo: { fontSize: 11, color: '#6B7280' },
-  centroValor: { fontSize: 13, color: '#111827', fontWeight: '800', textAlign: 'center' },
-  legenda: { flex: 1, minWidth: 190, gap: 10 },
-  legendaLinha: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  bolinha: { width: 10, height: 10, borderRadius: 99 },
-  legendaTextoWrap: { flex: 1 },
-  categoria: { fontSize: 13, fontWeight: '700', color: '#374151' },
-  valor: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  vazio: { color: '#6B7280' },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    card: { backgroundColor: colors.surface, borderRadius: 22, padding: 20, borderWidth: 1, borderColor: colors.border, gap: 16 },
+    titulo: { fontSize: 19, fontWeight: '800', color: colors.textPrimary },
+    conteudo: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 20 },
+    graficoWrap: { width: 150, height: 150, alignItems: 'center', justifyContent: 'center' },
+    centroGrafico: { position: 'absolute', alignItems: 'center', width: 100 },
+    centroRotulo: { fontSize: 11, color: colors.textSecondary },
+    centroValor: { fontSize: 13, color: colors.textPrimary, fontWeight: '800', textAlign: 'center' },
+    legenda: { flex: 1, minWidth: 190, gap: 10 },
+    legendaLinha: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    bolinha: { width: 10, height: 10, borderRadius: 99 },
+    legendaTextoWrap: { flex: 1 },
+    categoria: { fontSize: 13, fontWeight: '700', color: colors.textMuted },
+    valor: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
+    vazio: { color: colors.textSecondary },
+  });
+}
