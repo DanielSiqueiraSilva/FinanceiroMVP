@@ -9,7 +9,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { CategoryBudgetPanel } from '../components/finance/CategoryBudgetPanel';
 import { ExpensePieChart } from '../components/finance/ExpensePieChart';
 import { MonthlyOverview } from '../components/finance/MonthlyOverview';
 import { PeriodSelector } from '../components/finance/PeriodSelector';
@@ -220,7 +219,6 @@ export default function App() {
           </View>
 
           <ExpensePieChart lancamentos={lancamentos} />
-          <CategoryBudgetPanel lancamentos={lancamentos} />
 
           <TransactionForm lancamentoEmEdicao={editando} salvando={salvando} onSalvar={salvarLancamento} onCancelarEdicao={() => setEditando(null)} />
 
@@ -232,7 +230,12 @@ export default function App() {
               </View>
               {filtrosAtivos ? <AppButton title="Limpar filtros" variant="ghost" onPress={() => { setBusca(''); setCategoriaFiltro('Todas'); }} /> : null}
             </View>
-            <TextInput value={busca} onChangeText={setBusca} placeholder="Buscar por descrição..." style={styles.buscaInput} />
+            <TextInput
+              value={busca}
+              onChangeText={setBusca}
+              placeholder="Buscar por descrição..."
+              style={styles.buscaInput}
+            />
             <View style={styles.categoriasFiltro}>
               {['Todas', ...CATEGORIAS].map((categoria) => {
                 const ativa = categoriaFiltro === categoria;
