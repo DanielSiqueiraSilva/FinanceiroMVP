@@ -1,0 +1,7 @@
+{
+  "name": "financeiro-mvp-backend",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  }
+}
