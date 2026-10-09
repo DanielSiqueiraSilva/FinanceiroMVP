@@ -50,22 +50,25 @@ export function AccessibilityToolbar() {
   return (
     <>
       <View
-          style={[
-            styles.floatingArea,
-            Platform.OS === 'web'
-              ? ({
-                  position: 'fixed',
-                  top: 'calc(50% - 100px)',
-                  right: 8,
-                  bottom: 'auto',
-                } as unknown as ViewStyle)
-              : {
-                  top: Math.max(16, Math.round(height / 2) - 100),
-                  right: 8,
-                },
-          ]}
+        style={[
+          styles.floatingArea,
+          {
+            top: Math.max(16, Math.round(height / 2) - 100),
+            right: 8,
+          },
+        ]}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Abrir opções de acessibilidade"
+          accessibilityHint="Configurar tema claro ou escuro e tamanho das letras"
+          accessibilityState={{ expanded: open }}
+          onPress={() => setOpen(true)}
+          style={styles.floatingButton}
         >
-          <Text style={styles.floatingIcon} accessible={false}>Aa</Text>
+          <Text style={styles.floatingIcon} accessible={false}>
+            Aa
+          </Text>
         </Pressable>
       </View>
 
