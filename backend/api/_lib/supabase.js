@@ -25,7 +25,6 @@ export async function supabaseRequest(caminho, options = {}) {
     ...options,
     headers: {
       apikey: key,
-      Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
       Prefer: 'return=representation',
       ...(options.headers || {}),

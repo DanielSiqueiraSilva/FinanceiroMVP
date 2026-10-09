@@ -1,7 +1,5 @@
-import { useMemo } from 'react';
+import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { AppColors } from '../../theme/colors';
-import { useTheme } from '../../theme/ThemeContext';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
@@ -22,12 +20,12 @@ export function AppButton({
   fullWidth = false,
   style,
 }: Props) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
+  const styles = useAccessibleStyles(baseStyles);
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled }}
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
@@ -44,28 +42,26 @@ export function AppButton({
   );
 }
 
-function createStyles(colors: AppColors) {
-  return StyleSheet.create({
-    base: {
-      minHeight: 46,
-      paddingHorizontal: 18,
-      paddingVertical: 12,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-    },
-    fullWidth: { width: '100%' },
-    primary: { backgroundColor: colors.accentStrong, borderColor: colors.accentStrong },
-    secondary: { backgroundColor: colors.surface, borderColor: colors.border },
-    danger: { backgroundColor: colors.negativeSoftBg, borderColor: colors.negativeSoftBorder },
-    ghost: { backgroundColor: 'transparent', borderColor: 'transparent' },
-    text: { fontSize: 15, fontWeight: '800' },
-    primaryText: { color: colors.onAccent },
-    secondaryText: { color: colors.accentSoftText },
-    dangerText: { color: colors.negative },
-    ghostText: { color: colors.textSecondary },
-    pressed: { opacity: 0.82 },
-    disabled: { opacity: 0.5 },
-  });
-}
+const baseStyles = StyleSheet.create({
+  base: {
+    minHeight: 46,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  fullWidth: { width: '100%' },
+  primary: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  secondary: { backgroundColor: '#FFFFFF', borderColor: '#D8D2E2' },
+  danger: { backgroundColor: '#FFF1F2', borderColor: '#FECDD3' },
+  ghost: { backgroundColor: 'transparent', borderColor: 'transparent' },
+  text: { fontSize: 15, fontWeight: '800' },
+  primaryText: { color: '#FFFFFF' },
+  secondaryText: { color: '#5B21B6' },
+  dangerText: { color: '#BE123C' },
+  ghostText: { color: '#6B7280' },
+  pressed: { opacity: 0.82 },
+  disabled: { opacity: 0.5 },
+});

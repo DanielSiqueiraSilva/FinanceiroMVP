@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
+import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Lancamento, LancamentoInput, TipoLancamento } from '../../types/finance';
-import { AppColors } from '../../theme/colors';
-import { useTheme } from '../../theme/ThemeContext';
 import { AppButton } from './AppButton';
 
 export const CATEGORIAS = [
@@ -19,30 +19,37 @@ export const CATEGORIAS = [
 ] as const;
 
 type TransactionFormProps = {
+  mes: number;
+  ano: number;
   lancamentoEmEdicao: Lancamento | null;
   salvando: boolean;
   onSalvar: (input: LancamentoInput) => Promise<void>;
   onCancelarEdicao: () => void;
 };
 
-function dataAtual() {
-  return new Date().toISOString().slice(0, 10);
+function dataPadraoPeriodo(mes: number, ano: number) {
+  const hoje = new Date();
+  const ultimoDiaDoMes = new Date(ano, mes, 0).getDate();
+  const dia = Math.min(hoje.getDate(), ultimoDiaDoMes);
+
+  return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
 export function TransactionForm({
+  mes,
+  ano,
   lancamentoEmEdicao,
   salvando,
   onSalvar,
   onCancelarEdicao,
 }: TransactionFormProps) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
+  const styles = useAccessibleStyles(baseStyles);
+  const { isDark } = useAccessibility();
   const [tipo, setTipo] = useState<TipoLancamento>('despesa');
   const [descricao, setDescricao] = useState('');
   const [categoria, setCategoria] = useState<string>('Outros');
   const [valor, setValor] = useState('');
-  const [data, setData] = useState(dataAtual());
+  const [data, setData] = useState(() => dataPadraoPeriodo(mes, ano));
   const [erro, setErro] = useState('');
 
   useEffect(() => {
@@ -61,14 +68,14 @@ export function TransactionForm({
     }
 
     limparFormulario();
-  }, [lancamentoEmEdicao]);
+  }, [lancamentoEmEdicao, mes, ano]);
 
   function limparFormulario() {
     setTipo('despesa');
     setDescricao('');
     setCategoria('Outros');
     setValor('');
-    setData(dataAtual());
+    setData(dataPadraoPeriodo(mes, ano));
     setErro('');
   }
 
@@ -98,8 +105,31 @@ export function TransactionForm({
       setErro('Informe um valor maior que zero.');
       return;
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    const dataNormalizada = data.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataNormalizada)) {
       setErro('Informe a data no formato AAAA-MM-DD.');
+      return;
+    }
+
+    // Verifica também se o dia realmente existe (ex.: 31 de fevereiro não existe).
+    const [anoData, mesData, diaData] = dataNormalizada.split('-').map(Number);
+    const dataVerificada = new Date(Date.UTC(anoData, mesData - 1, diaData));
+    const dataExiste =
+      dataVerificada.getUTCFullYear() === anoData &&
+      dataVerificada.getUTCMonth() + 1 === mesData &&
+      dataVerificada.getUTCDate() === diaData;
+
+    if (!dataExiste) {
+      setErro('Informe uma data válida.');
+      return;
+    }
+
+    // Impede gravar no mês atual por engano quando outro mês foi selecionado.
+    // A edição mantém a data original e permite mover um lançamento de mês.
+    if (!lancamentoEmEdicao && (mesData !== mes || anoData !== ano)) {
+      setErro(
+        `A data precisa estar no mês selecionado: ${String(mes).padStart(2, '0')}/${ano}.`
+      );
       return;
     }
 
@@ -107,7 +137,7 @@ export function TransactionForm({
       descricao: descricao.trim(),
       categoria,
       valor: valorNumerico,
-      data,
+      data: dataNormalizada,
       tipo,
     });
 
@@ -131,6 +161,9 @@ export function TransactionForm({
           return (
             <Pressable
               key={opcao}
+              accessibilityRole="radio"
+              accessibilityLabel={opcao === 'receita' ? 'Receita' : 'Despesa'}
+              accessibilityState={{ checked: ativo }}
               style={[styles.tipoBotao, ativo && styles.tipoAtivo]}
               onPress={() => alterarTipo(opcao)}
             >
@@ -148,9 +181,10 @@ export function TransactionForm({
           value={descricao}
           onChangeText={setDescricao}
           placeholder={tipo === 'receita' ? 'Ex.: Salário mensal' : 'Ex.: Supermercado'}
-          placeholderTextColor={colors.placeholder}
           style={styles.input}
           maxLength={120}
+          accessibilityLabel="Descrição do lançamento"
+          placeholderTextColor={isDark ? '#CBD5E1' : '#6B7280'}
         />
       </View>
 
@@ -162,6 +196,9 @@ export function TransactionForm({
             return (
               <Pressable
                 key={opcao}
+                accessibilityRole="radio"
+                accessibilityLabel={`Categoria ${opcao}`}
+                accessibilityState={{ checked: ativa }}
                 style={[styles.categoria, ativa && styles.categoriaAtiva]}
                 onPress={() => setCategoria(opcao)}
               >
@@ -179,24 +216,23 @@ export function TransactionForm({
             value={valor}
             onChangeText={setValor}
             placeholder="Ex.: 250,00"
-            placeholderTextColor={colors.placeholder}
             keyboardType="decimal-pad"
+            accessibilityLabel="Valor do lançamento em reais"
+            placeholderTextColor={isDark ? '#CBD5E1' : '#6B7280'}
             style={styles.input}
           />
         </View>
         <View style={[styles.campo, styles.campoFlex]}>
-          <Text style={styles.rotulo}>Data</Text>
-          <TextInput
-            value={data}
-            onChangeText={setData}
-            placeholder="AAAA-MM-DD"
-            placeholderTextColor={colors.placeholder}
-            style={styles.input}
-          />
+          <Text style={styles.rotulo}>
+            {lancamentoEmEdicao
+              ? 'Data'
+              : `Data (${String(mes).padStart(2, '0')}/${ano})`}
+          </Text>
+          <TextInput value={data} onChangeText={setData} placeholder="AAAA-MM-DD" accessibilityLabel="Data do lançamento, ano mês dia" accessibilityHint="Use o formato AAAA-MM-DD" placeholderTextColor={isDark ? '#CBD5E1' : '#6B7280'} style={styles.input} />
         </View>
       </View>
 
-      {erro ? <Text style={styles.erro}>{erro}</Text> : null}
+      {erro ? <Text accessibilityLiveRegion="polite" style={styles.erro}>{erro}</Text> : null}
 
       <View style={styles.acoes}>
         {lancamentoEmEdicao ? (
@@ -219,29 +255,27 @@ export function TransactionForm({
   );
 }
 
-function createStyles(colors: AppColors) {
-  return StyleSheet.create({
-    card: { backgroundColor: colors.surface, borderRadius: 22, padding: 20, borderWidth: 1, borderColor: colors.border, gap: 18 },
-    cabecalho: { gap: 4 },
-    titulo: { color: colors.textPrimary, fontSize: 21, fontWeight: '800' },
-    subtitulo: { color: colors.textSecondary, fontSize: 13, lineHeight: 19 },
-    tipoContainer: { flexDirection: 'row', gap: 10 },
-    tipoBotao: { flex: 1, minHeight: 44, borderRadius: 14, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-    tipoAtivo: { backgroundColor: colors.accentSoftBg, borderColor: colors.accent },
-    tipoTexto: { color: colors.textSecondary, fontWeight: '700' },
-    tipoTextoAtivo: { color: colors.accentSoftText },
-    campo: { gap: 8 },
-    rotulo: { fontSize: 13, color: colors.textMuted, fontWeight: '700' },
-    input: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 14, backgroundColor: colors.inputBg, fontSize: 16, color: colors.textPrimary },
-    categorias: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    categoria: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-    categoriaAtiva: { backgroundColor: colors.accentStrong, borderColor: colors.accentStrong },
-    categoriaTexto: { color: colors.textMuted, fontSize: 13, fontWeight: '700' },
-    categoriaTextoAtiva: { color: colors.onAccent },
-    linhaCampos: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-    campoFlex: { flexGrow: 1, flexBasis: 220 },
-    erro: { color: colors.negative, fontSize: 14 },
-    acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    botaoAcao: { flexGrow: 1, flexBasis: 180 },
-  });
-}
+const baseStyles = StyleSheet.create({
+  card: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20, borderWidth: 1, borderColor: '#ECE8F1', gap: 18 },
+  cabecalho: { gap: 4 },
+  titulo: { color: '#111827', fontSize: 21, fontWeight: '800' },
+  subtitulo: { color: '#6B7280', fontSize: 13, lineHeight: 19 },
+  tipoContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  tipoBotao: { flexGrow: 1, minWidth: 120, minHeight: 48, borderRadius: 14, backgroundColor: '#F4F1F8', borderWidth: 1, borderColor: '#E6E0EC', alignItems: 'center', justifyContent: 'center' },
+  tipoAtivo: { backgroundColor: '#EDE9FE', borderColor: '#8B5CF6' },
+  tipoTexto: { color: '#6B7280', fontWeight: '700', fontSize: 14 },
+  tipoTextoAtivo: { color: '#5B21B6' },
+  campo: { gap: 8 },
+  rotulo: { fontSize: 13, color: '#4B5563', fontWeight: '700' },
+  input: { minHeight: 48, borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 14, paddingHorizontal: 14, backgroundColor: '#FCFBFD', fontSize: 16, color: '#111827' },
+  categorias: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  categoria: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: '#DDD6E6', backgroundColor: '#FFFFFF' },
+  categoriaAtiva: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  categoriaTexto: { color: '#4B5563', fontSize: 13, fontWeight: '700' },
+  categoriaTextoAtiva: { color: '#FFFFFF' },
+  linhaCampos: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  campoFlex: { flexGrow: 1, flexBasis: 220 },
+  erro: { color: '#B91C1C', fontSize: 14 },
+  acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  botaoAcao: { flexGrow: 1, flexBasis: 180 },
+});

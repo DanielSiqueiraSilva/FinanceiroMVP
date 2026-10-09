@@ -1,8 +1,6 @@
-import { useMemo } from 'react';
+import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { Lancamento } from '../../types/finance';
-import { AppColors } from '../../theme/colors';
-import { useTheme } from '../../theme/ThemeContext';
 import { AppButton } from './AppButton';
 
 type TransactionItemProps = {
@@ -21,9 +19,7 @@ function formatarData(data: string) {
 }
 
 export function TransactionItem({ lancamento, onEditar, onExcluir }: TransactionItemProps) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
+  const styles = useAccessibleStyles(baseStyles);
   function confirmarExclusao() {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       if (window.confirm(`Excluir "${lancamento.descricao}"?\n\nEsta ação não pode ser desfeita.`)) {
@@ -41,7 +37,7 @@ export function TransactionItem({ lancamento, onEditar, onExcluir }: Transaction
   const receita = lancamento.tipo === 'receita';
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityLabel={`Lançamento: ${lancamento.descricao}, ${lancamento.categoria}, ${formatarMoeda(lancamento.valor)}`}>
       <View style={styles.informacoes}>
         <View style={styles.linhaTitulo}>
           <View style={styles.textos}>
@@ -64,28 +60,26 @@ export function TransactionItem({ lancamento, onEditar, onExcluir }: Transaction
   );
 }
 
-function createStyles(colors: AppColors) {
-  return StyleSheet.create({
-    container: {
-      backgroundColor: colors.surface,
-      borderRadius: 18,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-      gap: 14,
-    },
-    informacoes: { gap: 6 },
-    linhaTitulo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 },
-    textos: { flex: 1, gap: 8 },
-    descricao: { color: colors.textPrimary, fontSize: 16, fontWeight: '700' },
-    valor: { fontSize: 15, fontWeight: '800' },
-    receita: { color: colors.positive },
-    despesa: { color: colors.negative },
-    metaLinha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-    categoriaBadge: { backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
-    categoriaTexto: { color: colors.accentSoftText, fontSize: 12, fontWeight: '700' },
-    meta: { color: colors.textSecondary, fontSize: 12 },
-    acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    botao: { flexGrow: 1, flexBasis: 120 },
-  });
-}
+const baseStyles = StyleSheet.create({
+  container: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#ECE8F1',
+    gap: 14,
+  },
+  informacoes: { gap: 6 },
+  linhaTitulo: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 },
+  textos: { flex: 1, gap: 8 },
+  descricao: { flexWrap: 'wrap', color: '#111827', fontSize: 16, fontWeight: '700' },
+  valor: { fontSize: 15, fontWeight: '800' },
+  receita: { color: '#15803D' },
+  despesa: { color: '#B91C1C' },
+  metaLinha: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  categoriaBadge: { backgroundColor: '#F4F1F8', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
+  categoriaTexto: { color: '#5B21B6', fontSize: 12, fontWeight: '700' },
+  meta: { color: '#6B7280', fontSize: 12 },
+  acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  botao: { flexGrow: 1, flexBasis: 120 },
+});

@@ -1,9 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import { Slot } from 'expo-router';
-import { ThemeProvider, useTheme } from '../theme/ThemeContext';
+import {AccessibilityProvider,useAccessibility,} from '../accessibility/AccessibilityContext';
 
 function LayoutInterno() {
-  const { isDark } = useTheme();
+  const { isDark } = useAccessibility();
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -14,8 +14,8 @@ function LayoutInterno() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
+    <AccessibilityProvider>
       <LayoutInterno />
-    </ThemeProvider>
+    </AccessibilityProvider>
   );
 }
