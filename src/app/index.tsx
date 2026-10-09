@@ -289,8 +289,29 @@ function FinanceHome() {
   );
 }
 
+function FinanceHomeCarregada() {
+  const { ready, isDark } = useAccessibility();
+
+  if (!ready) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: isDark ? '#0B1220' : '#F7F5FA',
+        }}
+      />
+    );
+  }
+
+  return <FinanceHome />;
+}
+
 export default function App() {
-  return <AccessibilityProvider><FinanceHome /></AccessibilityProvider>;
+  return (
+    <AccessibilityProvider>
+      <FinanceHomeCarregada />
+    </AccessibilityProvider>
+  );
 }
 
 const baseStyles = StyleSheet.create({
