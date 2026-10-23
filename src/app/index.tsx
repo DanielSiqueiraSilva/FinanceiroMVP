@@ -1,3 +1,4 @@
+import { ProfileCard } from '../components/auth/ProfileCard';
 import { ProtectedFinance } from '../components/auth/ProtectedFinance';
 import { AccessibilityProvider } from '../accessibility/AccessibilityContext';
 import { AccessibilityToolbar } from '../accessibility/AccessibilityToolbar';
@@ -182,7 +183,7 @@ function FinanceHome() {
           <Text style={styles.saudacao}>Seu controle financeiro</Text>
           <Text style={styles.titulo}>FinanMVP</Text>
         </View>
-        <View style={styles.avatar}><Text style={styles.avatarTexto}>F</Text></View>
+        <ProfileCard />
       </View>
 
 
