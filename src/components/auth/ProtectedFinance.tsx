@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import {
   AppState,
   ActivityIndicator,
@@ -80,48 +80,12 @@ function LoginScreen() {
   );
 }
 
-function ProfileBar({ session, signOut }: { session: Session; signOut: () => Promise<void> }) {
-  const [editing, setEditing] = useState(false);
-  const [nome, setNome] = useState(String(session.user.user_metadata?.full_name ?? ''));
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
+// Compartilha o usuário conectado com o cabeçalho financeiro.
+type ProfileSessionValue = { session: Session; signOut: () => Promise<void> };
+const ProfileSessionContext = createContext<ProfileSessionValue | null>(null);
 
-  async function salvarNome() {
-    if (!nome.trim()) { setMessage('Informe o nome.'); return; }
-    setBusy(true);
-    setMessage('');
-    const { error } = await supabaseAuth.auth.updateUser({ data: { full_name: nome.trim() } });
-    if (error) setMessage(error.message);
-    else { setEditing(false); setMessage('Perfil atualizado.'); }
-    setBusy(false);
-  }
-
-  return (
-    <View style={styles.profile}>
-      <View style={styles.profileText}>
-        <Text style={styles.profileLabel}>Conta conectada</Text>
-        <Text style={styles.profileName}>{String(session.user.user_metadata?.full_name ?? 'Usuário')}</Text>
-        <Text style={styles.profileEmail}>{session.user.email ?? 'E-mail não informado'}</Text>
-      </View>
-      <View style={styles.profileButtons}>
-        <Pressable style={styles.smallButton} onPress={() => { setNome(String(session.user.user_metadata?.full_name ?? '')); setEditing(!editing); }} accessibilityRole="button">
-          <Text style={styles.smallButtonText}>{editing ? 'Cancelar' : 'Editar perfil'}</Text>
-        </Pressable>
-        <Pressable style={styles.logout} onPress={() => void signOut()} accessibilityRole="button">
-          <Text style={styles.logoutText}>Sair</Text>
-        </Pressable>
-      </View>
-      {editing && (
-        <View style={styles.editRow}>
-          <TextInput style={[styles.input, styles.grow]} accessibilityLabel="Alterar nome do perfil" value={nome} onChangeText={setNome} />
-          <Pressable style={styles.smallButton} onPress={() => void salvarNome()} disabled={busy} accessibilityRole="button">
-            <Text style={styles.smallButtonText}>Salvar</Text>
-          </Pressable>
-        </View>
-      )}
-      {message ? <Text style={styles.message} accessibilityLiveRegion="polite">{message}</Text> : null}
-    </View>
-  );
+export function useProfileSession() {
+  return useContext(ProfileSessionContext);
 }
 
 /** Mostra dados financeiros apenas durante a sessão ativa. */
@@ -194,15 +158,16 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
   );
 
   return (
-    <View style={styles.flex} onTouchStart={activity}>
-      <ProfileBar session={session} signOut={signOut} />
-      <View style={styles.flex}>{children}</View>
-    </View>
+    <ProfileSessionContext.Provider value={{ session, signOut }}>
+      <View style={styles.flex} onTouchStart={activity}>
+        {children}
+      </View>
+    </ProfileSessionContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, minHeight: 0, backgroundColor: '#F7F5FA' },
+  flex: { flex: 1, minHeight: 0, backgroundColor: '#0B1220' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 18 },
   panel: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 22, gap: 12, width: '100%', maxWidth: 420, borderWidth: 1, borderColor: '#E5E7EB' },
   title: { fontSize: 28, fontWeight: '800', color: '#5B21B6' },
@@ -213,17 +178,5 @@ const styles = StyleSheet.create({
   primaryText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   secondary: { alignItems: 'center', padding: 8 },
   link: { color: '#5B21B6', fontWeight: '700' },
-  profile: { backgroundColor: '#FFFFFF', borderBottomColor: '#E5E7EB', borderBottomWidth: 1, paddingHorizontal: 18, paddingVertical: 10, gap: 6 },
-  profileText: { flex: 1 },
-  profileLabel: { color: '#6B7280', fontSize: 12 },
-  profileName: { color: '#111827', fontSize: 16, fontWeight: '700' },
-  profileEmail: { color: '#374151', fontSize: 12 },
-  profileButtons: { flexDirection: 'row', gap: 8, alignSelf: 'flex-start' },
-  smallButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 9, borderColor: '#DDD6FE', borderWidth: 1 },
-  smallButtonText: { fontSize: 13, color: '#5B21B6', fontWeight: '700' },
-  logout: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 9, backgroundColor: '#FEE2E2' },
-  logoutText: { color: '#991B1B', fontWeight: '700', fontSize: 13 },
-  editRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
-  grow: { flex: 1, minWidth: 160 },
   expired: { textAlign: 'center', color: '#991B1B', paddingTop: 14, fontWeight: '600' },
 });
