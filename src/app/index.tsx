@@ -1,3 +1,4 @@
+import { ProtectedFinance } from '../components/auth/ProtectedFinance';
 import { AccessibilityProvider } from '../accessibility/AccessibilityContext';
 import { AccessibilityToolbar } from '../accessibility/AccessibilityToolbar';
 import { useAccessibility } from '../accessibility/AccessibilityContext';
@@ -306,7 +307,7 @@ function FinanceHomeCarregada() {
   return <FinanceHome />;
 }
 
-export default function App() {
+function App() {
   return (
     <AccessibilityProvider>
       <FinanceHomeCarregada />
@@ -356,3 +357,8 @@ const baseStyles = StyleSheet.create({
   vazioTitulo: { fontWeight: '700', color: '#374151' },
   vazioTexto: { color: '#6B7280', textAlign: 'center', fontSize: 14 },
 });
+
+// Proteção da tela: desmonta todo o financeiro quando a sessão termina.
+export default function FinanceiroProtegido() {
+  return <ProtectedFinance><App /></ProtectedFinance>;
+}
