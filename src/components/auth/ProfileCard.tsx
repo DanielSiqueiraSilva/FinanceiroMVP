@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { supabaseAuth } from '../../auth/supabaseClient';
 import { useProfileSession } from './ProtectedFinance';
+import { NativeAccessControl } from './NativeAccessControl';
 
 function nomeDoUsuario(nome: unknown, email?: string) {
   if (typeof nome === 'string' && nome.trim()) return nome.trim();
