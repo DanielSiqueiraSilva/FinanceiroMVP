@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useProfileSession } from './ProtectedFinance';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
+import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 
 function nomeDoUsuario(nome: unknown, email?: string) {
   if (typeof nome === 'string' && nome.trim()) return nome.trim();
@@ -8,6 +10,8 @@ function nomeDoUsuario(nome: unknown, email?: string) {
 
 export function ProfileCard({ onOpenSettings }: { onOpenSettings: () => void }) {
   const auth = useProfileSession();
+  const { isDark } = useAccessibility();
+  const styles = useAccessibleStyles(baseStyles);
   const { width } = useWindowDimensions();
   if (!auth) return null;
 
@@ -17,34 +21,34 @@ export function ProfileCard({ onOpenSettings }: { onOpenSettings: () => void }) 
   const inicial = Array.from(nome)[0]?.toLocaleUpperCase('pt-BR') ?? 'U';
 
   return (
-    <View style={[styles.card, width < 720 && styles.cardCompacto]}>
+    <View style={[styles.card, width < 720 && styles.cardCompacto, !isDark && lightProfile.card]}>
       <View style={styles.conteudo}>
         <View style={styles.avatar} accessible accessibilityLabel={`Inicial de ${nome}: ${inicial}`}>
           <Text style={styles.inicial}>{inicial}</Text>
         </View>
         <View style={styles.identificacao}>
-          <Text style={styles.nome} numberOfLines={2}>{nome}</Text>
-          <Text style={styles.email} numberOfLines={1}>{email || 'E-mail não informado'}</Text>
+          <Text style={[styles.nome, !isDark && lightProfile.nome]} numberOfLines={2}>{nome}</Text>
+          <Text style={[styles.email, !isDark && lightProfile.email]} numberOfLines={1}>{email || 'E-mail não informado'}</Text>
         </View>
       </View>
       <View style={styles.acoes}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Abrir configurações de perfil e segurança"
-          style={styles.botaoConfiguracoes}
+          style={[styles.botaoConfiguracoes, !isDark && lightProfile.botaoConfiguracoes]}
           onPress={onOpenSettings}
         >
-          <Text style={styles.textoConfiguracoes}>⚙ Configurações</Text>
+          <Text style={[styles.textoConfiguracoes, !isDark && lightProfile.textoConfiguracoes]}>⚙ Configurações</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Sair da conta" style={styles.botaoSair} onPress={() => void signOut()}>
-          <Text style={styles.textoSair}>Sair</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Sair da conta" style={[styles.botaoSair, !isDark && lightProfile.botaoSair]} onPress={() => void signOut()}>
+          <Text style={[styles.textoSair, !isDark && lightProfile.textoSair]}>Sair</Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   card: {
     alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center',
     justifyContent: 'flex-end', flexWrap: 'wrap', gap: 12,
@@ -63,4 +67,14 @@ const styles = StyleSheet.create({
   textoConfiguracoes: { color: '#D8B4FE', fontSize: 12, fontWeight: '700' },
   botaoSair: { backgroundColor: '#332238', borderColor: '#804053', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
   textoSair: { color: '#FDA4AF', fontSize: 12, fontWeight: '700' },
+});
+
+const lightProfile = StyleSheet.create({
+  card: { backgroundColor: '#FFFFFF', borderColor: '#DDD6E6' },
+  nome: { color: '#111827' },
+  email: { color: '#4B5563' },
+  botaoConfiguracoes: { backgroundColor: '#F5F3FF' },
+  textoConfiguracoes: { color: '#5B21B6' },
+  botaoSair: { backgroundColor: '#FFF1F2', borderColor: '#FECDD3' },
+  textoSair: { color: '#BE123C' },
 });
