@@ -10,6 +10,7 @@ import {
 import { supabaseAuth } from '../../auth/supabaseClient';
 import { useProfileSession } from './ProtectedFinance';
 import { NativeAccessControl } from './NativeAccessControl';
+import { WebPasskeyControl } from './WebPasskeyControl';
 
 function nomeDoUsuario(nome: unknown, email?: string) {
   if (typeof nome === 'string' && nome.trim()) return nome.trim();
@@ -88,6 +89,9 @@ export function ProfileCard() {
           <Text style={styles.textoSair}>Sair</Text>
         </Pressable>
       </View>
+
+      <WebPasskeyControl />
+      <NativeAccessControl />
 
       {editando && (
         <View style={styles.edicao}>
