@@ -25,6 +25,7 @@ type ProfileSessionValue = {
   nativeMessage: string;
   activateNative: () => Promise<void>;
   deactivateNative: () => Promise<void>;
+  runPasskeyOperation: <T>(operation: () => Promise<T>) => Promise<T>;
 };
 const ProfileSessionContext = createContext<ProfileSessionValue | null>(null);
 export function useProfileSession() { return useContext(ProfileSessionContext); }
@@ -33,8 +34,9 @@ type LoginProps = {
   hasQuickAccount: boolean;
   onQuickLogin: () => Promise<string>;
   onRemoteLogin: (email: string, password: string) => Promise<string>;
+  onPasskeyLogin: () => Promise<string>;
 };
-function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin }: LoginProps) {
+function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLogin }: LoginProps) {
   const [cadastro, setCadastro] = useState(false);
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -42,20 +44,22 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin }: LoginProp
   const [busy, setBusy] = useState(false);
   const [mensagem, setMensagem] = useState('');
 
-  async function login(byQuick: boolean) {
+  async function login(byQuick: boolean, byPasskey = false) {
     if (busy) return;
     if (!authConfigured) {
       setMensagem('Configure EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY.');
       return;
     }
-    if (!byQuick && (!email.includes('@') || senha.length < 6 || (cadastro && !nome.trim()))) {
+    if (!byQuick && !byPasskey && (!email.includes('@') || senha.length < 6 || (cadastro && !nome.trim()))) {
       setMensagem('Informe e-mail, senha de pelo menos 6 caracteres e nome no cadastro.');
       return;
     }
     setBusy(true);
     setMensagem('');
     try {
-      if (byQuick) {
+      if (byPasskey) {
+        setMensagem(await onPasskeyLogin());
+      } else if (byQuick) {
         setMensagem(await onQuickLogin());
       } else if (cadastro) {
         const { data, error } = await supabaseAuth.auth.signUp({
@@ -82,6 +86,11 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin }: LoginProp
       <View style={styles.panel}>
         <Text accessibilityRole="header" style={styles.title}>FinanMVP</Text>
         <Text style={styles.subtitle}>{cadastro ? 'Criar uma conta' : 'Entrar na conta'}</Text>
+        {!cadastro && Platform.OS === 'web' && (
+          <Pressable style={styles.quickButton} accessibilityRole="button" disabled={busy} onPress={() => void login(false, true)}>
+            <Text style={styles.primaryText}>Entrar com chave de acesso (Face ID / digital)</Text>
+          </Pressable>
+        )}
         {!cadastro && isNativeQuickUnlock && hasQuickAccount && (
           <Pressable style={styles.quickButton} accessibilityRole="button" disabled={busy} onPress={() => void login(true)}>
             <Text style={styles.primaryText}>Entrar com biometria</Text>
@@ -116,7 +125,23 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
   const stateRef = useRef<string | null | undefined>(AppState.currentState);
   const isAppInBackground = useCallback(() => stateRef.current === 'background', []);
   const promptRef = useRef(false);
+  const passkeyPromptRef = useRef(false);
   const generationRef = useRef(0);
+
+  // Evita confundir o diálogo WebAuthn com saída intencional do site.
+  const runPasskeyOperation = useCallback(async <T,>(operation: () => Promise<T>): Promise<T> => {
+    passkeyPromptRef.current = true;
+    try {
+      return await operation();
+    } finally {
+      passkeyPromptRef.current = false;
+      if (Platform.OS === 'web' && typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        // Não liberar uma sessão se o usuário deixou a aba durante o diálogo.
+        lock('aba oculta apos dialogo de passkey');
+        void supabaseAuth.auth.signOut({ scope: 'local' });
+      }
+    }
+  }, [lock]);
 
   const activity = useCallback(() => { lastActivityRef.current = Date.now(); }, []);
   const lock = useCallback((reason = 'bloqueio nao especificado') => {
@@ -208,7 +233,7 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
     let onActivity: (() => void) | undefined;
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       onVisibility = () => {
-        if (document.visibilityState === 'hidden') {
+        if (document.visibilityState === 'hidden' && !passkeyPromptRef.current) {
           lock('aba web oculta');
           void supabaseAuth.auth.signOut({ scope: 'local' });
         }
@@ -246,6 +271,25 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
       return e instanceof Error ? e.message : 'Login não realizado.';
     }
   }, [allowSession, isAppInBackground]);
+
+  const onPasskeyLogin = useCallback(async (): Promise<string> => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.isSecureContext || typeof PublicKeyCredential === 'undefined') {
+      return 'Chaves de acesso exigem navegador compatível e HTTPS.';
+    }
+    const ticket = ++generationRef.current;
+    try {
+      const result = await runPasskeyOperation(() => supabaseAuth.auth.signInWithPasskey());
+      if (result.error) throw result.error;
+      if (!result.data?.session) throw new Error('Não foi possível validar a chave de acesso.');
+      if (ticket !== generationRef.current || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) {
+        return 'Entrada interrompida.';
+      }
+      allowSession(result.data.session, false);
+      return '';
+    } catch (e) {
+      return e instanceof Error ? e.message : 'Falha ao entrar com chave de acesso. Use e-mail e senha.';
+    }
+  }, [allowSession, runPasskeyOperation]);
 
   const onQuickLogin = useCallback(async (): Promise<string> => {
     if (!isNativeQuickUnlock) return 'Biometria disponível apenas no aplicativo instalado.';
@@ -319,14 +363,14 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
     return (
       <View style={styles.flex}>
         {banner ? <Text style={styles.banner}>{banner}</Text> : null}
-        <LoginScreen hasQuickAccount={Boolean(quickUserId)} onQuickLogin={onQuickLogin} onRemoteLogin={onRemoteLogin} />
+        <LoginScreen hasQuickAccount={Boolean(quickUserId)} onQuickLogin={onQuickLogin} onRemoteLogin={onRemoteLogin} onPasskeyLogin={onPasskeyLogin} />
       </View>
     );
   }
 
   return (
     <ProfileSessionContext.Provider value={{
-      session, signOut, lock, nativeEnabled, nativeBusy, nativeMessage, activateNative, deactivateNative,
+      session, signOut, lock, nativeEnabled, nativeBusy, nativeMessage, activateNative, deactivateNative, runPasskeyOperation,
     }}>
       <View style={styles.flex} onTouchStart={activity}>{children}</View>
     </ProfileSessionContext.Provider>
