@@ -1,7 +1,6 @@
 import { ProfileCard } from '../components/auth/ProfileCard';
+import { AccountSettings } from '../components/auth/AccountSettings';
 import { ProtectedFinance } from '../components/auth/ProtectedFinance';
-import { AccessibilityProvider } from '../accessibility/AccessibilityContext';
-import { AccessibilityToolbar } from '../accessibility/AccessibilityToolbar';
 import { useAccessibility } from '../accessibility/AccessibilityContext';
 import { useAccessibleStyles } from '../accessibility/useAccessibleStyles';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -60,6 +59,7 @@ function FinanceHome() {
   const [mensagem, setMensagem] = useState('');
   const [busca, setBusca] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('Todas');
+  const [activeTab, setActiveTab] = useState<'inicio' | 'configuracoes'>('inicio');
 
   const carregarDados = useCallback(async (modoRefresh = false) => {
     modoRefresh ? setAtualizando(true) : setCarregando(true);
@@ -183,10 +183,32 @@ function FinanceHome() {
           <Text style={styles.saudacao}>Seu controle financeiro</Text>
           <Text style={styles.titulo}>FinanMVP</Text>
         </View>
-        <ProfileCard />
+        <ProfileCard onOpenSettings={() => setActiveTab('configuracoes')} />
       </View>
 
 
+      <View style={styles.tabNav} accessibilityRole="tablist">
+        <Pressable
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'inicio' }}
+          style={[styles.tabButton, activeTab === 'inicio' && styles.tabActive]}
+          onPress={() => setActiveTab('inicio')}
+        >
+          <Text style={[styles.tabText, activeTab === 'inicio' && styles.tabActiveText]}>Início</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'configuracoes' }}
+          style={[styles.tabButton, activeTab === 'configuracoes' && styles.tabActive]}
+          onPress={() => setActiveTab('configuracoes')}
+        >
+          <Text style={[styles.tabText, activeTab === 'configuracoes' && styles.tabActiveText]}>Configurações</Text>
+        </Pressable>
+      </View>
+      {activeTab === 'configuracoes' ? (
+        <AccountSettings onBack={() => setActiveTab('inicio')} />
+      ) : (
+        <>
       <PeriodSelector mes={mes} ano={ano} onAnterior={() => mudarMes(-1)} onProximo={() => mudarMes(1)} />
 
       {mensagem ? <View style={styles.sucessoCard}><Text style={styles.sucessoTexto} accessibilityLiveRegion="polite">{mensagem}</Text></View> : null}
@@ -285,8 +307,9 @@ function FinanceHome() {
           </View>
         </>
       )}
+        </>
+      )}
       </ScrollView>
-      <AccessibilityToolbar />
     </View>
   );
 }
@@ -309,17 +332,18 @@ function FinanceHomeCarregada() {
 }
 
 function App() {
-  return (
-    <AccessibilityProvider>
-      <FinanceHomeCarregada />
-    </AccessibilityProvider>
-  );
+  return <FinanceHomeCarregada />;
 }
 
 const baseStyles = StyleSheet.create({
   tela: { flex: 1, backgroundColor: '#F7F5FA' },
   container: { width: '100%', maxWidth: 880, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 38, paddingBottom: 48, gap: 18 },
   cabecalho: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' },
+  tabNav: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderBottomWidth: 1, borderBottomColor: '#DDD6E6', paddingBottom: 10 },
+  tabButton: { minHeight: 44, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDD6E6', justifyContent: 'center' },
+  tabActive: { backgroundColor: '#EDE9FE', borderColor: '#8B5CF6' },
+  tabText: { color: '#4B5563', fontSize: 13, fontWeight: '700' },
+  tabActiveText: { color: '#5B21B6' },
   saudacao: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
   titulo: { fontSize: 30, fontWeight: '900', color: '#111827', marginTop: 2 },
   avatar: { width: 42, height: 42, borderRadius: 99, backgroundColor: '#7C3AED', alignItems: 'center', justifyContent: 'center' },
