@@ -27,9 +27,11 @@ const FONTS: { value: FontChoice; title: string }[] = [
 
 /** Único acesso flutuante aos recursos de leitura e ao VLibras na web. */
 function getVLibrasButton(): HTMLElement | null {
-  if (typeof window === 'undefined') return null;
-  const vlibras = (window as Window & { VLibrasWidget?: { initBtn?: HTMLElement } }).VLibrasWidget;
-  return vlibras?.initBtn ?? null;
+  if (typeof document === 'undefined') return null;
+  // O launcher da versão web oficial é um elemento com vw-access-button.
+  // A versão anterior procurava uma propriedade global que não existia.
+  return document.querySelector<HTMLElement>('[vw-access-button]') ??
+    document.querySelector<HTMLElement>('.vw-access-button');
 }
 export function AccessibilityToolbar() {
   const [open, setOpen] = useState(false);
@@ -41,27 +43,18 @@ export function AccessibilityToolbar() {
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    // O VLibras se inicializa pelo script oficial em +html.tsx. O botão de
-    // abertura oficial continua existindo, mas não aparece separado no canto.
-    const syncButton = () => {
+    // O CSS em +html.tsx mantém o lançador oculto desde o carregamento.
+    // Apenas detectamos quando o widget está pronto para ser acionado no Aa.
+    const checkReady = () => {
       const button = getVLibrasButton();
       if (!button) return;
-      button.style.visibility = 'hidden';
-      button.style.pointerEvents = 'none';
       button.setAttribute('tabindex', '-1');
+      button.setAttribute('aria-hidden', 'true');
       setVlibrasReady(true);
     };
-    syncButton();
-    const interval = setInterval(syncButton, 900);
-    return () => {
-      clearInterval(interval);
-      const button = getVLibrasButton();
-      if (button) {
-        button.style.visibility = '';
-        button.style.pointerEvents = '';
-        button.removeAttribute('tabindex');
-      }
-    };
+    checkReady();
+    const interval = setInterval(checkReady, 1500);
+    return () => clearInterval(interval);
   }, []);
 
   function openVLibras() {

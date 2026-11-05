@@ -23,6 +23,16 @@ export default function RootHtml({ children }: PropsWithChildren) {
         />
         <meta name="color-scheme" content="light dark" />
         <ScrollViewStyleReset />
+        {/* O botão próprio do VLibras fica oculto: o acesso é pelo painel Aa.
+            Escondemos APENAS o acionador, nunca o intérprete/janela. */}
+        <style>{`
+          [vw-access-button],
+          .vw-access-button {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+          }
+        `}</style>
         {headNodes}
       </head>
       <body {...bodyAttributes}>
