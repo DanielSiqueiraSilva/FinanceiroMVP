@@ -2,11 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { supabaseAuth } from '../../auth/supabaseClient';
 import { useProfileSession } from './ProtectedFinance';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
+import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 
 type PasskeyInfo = { id: string; friendly_name?: string; created_at: string; last_used_at?: string };
 
 export function WebPasskeyControl() {
   const auth = useProfileSession();
+  const { isDark } = useAccessibility();
+  const styles = useAccessibleStyles(baseStyles);
   const [keys, setKeys] = useState<PasskeyInfo[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -68,27 +72,27 @@ export function WebPasskeyControl() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Chaves de acesso</Text>
-      <Text style={styles.help}>Cadastre uma chave depois de entrar com senha. A biometria é verificada pelo dispositivo, não pelo FinanceiroMVP.</Text>
+    <View style={[styles.container, !isDark && lightPasskey.container]}>
+      <Text style={[styles.heading, !isDark && lightPasskey.heading]}>Chaves de acesso</Text>
+      <Text style={[styles.help, !isDark && lightPasskey.help]}>Cadastre uma chave depois de entrar com senha. A biometria é verificada pelo dispositivo, não pelo FinanceiroMVP.</Text>
       <Pressable accessibilityRole="button" disabled={busy || !supported} style={[styles.button, (!supported || busy) && styles.disabled]} onPress={() => void register()}>
         <Text style={styles.buttonText}>{busy ? 'Verificando...' : 'Ativar Face ID / digital neste dispositivo'}</Text>
       </Pressable>
       {!supported ? <Text style={styles.help}>Disponível em navegador compatível com WebAuthn e conexão HTTPS.</Text> : null}
       {keys.map(key => (
         <View key={key.id} style={styles.key}>
-          <Text style={styles.keyName}>{key.friendly_name || 'Chave de acesso'} · {new Date(key.created_at).toLocaleDateString('pt-BR')}</Text>
+          <Text style={[styles.keyName, !isDark && lightPasskey.keyName]}>{key.friendly_name || 'Chave de acesso'} · {new Date(key.created_at).toLocaleDateString('pt-BR')}</Text>
           <Pressable accessibilityRole="button" disabled={busy} onPress={() => void remove(key.id)}>
-            <Text style={styles.remove}>Remover</Text>
+            <Text style={[styles.remove, !isDark && lightPasskey.remove]}>Remover</Text>
           </Pressable>
         </View>
       ))}
-      {message ? <Text style={styles.message} accessibilityLiveRegion="polite">{message}</Text> : null}
+      {message ? <Text style={[styles.message, !isDark && lightPasskey.message]} accessibilityLiveRegion="polite">{message}</Text> : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { width: '100%', gap: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#34435B' },
   heading: { fontSize: 14, color: '#FFFFFF', fontWeight: '700' },
   help: { color: '#A9B8D1', fontSize: 12 },
@@ -99,4 +103,13 @@ const styles = StyleSheet.create({
   keyName: { color: '#DDD6FE', fontSize: 12 },
   remove: { color: '#FDA4AF', fontWeight: '700', fontSize: 12 },
   message: { color: '#DDD6FE', fontSize: 12 },
+});
+
+const lightPasskey = StyleSheet.create({
+  container: { borderTopColor: '#DDD6E6' },
+  heading: { color: '#111827' },
+  help: { color: '#4B5563' },
+  keyName: { color: '#5B21B6' },
+  remove: { color: '#B91C1C' },
+  message: { color: '#5B21B6' },
 });
