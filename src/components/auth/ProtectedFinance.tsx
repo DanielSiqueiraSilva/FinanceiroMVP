@@ -3,10 +3,12 @@ import {
   type PropsWithChildren,
 } from 'react';
 import {
-  ActivityIndicator, AppState, Platform, Pressable, StyleSheet,
+  AppState, Platform, Pressable, ScrollView, StyleSheet,
   Text, TextInput, View,
 } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { authConfigured, supabaseAuth } from '../../auth/supabaseClient';
 import {
   isNativeQuickUnlock, checkQuickUnlock, getQuickUserId,
@@ -81,34 +83,122 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
     }
   }
 
+
+  const ui = useAccessibleStyles(styles);
+
   return (
-    <View style={styles.center}>
-      <View style={styles.panel}>
-        <Text accessibilityRole="header" style={styles.title}>FinanMVP</Text>
-        <Text style={styles.subtitle}>{cadastro ? 'Criar uma conta' : 'Entrar na conta'}</Text>
-        {!cadastro && Platform.OS === 'web' && (
-          <Pressable style={styles.quickButton} accessibilityRole="button" disabled={busy} onPress={() => void login(false, true)}>
-            <Text style={styles.primaryText}>Entrar com chave de acesso (Face ID / digital)</Text>
+    <ScrollView
+      style={ui.loginBackground}
+      contentContainerStyle={ui.loginScroll}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={ui.panel}>
+        <View style={ui.brand}>
+          <Svg width={21} height={21} viewBox="0 0 24 24" fill="none">
+            <Rect x={3} y={6} width={18} height={15} rx={3} stroke="#C4B5FD" strokeWidth={1.7} />
+            <Path d="M6 6V4.5A2.5 2.5 0 0 1 8.5 2H19" stroke="#C4B5FD" strokeWidth={1.7} strokeLinecap="round" />
+            <Path d="M15.5 12h5.5v4h-5.5a2 2 0 0 1 0-4Z" stroke="#C4B5FD" strokeWidth={1.7} />
+          </Svg>
+          <Text accessibilityRole="header" style={ui.brandTitle}>FinanMVP</Text>
+        </View>
+
+        <Text style={ui.subtitle}>{cadastro ? 'Crie sua conta com segurança' : 'Entre na sua conta com segurança'}</Text>
+
+        {!cadastro ? (
+          <View style={ui.faceArea}>
+            <Svg width={52} height={52} viewBox="0 0 48 48" fill="none" accessibilityLabel="Ícone de reconhecimento facial">
+              <Path d="M16 8h-4a4 4 0 0 0-4 4v4M32 8h4a4 4 0 0 1 4 4v4M8 32v4a4 4 0 0 0 4 4h4M40 32v4a4 4 0 0 1-4 4h-4" stroke="#C4B5FD" strokeWidth={2.8} strokeLinecap="round" />
+              <Circle cx={18} cy={22} r={1.6} fill="#C4B5FD" />
+              <Circle cx={30} cy={22} r={1.6} fill="#C4B5FD" />
+              <Path d="M18 31c3.3 3.5 8.7 3.5 12 0" stroke="#C4B5FD" strokeWidth={2.6} strokeLinecap="round" />
+            </Svg>
+          </View>
+        ) : null}
+
+        {!cadastro && Platform.OS === 'web' ? (
+          <Pressable
+            style={[ui.quickButton, busy && ui.disabled]}
+            accessibilityRole="button"
+            accessibilityLabel="Entrar com chave de acesso, Face ID ou impressão digital"
+            disabled={busy}
+            onPress={() => void login(false, true)}
+          >
+            <Text style={ui.primaryText}>◉  {busy ? 'Verificando...' : 'Entrar com biometria'}</Text>
           </Pressable>
-        )}
-        {!cadastro && isNativeQuickUnlock && hasQuickAccount && (
-          <Pressable style={styles.quickButton} accessibilityRole="button" disabled={busy} onPress={() => void login(true)}>
-            <Text style={styles.primaryText}>Entrar com biometria</Text>
+        ) : null}
+        {!cadastro && isNativeQuickUnlock && hasQuickAccount ? (
+          <Pressable
+            style={[ui.quickButton, busy && ui.disabled]}
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => void login(true)}
+          >
+            <Text style={ui.primaryText}>{busy ? 'Verificando...' : 'Entrar com biometria'}</Text>
           </Pressable>
-        )}
-        {!cadastro && hasQuickAccount && <Text style={styles.hint}>Ou entre com e-mail e senha.</Text>}
-        {cadastro && <TextInput style={styles.input} placeholder="Nome" placeholderTextColor="#94A3B8" value={nome} onChangeText={setNome} accessibilityLabel="Nome" autoCapitalize="words" />}
-        <TextInput style={styles.input} placeholder="E-mail" placeholderTextColor="#94A3B8" value={email} onChangeText={setEmail} accessibilityLabel="E-mail" autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
-        <TextInput style={styles.input} placeholder="Senha" placeholderTextColor="#94A3B8" value={senha} onChangeText={setSenha} accessibilityLabel="Senha" secureTextEntry autoComplete={cadastro ? 'new-password' : 'current-password'} />
-        <Pressable accessibilityRole="button" disabled={busy} style={[styles.primary, busy && styles.disabled]} onPress={() => void login(false)}>
-          <Text style={styles.primaryText}>{busy ? 'Verificando...' : cadastro ? 'Criar conta' : 'Entrar com senha'}</Text>
+        ) : null}
+
+        <View style={ui.emailSection}>
+          <Text style={ui.emailTitle}>{cadastro ? 'Dados para criar sua conta' : 'Ou entre com e-mail e senha'}</Text>
+          {cadastro ? (
+            <TextInput
+              style={ui.input}
+              placeholder="Nome completo"
+              placeholderTextColor="#94A3B8"
+              value={nome}
+              onChangeText={setNome}
+              accessibilityLabel="Nome completo"
+              autoCapitalize="words"
+              autoComplete="name"
+            />
+          ) : null}
+          <TextInput
+            style={ui.input}
+            placeholder="E-mail"
+            placeholderTextColor="#94A3B8"
+            value={email}
+            onChangeText={setEmail}
+            accessibilityLabel="E-mail"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+          />
+          <TextInput
+            style={ui.input}
+            placeholder="Senha"
+            placeholderTextColor="#94A3B8"
+            value={senha}
+            onChangeText={setSenha}
+            accessibilityLabel="Senha"
+            secureTextEntry
+            autoComplete={cadastro ? 'new-password' : 'current-password'}
+          />
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            style={[ui.passwordButton, busy && ui.disabled]}
+            onPress={() => void login(false)}
+          >
+            <Text style={ui.passwordText}>
+              {busy ? 'Verificando...' : cadastro ? 'Criar conta' : 'Entrar com e-mail e senha'}
+            </Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          disabled={busy}
+          style={ui.secondary}
+          onPress={() => { setCadastro(!cadastro); setMensagem(''); }}
+        >
+          <Text style={ui.link}>{cadastro ? 'Já tem conta? Entrar' : 'Ainda não tem conta? Criar conta'}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" disabled={busy} style={styles.secondary} onPress={() => { setCadastro(!cadastro); setMensagem(''); }}>
-          <Text style={styles.link}>{cadastro ? 'Já tenho uma conta' : 'Criar conta'}</Text>
-        </Pressable>
-        {mensagem ? <Text style={styles.message} accessibilityLiveRegion="polite">{mensagem}</Text> : null}
+
+        {mensagem ? <Text style={ui.message} accessibilityLiveRegion="polite">{mensagem}</Text> : null}
+        {!cadastro ? (
+          <Text style={ui.hint}>Face ID, impressão digital ou método seguro disponível no dispositivo</Text>
+        ) : null}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -381,18 +471,36 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, minHeight: 0, backgroundColor: '#0B1220' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 18 },
-  panel: { width: '100%', maxWidth: 410, padding: 22, gap: 12, backgroundColor: '#142136', borderRadius: 18, borderWidth: 1, borderColor: '#34435B' },
-  title: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
-  subtitle: { fontSize: 17, color: '#CBD5E1', fontWeight: '700' },
-  hint: { color: '#94A3B8', textAlign: 'center', fontSize: 13 },
-  input: { backgroundColor: '#1B2A40', color: '#FFFFFF', borderColor: '#475569', borderWidth: 1, borderRadius: 12, padding: 12, minHeight: 48, fontSize: 16 },
-  message: { color: '#FCA5A5', fontSize: 13 },
-  primary: { backgroundColor: '#7C3AED', borderRadius: 12, alignItems: 'center', padding: 13 },
-  quickButton: { backgroundColor: '#5B21B6', borderRadius: 12, alignItems: 'center', padding: 15 },
-  primaryText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  secondary: { alignItems: 'center', padding: 8 },
-  link: { color: '#C4B5FD', fontWeight: '700' },
+  loginBackground: { flex: 1, backgroundColor: '#090F1B' },
+  loginScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 34, paddingHorizontal: 16 },
+  panel: {
+    width: '100%', maxWidth: 510, borderRadius: 20, padding: 24, gap: 16,
+    backgroundColor: '#111A2E', borderWidth: 1, borderColor: '#283650',
+  },
+  brand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
+  brandTitle: { color: '#FFFFFF', fontSize: 21, fontWeight: '800' },
+  subtitle: { color: '#CBD5E1', fontSize: 14, textAlign: 'center', marginTop: 0 },
+  faceArea: { alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
+  quickButton: {
+    backgroundColor: '#7C3AED', borderRadius: 13, alignItems: 'center',
+    justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 16, minHeight: 54,
+  },
+  primaryText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' },
+  emailSection: { gap: 10, paddingTop: 4 },
+  emailTitle: { color: '#CBD5E1', textAlign: 'center', fontSize: 13, fontWeight: '600', marginBottom: 4 },
+  input: {
+    backgroundColor: '#18263D', color: '#FFFFFF', borderColor: '#44516A',
+    borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, minHeight: 48, fontSize: 16,
+  },
+  passwordButton: {
+    borderColor: '#475569', borderWidth: 1, borderRadius: 12, minHeight: 52,
+    alignItems: 'center', justifyContent: 'center', padding: 12,
+  },
+  passwordText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15, textAlign: 'center' },
+  secondary: { alignItems: 'center', paddingVertical: 9 },
+  link: { color: '#C4B5FD', fontWeight: '700', fontSize: 14 },
+  hint: { color: '#94A3B8', textAlign: 'center', fontSize: 12, lineHeight: 18 },
+  message: { color: '#FCA5A5', textAlign: 'center', fontSize: 13 },
   disabled: { opacity: .55 },
   banner: { color: '#DDD6FE', textAlign: 'center', padding: 10 },
 });

@@ -25,27 +25,56 @@ const FONTS: { value: FontChoice; title: string }[] = [
   { value: 'extraLarge', title: 'Muito maior (+40%)' },
 ];
 
-/** Botão flutuante na esquerda para não cobrir o widget VLibras da direita. */
+/** Único acesso flutuante aos recursos de leitura e ao VLibras na web. */
+function getVLibrasButton(): HTMLElement | null {
+  if (typeof window === 'undefined') return null;
+  const vlibras = (window as Window & { VLibrasWidget?: { initBtn?: HTMLElement } }).VLibrasWidget;
+  return vlibras?.initBtn ?? null;
+}
 export function AccessibilityToolbar() {
   const [open, setOpen] = useState(false);
+  const [vlibrasMessage, setVlibrasMessage] = useState('');
+  const [vlibrasReady, setVlibrasReady] = useState(false);
   const { width, height } = useWindowDimensions();
   const { theme, font, setTheme, setFont, ready } = useAccessibility();
   const styles = useAccessibleStyles(baseStyles);
 
   useEffect(() => {
-      if (Platform.OS !== 'web' || !open) return;
+    if (Platform.OS !== 'web') return;
+    // O VLibras se inicializa pelo script oficial em +html.tsx. O botão de
+    // abertura oficial continua existindo, mas não aparece separado no canto.
+    const syncButton = () => {
+      const button = getVLibrasButton();
+      if (!button) return;
+      button.style.visibility = 'hidden';
+      button.style.pointerEvents = 'none';
+      button.setAttribute('tabindex', '-1');
+      setVlibrasReady(true);
+    };
+    syncButton();
+    const interval = setInterval(syncButton, 900);
+    return () => {
+      clearInterval(interval);
+      const button = getVLibrasButton();
+      if (button) {
+        button.style.visibility = '';
+        button.style.pointerEvents = '';
+        button.removeAttribute('tabindex');
+      }
+    };
+  }, []);
 
-      const vlibras = document.querySelector<HTMLElement>('[vw]');
-      if (!vlibras) return;
-
-      const displayAnterior = vlibras.style.display;
-
-      vlibras.style.display = 'none';
-
-      return () => {
-        vlibras.style.display = displayAnterior;
-      };
-    }, [open]);
+  function openVLibras() {
+    const button = getVLibrasButton();
+    if (!button) {
+      setVlibrasMessage('O VLibras ainda está carregando. Verifique a conexão e tente novamente.');
+      return;
+    }
+    setVlibrasMessage('');
+    // Reutiliza o disparador oficial do widget, em vez de simular tradução.
+    button.click();
+    setOpen(false);
+  }
 
   return (
     <>
@@ -61,7 +90,7 @@ export function AccessibilityToolbar() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Abrir opções de acessibilidade"
-          accessibilityHint="Configurar tema claro ou escuro e tamanho das letras"
+          accessibilityHint="Configurar tema, tamanho das letras e tradução para Libras"
           accessibilityState={{ expanded: open }}
           onPress={() => setOpen(true)}
           style={styles.floatingButton}
@@ -152,10 +181,26 @@ export function AccessibilityToolbar() {
                 ))}
               </View>
 
+              <Text style={styles.label} accessibilityRole="header">Tradução em Libras</Text>
+              {Platform.OS === 'web' ? (
+                <>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Abrir tradutor VLibras"
+                    onPress={openVLibras}
+                    style={styles.vlibrasButton}
+                  >
+                    <Text style={styles.vlibrasText}>Abrir VLibras</Text>
+                  </Pressable>
+                  <Text style={styles.description}>
+                    {vlibrasReady ? 'Traduza conteúdos do site para Libras com o intérprete virtual.' : 'Aguardando carregamento do VLibras...'}
+                  </Text>
+                  {vlibrasMessage ? <Text style={styles.error} accessibilityLiveRegion="polite">{vlibrasMessage}</Text> : null}
+                </>
+              ) : (
+                <Text style={styles.description}>O VLibras integrado está disponível na versão web.</Text>
+              )}
               {!ready ? <Text style={styles.description}>Carregando preferências...</Text> : null}
-              <Text style={styles.description}>
-                Para tradução em Libras na versão Web, use o botão do VLibras no lado direito da tela.
-              </Text>
             </ScrollView>
           </View>
         </View>
@@ -271,4 +316,7 @@ const baseStyles = StyleSheet.create({
   selected: { backgroundColor: '#EDE9FE', borderColor: '#7C3AED' },
   buttonText: { color: '#374151', fontSize: 13, fontWeight: '700', textAlign: 'center' },
   selectedText: { color: '#5B21B6' },
+  vlibrasButton: { backgroundColor: '#1D4ED8', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center', minHeight: 48 },
+  vlibrasText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  error: { color: '#991B1B', fontSize: 13 },
 });
