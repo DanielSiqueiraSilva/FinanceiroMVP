@@ -128,6 +128,19 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
   const passkeyPromptRef = useRef(false);
   const generationRef = useRef(0);
 
+
+  const activity = useCallback(() => { lastActivityRef.current = Date.now(); }, []);
+  const lock = useCallback((reason = 'bloqueio nao especificado') => {
+    console.info('[FinanceiroMVP][sessao] BLOQUEIO:', reason, '| AppState:', stateRef.current);
+    generationRef.current++;
+    approvedRef.current = null;
+    setSession(null);
+    setNativeBusy(false);
+    setNativeMessage('');
+    if (isNativeQuickUnlock) supabaseAuth.auth.stopAutoRefresh();
+    // Em native, mantém apenas a credencial protegida para desbloqueio futuro.
+    // Em web, usamos logout tradicional no evento de mudança de aba.
+  }, []);
   // Evita confundir o diálogo WebAuthn com saída intencional do site.
   const runPasskeyOperation = useCallback(async <T,>(operation: () => Promise<T>): Promise<T> => {
     passkeyPromptRef.current = true;
@@ -143,18 +156,7 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
     }
   }, [lock]);
 
-  const activity = useCallback(() => { lastActivityRef.current = Date.now(); }, []);
-  const lock = useCallback((reason = 'bloqueio nao especificado') => {
-    console.info('[FinanceiroMVP][sessao] BLOQUEIO:', reason, '| AppState:', stateRef.current);
-    generationRef.current++;
-    approvedRef.current = null;
-    setSession(null);
-    setNativeBusy(false);
-    setNativeMessage('');
-    if (isNativeQuickUnlock) supabaseAuth.auth.stopAutoRefresh();
-    // Em native, mantém apenas a credencial protegida para desbloqueio futuro.
-    // Em web, usamos logout tradicional no evento de mudança de aba.
-  }, []);
+
   const allowSession = useCallback((approved: Session, enabled: boolean) => {
     console.info('[FinanceiroMVP][sessao] Login APROVADO | AppState:', stateRef.current);
     approvedRef.current = approved;
