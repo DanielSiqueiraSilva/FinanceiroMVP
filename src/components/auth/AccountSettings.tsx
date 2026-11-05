@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { supabaseAuth } from '../../auth/supabaseClient';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useProfileSession } from './ProtectedFinance';
 import { NativeAccessControl } from './NativeAccessControl';
 import { WebPasskeyControl } from './WebPasskeyControl';
@@ -15,6 +16,7 @@ function displayName(name: unknown, email?: string) {
 /** Aba de configurações dentro da sessão protegida; não cria outro login. */
 export function AccountSettings({ onBack }: { onBack: () => void }) {
   const auth = useProfileSession();
+  const { isDark } = useAccessibility();
   const styles = useAccessibleStyles(baseStyles);
   const [name, setName] = useState('');
   const [editing, setEditing] = useState(false);
@@ -101,7 +103,7 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
           Ative a chave de acesso para usar Face ID, impressão digital ou o método seguro do dispositivo no navegador.
           O login por e-mail e senha continuará disponível.
         </Text>
-        <View style={styles.securityPanel}>
+        <View style={[styles.securityPanel, !isDark && lightSettings.securityPanel]}>
           <WebPasskeyControl />
           <NativeAccessControl />
         </View>
@@ -133,4 +135,8 @@ const baseStyles = StyleSheet.create({
   backText: { color: '#5B21B6', fontSize: 13, fontWeight: '700' },
   disabled: { opacity: .5 },
   message: { color: '#6D28D9', fontSize: 13 },
+});
+
+const lightSettings = StyleSheet.create({
+  securityPanel: { backgroundColor: '#FFFFFF', borderColor: '#DDD6E6' },
 });
