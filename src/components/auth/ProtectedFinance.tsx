@@ -9,6 +9,7 @@ import {
 import type { Session } from '@supabase/supabase-js';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { authConfigured, supabaseAuth } from '../../auth/supabaseClient';
 import {
   isNativeQuickUnlock, checkQuickUnlock, getQuickUserId,
@@ -39,6 +40,7 @@ type LoginProps = {
   onPasskeyLogin: () => Promise<string>;
 };
 function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLogin }: LoginProps) {
+  const { isDark } = useAccessibility();
   const [cadastro, setCadastro] = useState(false);
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -88,21 +90,21 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
 
   return (
     <ScrollView
-      style={ui.loginBackground}
+      style={[ui.loginBackground, !isDark && lightLoginStyles.loginBackground]}
       contentContainerStyle={ui.loginScroll}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={ui.panel}>
+      <View style={[ui.panel, !isDark && lightLoginStyles.panel]}>
         <View style={ui.brand}>
           <Svg width={21} height={21} viewBox="0 0 24 24" fill="none">
             <Rect x={3} y={6} width={18} height={15} rx={3} stroke="#C4B5FD" strokeWidth={1.7} />
             <Path d="M6 6V4.5A2.5 2.5 0 0 1 8.5 2H19" stroke="#C4B5FD" strokeWidth={1.7} strokeLinecap="round" />
             <Path d="M15.5 12h5.5v4h-5.5a2 2 0 0 1 0-4Z" stroke="#C4B5FD" strokeWidth={1.7} />
           </Svg>
-          <Text accessibilityRole="header" style={ui.brandTitle}>FinanMVP</Text>
+          <Text accessibilityRole="header" style={[ui.brandTitle, !isDark && lightLoginStyles.brandTitle]}>FinanMVP</Text>
         </View>
 
-        <Text style={ui.subtitle}>{cadastro ? 'Crie sua conta com segurança' : 'Entre na sua conta com segurança'}</Text>
+        <Text style={[ui.subtitle, !isDark && lightLoginStyles.subtitle]}>{cadastro ? 'Crie sua conta com segurança' : 'Entre na sua conta com segurança'}</Text>
 
         {!cadastro ? (
           <View style={ui.faceArea}>
@@ -138,10 +140,10 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
         ) : null}
 
         <View style={ui.emailSection}>
-          <Text style={ui.emailTitle}>{cadastro ? 'Dados para criar sua conta' : 'Ou entre com e-mail e senha'}</Text>
+          <Text style={[ui.emailTitle, !isDark && lightLoginStyles.emailTitle]}>{cadastro ? 'Dados para criar sua conta' : 'Ou entre com e-mail e senha'}</Text>
           {cadastro ? (
             <TextInput
-              style={ui.input}
+              style={[ui.input, !isDark && lightLoginStyles.input]}
               placeholder="Nome completo"
               placeholderTextColor="#94A3B8"
               value={nome}
@@ -152,7 +154,7 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
             />
           ) : null}
           <TextInput
-            style={ui.input}
+            style={[ui.input, !isDark && lightLoginStyles.input]}
             placeholder="E-mail"
             placeholderTextColor="#94A3B8"
             value={email}
@@ -175,10 +177,10 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
           <Pressable
             accessibilityRole="button"
             disabled={busy}
-            style={[ui.passwordButton, busy && ui.disabled]}
+            style={[ui.passwordButton, !isDark && lightLoginStyles.passwordButton, busy && ui.disabled]}
             onPress={() => void login(false)}
           >
-            <Text style={ui.passwordText}>
+            <Text style={[ui.passwordText, !isDark && lightLoginStyles.passwordText]}>
               {busy ? 'Verificando...' : cadastro ? 'Criar conta' : 'Entrar com e-mail e senha'}
             </Text>
           </Pressable>
@@ -193,9 +195,9 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
           <Text style={ui.link}>{cadastro ? 'Já tem conta? Entrar' : 'Ainda não tem conta? Criar conta'}</Text>
         </Pressable>
 
-        {mensagem ? <Text style={ui.message} accessibilityLiveRegion="polite">{mensagem}</Text> : null}
+        {mensagem ? <Text style={[ui.message, !isDark && lightLoginStyles.message]} accessibilityLiveRegion="polite">{mensagem}</Text> : null}
         {!cadastro ? (
-          <Text style={ui.hint}>Face ID, impressão digital ou método seguro disponível no dispositivo</Text>
+          <Text style={[ui.hint, !isDark && lightLoginStyles.hint]}>Face ID, impressão digital ou método seguro disponível no dispositivo</Text>
         ) : null}
       </View>
     </ScrollView>
@@ -204,6 +206,7 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
 
 /** O estado remoto do Supabase NÃO abre a tela: somente allowSession faz isso. */
 export function ProtectedFinance({ children }: PropsWithChildren) {
+  const { isDark } = useAccessibility();
   const [session, setSession] = useState<Session | null>(null);
   const [quickUserId, setQuickUserId] = useState<string | null>(null);
   const [nativeEnabled, setNativeEnabled] = useState(false);
@@ -453,7 +456,7 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
 
   if (!session) {
     return (
-      <View style={styles.flex}>
+      <View style={[styles.flex, { backgroundColor: isDark ? "#0B1220" : "#F7F5FA" }]}>
         {banner ? <Text style={styles.banner}>{banner}</Text> : null}
         <LoginScreen hasQuickAccount={Boolean(quickUserId)} onQuickLogin={onQuickLogin} onRemoteLogin={onRemoteLogin} onPasskeyLogin={onPasskeyLogin} />
       </View>
@@ -464,7 +467,7 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
     <ProfileSessionContext.Provider value={{
       session, signOut, lock, nativeEnabled, nativeBusy, nativeMessage, activateNative, deactivateNative, runPasskeyOperation,
     }}>
-      <View style={styles.flex} onTouchStart={activity}>{children}</View>
+      <View style={[styles.flex, { backgroundColor: isDark ? "#0B1220" : "#F7F5FA" }]} onTouchStart={activity}>{children}</View>
     </ProfileSessionContext.Provider>
   );
 }
@@ -503,4 +506,19 @@ const styles = StyleSheet.create({
   message: { color: '#FCA5A5', textAlign: 'center', fontSize: 13 },
   disabled: { opacity: .55 },
   banner: { color: '#DDD6FE', textAlign: 'center', padding: 10 },
+});
+
+/** O login usa base escura conforme a referência; estas sobreposições
+ * garantem contraste real quando o usuário escolhe "Claro" no Aa. */
+const lightLoginStyles = StyleSheet.create({
+  loginBackground: { backgroundColor: '#F7F5FA' },
+  panel: { backgroundColor: '#FFFFFF', borderColor: '#DDD6E6' },
+  brandTitle: { color: '#111827' },
+  subtitle: { color: '#374151' },
+  emailTitle: { color: '#374151' },
+  input: { backgroundColor: '#FCFBFD', borderColor: '#D8D2E2', color: '#111827' },
+  passwordButton: { backgroundColor: '#FFFFFF', borderColor: '#8B5CF6' },
+  passwordText: { color: '#5B21B6' },
+  hint: { color: '#4B5563' },
+  message: { color: '#991B1B' },
 });
