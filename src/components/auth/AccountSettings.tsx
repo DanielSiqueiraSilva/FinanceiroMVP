@@ -101,8 +101,10 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
           Ative a chave de acesso para usar Face ID, impressão digital ou o método seguro do dispositivo no navegador.
           O login por e-mail e senha continuará disponível.
         </Text>
-        <WebPasskeyControl />
-        <NativeAccessControl />
+        <View style={styles.securityPanel}>
+          <WebPasskeyControl />
+          <NativeAccessControl />
+        </View>
       </View>
     </View>
   );
@@ -119,6 +121,7 @@ const baseStyles = StyleSheet.create({
   label: { fontSize: 12, color: '#6B7280', fontWeight: '700' },
   value: { fontSize: 16, color: '#111827', fontWeight: '600', flexShrink: 1 },
   description: { color: '#4B5563', fontSize: 13, lineHeight: 20 },
+  securityPanel: { backgroundColor: '#142136', borderWidth: 1, borderColor: '#34435B', borderRadius: 14, padding: 14, gap: 10 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   form: { gap: 12 },
   input: { minHeight: 48, color: '#111827', backgroundColor: '#FCFBFD', padding: 12, borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 12, fontSize: 16 },
