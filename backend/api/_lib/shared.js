@@ -12,6 +12,7 @@ export const sharedId = validarId;
 
 export async function initialize(req, res) {
   configurarCors(req, res);
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,PUT,DELETE,OPTIONS');
   if (req.method === 'OPTIONS') { res.status(204).end(); return null; }
   const userId = await exigirUsuario(req);
   const token = TOKEN.exec(String(req.headers.authorization || ''))?.[1];
