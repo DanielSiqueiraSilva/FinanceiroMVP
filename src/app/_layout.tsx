@@ -6,7 +6,7 @@ import { AccessibilityProvider, useAccessibility } from '../accessibility/Access
 import { AccessibilityToolbar } from '../accessibility/AccessibilityToolbar';
 
 function LayoutInterno() {
-  const { isDark, ready } = useAccessibility();
+  const { isDark, ready, highContrast, reduceMotion, focusHighlight, keyboardNavigation, textSpacing } = useAccessibility();
   useEffect(() => {
     if (!ready || Platform.OS !== 'web' || typeof document === 'undefined') return;
     // Sincroniza também os controles do navegador (inputs, selects, scrollbar)
@@ -17,8 +17,13 @@ function LayoutInterno() {
     document.documentElement.style.backgroundColor = background;
     document.documentElement.setAttribute('data-finance-theme', mode);
     document.documentElement.setAttribute('data-finance-theme-ready', 'true');
+    document.documentElement.setAttribute('data-finance-high-contrast', String(highContrast));
+    document.documentElement.setAttribute('data-finance-reduce-motion', String(reduceMotion));
+    document.documentElement.setAttribute('data-finance-focus', String(focusHighlight));
+    document.documentElement.setAttribute('data-finance-keyboard', String(keyboardNavigation));
+    document.documentElement.setAttribute('data-finance-text-spacing', String(textSpacing));
     document.body.style.backgroundColor = background;
-  }, [isDark, ready]);
+  }, [isDark, ready, highContrast, reduceMotion, focusHighlight, keyboardNavigation, textSpacing]);
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#0B1220" : "#F7F5FA" }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
