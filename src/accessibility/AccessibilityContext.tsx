@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useState,
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
   type PropsWithChildren,
 } from 'react';
 import { Platform, useColorScheme } from 'react-native';
@@ -67,6 +67,7 @@ export function AccessibilityProvider({ children }: PropsWithChildren) {
   const reactNativeSystemTheme = useColorScheme();
   const [systemWebDark, setSystemWebDark] = useState<boolean | null>(null);
   const [preferences, setPreferences] = useState<Preferences>(DEFAULTS);
+  const latestPreferences = useRef<Preferences>(DEFAULTS);
   const [ready, setReady] = useState(false);
 
   // Os eventos do sistema também funcionam quando o tema muda com a página aberta.
@@ -88,6 +89,7 @@ export function AccessibilityProvider({ children }: PropsWithChildren) {
         const restored = browser ?? parsePreferences(await AsyncStorage.getItem(ACCESSIBILITY_STORAGE_KEY));
         if (!mounted) return;
         const value = restored ?? DEFAULTS;
+        latestPreferences.current = value;
         setPreferences(value);
 
         // Migra automaticamente preferências previamente mantidas no AsyncStorage.
@@ -115,20 +117,18 @@ export function AccessibilityProvider({ children }: PropsWithChildren) {
 
   const setTheme = useCallback((theme: ThemeChoice) => {
     if (!ready) return;
-    setPreferences(previous => {
-      const next = { ...previous, theme };
-      save(next);
-      return next;
-    });
+    const next = { ...latestPreferences.current, theme };
+    latestPreferences.current = next;
+    setPreferences(next);
+    save(next);
   }, [ready, save]);
 
   const setFont = useCallback((font: FontChoice) => {
     if (!ready) return;
-    setPreferences(previous => {
-      const next = { ...previous, font };
-      save(next);
-      return next;
-    });
+    const next = { ...latestPreferences.current, font };
+    latestPreferences.current = next;
+    setPreferences(next);
+    save(next);
   }, [ready, save]);
 
   const value = useMemo<AccessibilityValue>(() => ({
