@@ -60,10 +60,12 @@ function parsePreferences(raw: string | null): Preferences | null {
       theme: isTheme(parsed.theme) ? parsed.theme : 'system',
       font: isFont(parsed.font) ? parsed.font : 'normal',
       highContrast: typeof parsed.highContrast === 'boolean' ? parsed.highContrast : false,
-      reduceMotion: typeof parsed.reduceMotion === 'boolean' ? parsed.reduceMotion : false,
-      focusHighlight: typeof parsed.focusHighlight === 'boolean' ? parsed.focusHighlight : false,
-      keyboardNavigation: typeof parsed.keyboardNavigation === 'boolean' ? parsed.keyboardNavigation : false,
-      textSpacing: typeof parsed.textSpacing === 'boolean' ? parsed.textSpacing : false,
+      // Recursos retirados da janela: não reativar estados antigos ocultos.
+      // O suporte nativo de teclado e redução de movimento do SO permanece.
+      reduceMotion: false,
+      focusHighlight: false,
+      keyboardNavigation: false,
+      textSpacing: false,
     };
   } catch {
     return null;
