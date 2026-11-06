@@ -120,10 +120,12 @@ export function PaymentReminders({ month, year }: { month: number; year: number 
 
   const today = (() => {
     const now = new Date();
-    const fmt = new Intl.DateTimeFormat('en-CA', {
+    const fmt = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
     });
-    return fmt.format(now);
+    const parts = fmt.formatToParts(now);
+    const get = (type: string) => parts.find(part => part.type === type)?.value ?? '';
+    return `${get('year')}-${get('month')}-${get('day')}`;
   })();
 
   return (
@@ -194,6 +196,11 @@ export function PaymentReminders({ month, year }: { month: number; year: number 
               <Text style={styles.itemHint}>{item.is_paid ? 'Pago' : item.due_date < today ? 'Vencido' : 'Pendente'}{item.email_enabled ? ' · Alerta por e-mail ativado' : ''}</Text>
             </View>
             <View style={styles.itemActions}>
+              <Pressable accessibilityRole="button" disabled={busy}
+                accessibilityLabel={item.email_enabled ? 'Desativar e-mail deste pagamento' : 'Ativar e-mail deste pagamento'}
+                style={styles.secondary} onPress={() => void changeItem(item, { email_enabled: !item.email_enabled })}>
+                <Text style={styles.secondaryText}>{item.email_enabled ? 'E-mail: ligado' : 'E-mail: desligado'}</Text>
+              </Pressable>
               <Pressable accessibilityRole="button" accessibilityLabel={item.is_paid ? 'Marcar como pendente' : 'Marcar como pago'}
                 disabled={busy} style={styles.secondary} onPress={() => void changeItem(item, { is_paid: !item.is_paid })}>
                 <Text style={styles.secondaryText}>{item.is_paid ? 'Reabrir' : 'Marcar pago'}</Text>
