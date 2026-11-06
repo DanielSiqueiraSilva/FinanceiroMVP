@@ -19,6 +19,7 @@ import {
 import { ExpensePieChart } from '../components/finance/ExpensePieChart';
 import { MonthlyOverview } from '../components/finance/MonthlyOverview';
 import { PaymentReminders } from '../components/finance/PaymentReminders';
+import { SharedWallets } from '../components/shared/SharedWallets';
 import { PeriodSelector } from '../components/finance/PeriodSelector';
 import { SummaryCard } from '../components/finance/SummaryCard';
 import { CATEGORIAS, TransactionForm } from '../components/finance/TransactionForm';
@@ -63,7 +64,7 @@ function FinanceHome() {
   const [mensagem, setMensagem] = useState('');
   const [busca, setBusca] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('Todas');
-  const [activeTab, setActiveTab] = useState<'inicio' | 'configuracoes'>('inicio');
+  const [activeTab, setActiveTab] = useState<'inicio' | 'configuracoes' | 'carteiras'>('inicio');
 
   const carregarDados = useCallback(async (modoRefresh = false) => {
     modoRefresh ? setAtualizando(true) : setCarregando(true);
@@ -212,6 +213,16 @@ function FinanceHome() {
         </Pressable>
         <Pressable
           accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'carteiras' }}
+          style={[styles.tabButton, activeTab === 'carteiras' && styles.tabActive]}
+          onPress={() => { notifications?.click(); setActiveTab('carteiras'); }}
+        >
+          <Text style={[styles.tabText, activeTab === 'carteiras' && styles.tabActiveText]}>
+            Carteiras Compartilhadas
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="tab"
           accessibilityState={{ selected: activeTab === 'configuracoes' }}
           style={[styles.tabButton, activeTab === 'configuracoes' && styles.tabActive]}
           onPress={() => { notifications?.click(); setActiveTab('configuracoes'); }}
@@ -221,6 +232,8 @@ function FinanceHome() {
       </View>
       {activeTab === 'configuracoes' ? (
         <AccountSettings onBack={() => setActiveTab('inicio')} />
+      ) : activeTab === 'carteiras' ? (
+        <SharedWallets />
       ) : (
         <>
       <PeriodSelector mes={mes} ano={ano} onAnterior={() => mudarMes(-1)} onProximo={() => mudarMes(1)} />
