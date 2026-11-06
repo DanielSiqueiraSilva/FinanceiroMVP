@@ -6,6 +6,7 @@ import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useProfileSession } from './ProtectedFinance';
 import { NativeAccessControl } from './NativeAccessControl';
 import { WebPasskeyControl } from './WebPasskeyControl';
+import { NotificationPreferences } from '../notifications/NotificationPreferences';
 
 function displayName(name: unknown, email?: string) {
   return typeof name === 'string' && name.trim()
@@ -95,6 +96,10 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
         <Text style={styles.label}>E-mail</Text>
         <Text style={styles.value}>{auth.session.user.email ?? 'Não informado'}</Text>
         {message ? <Text style={styles.message} accessibilityLiveRegion="polite">{message}</Text> : null}
+      </View>
+
+      <View style={styles.section}>
+        <NotificationPreferences />
       </View>
 
       <View style={styles.section}>
