@@ -190,3 +190,27 @@ select cron.schedule(
   '0 * * * *',
   $cron$select app_private.queue_due_payment_reminders();$cron$
 );
+
+-- Um segundo job chama a função de e-mail. O token aleatório permanece
+-- no Vault; ele não é incluído no código, na URL ou no painel web.
+-- A função exige validar esse segredo no banco antes de processar a fila.
+create extension if not exists pg_net;
+select cron.schedule(
+  'finanmvp-envia-lembretes-email',
+  '10 * * * *',
+  $cron$
+    select net.http_post(
+      url := 'https://hgyuhvqlekyxsuaysfsf.supabase.co/functions/v1/send-payment-reminders',
+      headers := jsonb_build_object(
+        'Content-Type','application/json',
+        'x-reminder-secret', (
+          select decrypted_secret from vault.decrypted_secrets
+          where name = 'finanmvp_reminder_scheduler'
+          limit 1
+        )
+      ),
+      body := '{"source":"scheduler"}'::jsonb,
+      timeout_milliseconds := 30000
+    );
+  $cron$
+);
