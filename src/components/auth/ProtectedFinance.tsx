@@ -97,9 +97,9 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
       <View style={[ui.panel, !isDark && lightLoginStyles.panel]}>
         <View style={ui.brand}>
           <Svg width={21} height={21} viewBox="0 0 24 24" fill="none">
-            <Rect x={3} y={6} width={18} height={15} rx={3} stroke="#C4B5FD" strokeWidth={1.7} />
-            <Path d="M6 6V4.5A2.5 2.5 0 0 1 8.5 2H19" stroke="#C4B5FD" strokeWidth={1.7} strokeLinecap="round" />
-            <Path d="M15.5 12h5.5v4h-5.5a2 2 0 0 1 0-4Z" stroke="#C4B5FD" strokeWidth={1.7} />
+            <Rect x={3} y={6} width={18} height={15} rx={3} stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={1.7} />
+            <Path d="M6 6V4.5A2.5 2.5 0 0 1 8.5 2H19" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={1.7} strokeLinecap="round" />
+            <Path d="M15.5 12h5.5v4h-5.5a2 2 0 0 1 0-4Z" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={1.7} />
           </Svg>
           <Text accessibilityRole="header" style={[ui.brandTitle, !isDark && lightLoginStyles.brandTitle]}>FinanMVP</Text>
         </View>
@@ -109,10 +109,10 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
         {!cadastro ? (
           <View style={ui.faceArea}>
             <Svg width={52} height={52} viewBox="0 0 48 48" fill="none" accessibilityLabel="Ícone de reconhecimento facial">
-              <Path d="M16 8h-4a4 4 0 0 0-4 4v4M32 8h4a4 4 0 0 1 4 4v4M8 32v4a4 4 0 0 0 4 4h4M40 32v4a4 4 0 0 1-4 4h-4" stroke="#C4B5FD" strokeWidth={2.8} strokeLinecap="round" />
-              <Circle cx={18} cy={22} r={1.6} fill="#C4B5FD" />
-              <Circle cx={30} cy={22} r={1.6} fill="#C4B5FD" />
-              <Path d="M18 31c3.3 3.5 8.7 3.5 12 0" stroke="#C4B5FD" strokeWidth={2.6} strokeLinecap="round" />
+              <Path d="M16 8h-4a4 4 0 0 0-4 4v4M32 8h4a4 4 0 0 1 4 4v4M8 32v4a4 4 0 0 0 4 4h4M40 32v4a4 4 0 0 1-4 4h-4" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={2.8} strokeLinecap="round" />
+              <Circle cx={18} cy={22} r={1.6} fill={isDark ? "#C4B5FD" : "#6D28D9"} />
+              <Circle cx={30} cy={22} r={1.6} fill={isDark ? "#C4B5FD" : "#6D28D9"} />
+              <Path d="M18 31c3.3 3.5 8.7 3.5 12 0" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={2.6} strokeLinecap="round" />
             </Svg>
           </View>
         ) : null}
@@ -145,7 +145,7 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
             <TextInput
               style={[ui.input, !isDark && lightLoginStyles.input]}
               placeholder="Nome completo"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
               value={nome}
               onChangeText={setNome}
               accessibilityLabel="Nome completo"
@@ -156,7 +156,7 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
           <TextInput
             style={[ui.input, !isDark && lightLoginStyles.input]}
             placeholder="E-mail"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
             value={email}
             onChangeText={setEmail}
             accessibilityLabel="E-mail"
@@ -165,9 +165,9 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
             autoComplete="email"
           />
           <TextInput
-            style={ui.input}
+            style={[ui.input, !isDark && lightLoginStyles.input]}
             placeholder="Senha"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
             value={senha}
             onChangeText={setSenha}
             accessibilityLabel="Senha"
