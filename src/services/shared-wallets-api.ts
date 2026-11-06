@@ -38,6 +38,7 @@ export type WalletDetailsResponse = {
   wallet: SharedWallet; members: WalletMember[]; transactions: WalletTransaction[];
   messages: WalletMessage[]; reads: WalletRead[];
   invitations: { id: string; invited_user_id: string; status: string; created_at: string; expires_at: string }[];
+  totals: { total_receitas: number; total_despesas: number; saldo: number; quantidade: number };
 };
 
 async function requestShared<T>(path: string, method = 'GET', body?: object): Promise<T> {
@@ -76,3 +77,7 @@ export const closeSharedWallet = (id: string) =>
   requestShared<{ success: boolean }>('/' + encodeURIComponent(id), 'DELETE', { confirmation: 'ENCERRAR' });
 export const walletAction = <T,>(id: string, action: string, args: object = {}) =>
   requestShared<T>('/' + encodeURIComponent(id) + '/actions', 'POST', { action, ...args });
+
+export const olderWalletHistory = <T,>(id: string, kind: 'messages' | 'transactions', before: string) =>
+  requestShared<T[]>('/' + encodeURIComponent(id) + '/history?kind=' + kind +
+    '&before=' + encodeURIComponent(before));
