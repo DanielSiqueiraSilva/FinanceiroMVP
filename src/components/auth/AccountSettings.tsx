@@ -23,6 +23,11 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [showDeletion, setShowDeletion] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState('');
 
   if (!auth) return null;
 
@@ -47,6 +52,52 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function deleteOwnAccount() {
+    if (!auth || deleteBusy || deletePassword.length < 6 || deleteConfirmation !== 'EXCLUIR') return;
+    setDeleteBusy(true);
+    setDeleteMessage('');
+    try {
+      // Exclusão somente pelo servidor. A chave administrativa não existe no frontend.
+      const { data, error } = await supabaseAuth.functions.invoke('delete-account', {
+        body: { password: deletePassword, confirmation: deleteConfirmation },
+      });
+      if (error) {
+        // O Edge Function pode retornar um erro de autenticação ou validação.
+        const context = 'context' in error ? error.context : null;
+        let explanation = '';
+        if (context && typeof context === 'object' && 'json' in context &&
+            typeof context.json === 'function') {
+          try {
+            const result = await context.json();
+            if (typeof result?.message === 'string') explanation = result.message;
+          } catch {}
+        }
+        throw new Error(explanation || 'Não foi possível excluir a conta. Verifique a senha e tente novamente.');
+      }
+      if (data?.message !== 'Conta excluída com sucesso.') {
+        throw new Error('Não foi possível confirmar a exclusão no servidor.');
+      }
+      setShowDeletion(false);
+      setDeletePassword('');
+      setDeleteConfirmation('');
+      // Encerra a sessão e apaga a credencial biométrica local, quando existir.
+      await auth.signOut();
+    } catch (error) {
+      setDeleteMessage(error instanceof Error ? error.message : 'Erro ao excluir conta.');
+    } finally {
+      setDeletePassword('');
+      setDeleteBusy(false);
+    }
+  }
+
+  function cancelDeletion() {
+    if (deleteBusy) return;
+    setShowDeletion(false);
+    setDeletePassword('');
+    setDeleteConfirmation('');
+    setDeleteMessage('');
   }
 
   return (
@@ -113,6 +164,60 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
           <NativeAccessControl />
         </View>
       </View>
+
+      <View style={styles.section}>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>Excluir minha conta</Text>
+        <Text style={styles.description}>
+          A exclusão é definitiva e remove seu acesso, lançamentos, limites mensais e histórico
+          de notificações. Esta ação não pode ser desfeita.
+        </Text>
+        {!showDeletion ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Solicitar exclusão da minha conta"
+            onPress={() => { setShowDeletion(true); setDeleteMessage(''); }}
+            style={styles.dangerOutline}>
+            <Text style={styles.dangerOutlineText}>Excluir minha conta...</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.deletionForm}>
+            <Text style={styles.warningText}>
+              Confirme sua identidade. Digite sua senha atual e depois escreva EXCLUIR
+              exatamente como mostrado. Nenhuma informação será removida até confirmar.
+            </Text>
+            <Text style={styles.label}>Senha atual</Text>
+            <TextInput accessibilityLabel="Senha atual para excluir conta"
+              secureTextEntry autoComplete="off" textContentType="password"
+              autoCapitalize="none" placeholder="Sua senha atual"
+              placeholderTextColor={isDark ? '#94A3B8' : '#6B7280'}
+              value={deletePassword} onChangeText={setDeletePassword}
+              editable={!deleteBusy} style={styles.input} maxLength={256} />
+            <Text style={styles.label}>Digite EXCLUIR para confirmar</Text>
+            <TextInput accessibilityLabel="Digite EXCLUIR para confirmar a exclusão"
+              autoCapitalize="characters" autoComplete="off" placeholder="EXCLUIR"
+              placeholderTextColor={isDark ? '#94A3B8' : '#6B7280'}
+              value={deleteConfirmation} onChangeText={setDeleteConfirmation}
+              editable={!deleteBusy} style={styles.input} maxLength={10} />
+            {deleteMessage ? <Text accessibilityLiveRegion="polite"
+              style={styles.warningText}>{deleteMessage}</Text> : null}
+            <View style={styles.actions}>
+              <Pressable accessibilityRole="button"
+                accessibilityLabel="Confirmar exclusão definitiva da minha conta"
+                disabled={deleteBusy || deleteConfirmation !== 'EXCLUIR' || deletePassword.length < 6}
+                onPress={() => void deleteOwnAccount()}
+                style={[styles.dangerButton,
+                  (deleteBusy || deleteConfirmation !== 'EXCLUIR' || deletePassword.length < 6)
+                  && styles.disabled]}>
+                <Text style={styles.dangerButtonText}>
+                  {deleteBusy ? 'Excluindo...' : 'Excluir conta definitivamente'}
+                </Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" disabled={deleteBusy} onPress={cancelDeletion}
+                style={styles.secondary}>
+                <Text style={styles.secondaryText}>Cancelar</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -140,6 +245,14 @@ const baseStyles = StyleSheet.create({
   backText: { color: '#5B21B6', fontSize: 13, fontWeight: '700' },
   disabled: { opacity: .5 },
   message: { color: '#6D28D9', fontSize: 13 },
+  deletionForm: { gap: 12 },
+  warningText: { fontSize: 13, color: '#B91C1C', lineHeight: 20 },
+  dangerOutline: { alignSelf: 'flex-start', borderWidth: 1, borderColor: '#B91C1C',
+    paddingHorizontal: 14, paddingVertical: 12, borderRadius: 10 },
+  dangerOutlineText: { fontSize: 13, fontWeight: '700', color: '#B91C1C' },
+  dangerButton: { alignSelf: 'flex-start', backgroundColor: '#B91C1C', borderRadius: 10,
+    paddingVertical: 12, paddingHorizontal: 15 },
+  dangerButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
 });
 
 const lightSettings = StyleSheet.create({
