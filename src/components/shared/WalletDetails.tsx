@@ -112,7 +112,6 @@ export function WalletDetails({
 
   useEffect(() => {
     if (!userId || !session?.access_token) return;
-    void supabaseAuth.realtime.setAuth(session.access_token);
     let active = true;
     const sync = () => { if (active) void refresh(); };
     const chatMessage = () => {
@@ -143,7 +142,14 @@ export function WalletDetails({
         event: 'INSERT', schema: 'public', table: 'notification_items',
         filter: 'user_id=eq.' + userId,
       }, sync)
-      .subscribe(next => { if (active) setStatus(next === 'SUBSCRIBED' ? 'Em tempo real' : 'Reconectando...'); });
+      ;
+    void Promise.resolve(supabaseAuth.realtime.setAuth(session.access_token))
+      .then(() => {
+        if (active) channel.subscribe(next => {
+          if (active) setStatus(next === 'SUBSCRIBED' ? 'Em tempo real' : 'Reconectando...');
+        });
+      })
+      .catch(() => { if (active) setStatus('Sem conexão Realtime'); });
 
     // Em uma conexão perdida, a próxima consulta valida RLS e revoga a tela.
     const interval = setInterval(sync, 10000);
