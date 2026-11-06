@@ -87,9 +87,16 @@ function saveBrowserPreferences(value: Preferences) {
 
 export function AccessibilityProvider({ children }: PropsWithChildren) {
   const reactNativeSystemTheme = useColorScheme();
-  const [systemWebDark, setSystemWebDark] = useState<boolean | null>(null);
-  const [preferences, setPreferences] = useState<Preferences>(DEFAULTS);
-  const latestPreferences = useRef<Preferences>(DEFAULTS);
+  // No navegador, leia ANTES da primeira renderização: o menu e a página
+  // não podem iniciar em "Sistema" se o usuário já selecionou "Escuro".
+  const [systemWebDark, setSystemWebDark] = useState<boolean | null>(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.matchMedia) return null;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  const [preferences, setPreferences] = useState<Preferences>(
+    () => readBrowserPreferences() ?? { ...DEFAULTS }
+  );
+  const latestPreferences = useRef(preferences);
   const [ready, setReady] = useState(false);
 
   // Os eventos do sistema também funcionam quando o tema muda com a página aberta.
@@ -106,16 +113,25 @@ export function AccessibilityProvider({ children }: PropsWithChildren) {
     let mounted = true;
     async function restore() {
       try {
-        // Prioridade na web: a mesma chave que o +html.tsx lê ANTES de carregar o React.
-        const browser = readBrowserPreferences();
-        const restored = browser ?? parsePreferences(await AsyncStorage.getItem(ACCESSIBILITY_STORAGE_KEY));
+        if (Platform.OS === 'web') {
+          // A preferência do localStorage é a fonte principal: não esperar
+          // AsyncStorage nem deixar um valor antigo substituir a escolha.
+          const browser = readBrowserPreferences();
+          if (browser) {
+            latestPreferences.current = browser;
+            setPreferences(browser);
+            setReady(true);
+            return;
+          }
+        }
+
+        // Migração de preferências antigas e persistência no aplicativo nativo.
+        const legacy = parsePreferences(await AsyncStorage.getItem(ACCESSIBILITY_STORAGE_KEY));
         if (!mounted) return;
-        const value = restored ?? DEFAULTS;
+        const value = legacy ?? { ...DEFAULTS };
         latestPreferences.current = value;
         setPreferences(value);
-
-        // Migra automaticamente preferências previamente mantidas no AsyncStorage.
-        if (Platform.OS === 'web' && !browser && restored) saveBrowserPreferences(value);
+        if (Platform.OS === 'web') saveBrowserPreferences(value);
       } catch (error) {
         console.warn('Não foi possível recuperar as preferências de acessibilidade.', error);
       } finally {
@@ -126,15 +142,27 @@ export function AccessibilityProvider({ children }: PropsWithChildren) {
     return () => { mounted = false; };
   }, []);
 
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    // Mantém abas abertas sincronizadas sem criar um segundo estado de tema.
+    const sync = (event: StorageEvent) => {
+      if (event.key !== ACCESSIBILITY_STORAGE_KEY) return;
+      const latest = parsePreferences(event.newValue) ?? { ...DEFAULTS };
+      latestPreferences.current = latest;
+      setPreferences(latest);
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
+
   const save = useCallback((next: Preferences) => {
     // Após restaurar, gravar imediatamente no navegador evita a corrida
     // entre o clique em "Escuro" e a atualização da página.
-    if (Platform.OS === 'web') {
-      saveBrowserPreferences(next);
-    } else {
-      void AsyncStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(next))
-        .catch(error => console.warn('Não foi possível salvar a acessibilidade.', error));
-    }
+    if (Platform.OS === 'web') saveBrowserPreferences(next);
+    // Mantém o armazenamento nativo/legado sincronizado, sem bloquear a
+    // gravação síncrona usada no refresh da web.
+    void AsyncStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(next))
+      .catch(error => console.warn('Não foi possível salvar a acessibilidade.', error));
   }, []);
 
   const setTheme = useCallback((theme: ThemeChoice) => {
