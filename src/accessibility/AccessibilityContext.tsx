@@ -87,15 +87,12 @@ function saveBrowserPreferences(value: Preferences) {
 
 export function AccessibilityProvider({ children }: PropsWithChildren) {
   const reactNativeSystemTheme = useColorScheme();
-  // No navegador, leia ANTES da primeira renderização: o menu e a página
-  // não podem iniciar em "Sistema" se o usuário já selecionou "Escuro".
-  const [systemWebDark, setSystemWebDark] = useState<boolean | null>(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.matchMedia) return null;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-  const [preferences, setPreferences] = useState<Preferences>(
-    () => readBrowserPreferences() ?? { ...DEFAULTS }
-  );
+  // SSR do Expo Router: a primeira renderização precisa ser idêntica
+  // no servidor e no navegador. Ler localStorage aqui causa divergência
+  // de hidratação e pode ocultar/desmontar o login ao atualizar a página.
+  // O +html.tsx já aplica a cor salva ao documento antes do React carregar.
+  const [systemWebDark, setSystemWebDark] = useState<boolean | null>(null);
+  const [preferences, setPreferences] = useState<Preferences>({ ...DEFAULTS });
   const latestPreferences = useRef(preferences);
   const [ready, setReady] = useState(false);
 
@@ -199,9 +196,12 @@ export function AccessibilityProvider({ children }: PropsWithChildren) {
 
   const value = useMemo<AccessibilityValue>(() => ({
     ...preferences,
-    isDark: preferences.theme === 'dark' ||
-      (preferences.theme === 'system' &&
-        (systemWebDark ?? (reactNativeSystemTheme === 'dark'))),
+    // Impede diferenças entre HTML gerado no servidor e renderização web
+    // inicial. A página só fica visível no _layout quando ready é true.
+    isDark: (Platform.OS !== 'web' || ready) &&
+      (preferences.theme === 'dark' ||
+        (preferences.theme === 'system' &&
+          (systemWebDark ?? (reactNativeSystemTheme === 'dark')))),
     fontScale: FONT_SCALE[preferences.font],
     ready, setTheme, setFont, setFeature, resetPreferences,
   }), [preferences, ready, reactNativeSystemTheme, systemWebDark, setTheme, setFont, setFeature, resetPreferences]);
