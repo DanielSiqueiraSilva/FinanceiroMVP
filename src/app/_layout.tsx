@@ -6,9 +6,9 @@ import { AccessibilityProvider, useAccessibility } from '../accessibility/Access
 import { AccessibilityToolbar } from '../accessibility/AccessibilityToolbar';
 
 function LayoutInterno() {
-  const { isDark } = useAccessibility();
+  const { isDark, ready } = useAccessibility();
   useEffect(() => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    if (!ready || Platform.OS !== 'web' || typeof document === 'undefined') return;
     // Sincroniza também os controles do navegador (inputs, selects, scrollbar)
     // com a preferência selecionada em Aa ou com o modo do sistema.
     const mode = isDark ? 'dark' : 'light';
@@ -16,8 +16,9 @@ function LayoutInterno() {
     document.documentElement.style.colorScheme = mode;
     document.documentElement.style.backgroundColor = background;
     document.documentElement.setAttribute('data-finance-theme', mode);
+    document.documentElement.setAttribute('data-finance-theme-ready', 'true');
     document.body.style.backgroundColor = background;
-  }, [isDark]);
+  }, [isDark, ready]);
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#0B1220" : "#F7F5FA" }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
