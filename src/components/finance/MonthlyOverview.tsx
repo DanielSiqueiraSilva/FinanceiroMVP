@@ -46,8 +46,8 @@ export function MonthlyOverview({ totalDespesas, limite, salvando, onSalvarLimit
     <View style={styles.card}>
       <View style={styles.topo}>
         <View>
-          <Text style={styles.rotulo}>Fatura atual</Text>
-          <Text style={styles.fatura}>{moeda(totalDespesas)}</Text>
+          <Text style={styles.rotulo}>Limite disponível</Text>
+          <Text style={[styles.fatura, estourou && styles.alerta]}>{estourou ? moeda(0) : moeda(disponivel)}</Text>
         </View>
         <View style={styles.status}><Text style={styles.statusTexto}>{limite > 0 ? `${Math.round((totalDespesas / limite) * 100)}% usado` : 'Sem limite'}</Text></View>
       </View>
@@ -58,10 +58,8 @@ export function MonthlyOverview({ totalDespesas, limite, salvando, onSalvarLimit
           <Text style={styles.miniValor}>{limite > 0 ? moeda(limite) : 'Não definido'}</Text>
         </View>
         <View style={[styles.resumoItem, styles.alinharDireita]}>
-          <Text style={styles.miniRotulo}>Disponível</Text>
-          <Text style={[styles.miniValor, estourou && styles.alerta]}>
-            {estourou ? `Excedido em ${moeda(totalDespesas - limite)}` : moeda(disponivel)}
-          </Text>
+          <Text style={styles.miniRotulo}>Fatura atual</Text>
+          <Text style={[styles.miniValor, estourou && styles.alerta]}>{moeda(totalDespesas)}</Text>
         </View>
       </View>
 
