@@ -10,16 +10,18 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const wallets = await queryShared(token, 'shared_wallets?select=*&id=eq.' + filter);
       if (!wallets?.length) return res.status(404).json({ error: 'Carteira não encontrada ou acesso revogado.' });
-      const [members, transactions, messages, reads, invitations] = await Promise.all([
+      const [members, transactions, messages, reads, invitations, totals] = await Promise.all([
         queryShared(token, 'shared_wallet_members?select=*&wallet_id=eq.' + filter + '&order=joined_at.asc'),
         queryShared(token, 'shared_wallet_transactions?select=*&wallet_id=eq.' + filter + '&order=entry_date.desc,created_at.desc&limit=300'),
         queryShared(token, 'shared_wallet_messages?select=*&wallet_id=eq.' + filter + '&order=created_at.desc&limit=100'),
         queryShared(token, 'shared_wallet_message_reads?select=*&wallet_id=eq.' + filter),
         queryShared(token, 'shared_wallet_invitations?select=id,invited_user_id,status,created_at,expires_at&wallet_id=eq.' + filter),
+        queryShared(token, 'rpc/shared_wallet_totals', 'POST', { p_wallet: id }),
       ]);
       return res.status(200).json({
         wallet: wallets[0], members, transactions,
         messages: (messages ?? []).reverse(), reads, invitations,
+        totals: totals?.[0] ?? { total_receitas: 0, total_despesas: 0, saldo: 0, quantidade: 0 },
       });
     }
     if (req.method === 'PATCH') {
