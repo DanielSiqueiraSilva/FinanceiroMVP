@@ -92,7 +92,11 @@ export function useAccessibleStyles<T extends Record<string, ViewStyle | TextSty
           next[key] = Math.round(value * fontScale);
         }
         if (typeof value === 'string' &&
-            (key === 'color' || key === 'backgroundColor' || key === 'borderColor')) {
+            (key === 'color' || key === 'backgroundColor' || key === 'borderColor' ||
+              key === 'borderTopColor' || key === 'borderBottomColor' ||
+              key === 'borderLeftColor' || key === 'borderRightColor' ||
+              key === 'borderStartColor' || key === 'borderEndColor' ||
+              key === 'textDecorationColor' || key === 'tintColor')) {
           const palette = isDark ? DARK_PALETTE : LIGHT_PALETTE;
           // Branco nos botões primários permanece branco. O componente
           // define explicitamente os títulos que precisam escurecer.
