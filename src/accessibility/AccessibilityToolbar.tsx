@@ -26,12 +26,29 @@ const FONTS: { value: FontChoice; title: string }[] = [
 ];
 
 /** Único acesso flutuante aos recursos de leitura e ao VLibras na web. */
+type VLibrasBrowser = Window & {
+  VLibrasWidget?: { initBtn?: HTMLElement | null };
+};
+
 function getVLibrasButton(): HTMLElement | null {
-  if (typeof document === 'undefined') return null;
-  // O launcher da versão web oficial é um elemento com vw-access-button.
-  // A versão anterior procurava uma propriedade global que não existia.
+  if (typeof window === 'undefined' || typeof document === 'undefined') return null;
+  // VLibras 7.x: o botão está numa shadow root e NÃO aparece no querySelector.
+  // A documentação oficial expõe o botão como window.VLibrasWidget.initBtn.
+  const official = (window as VLibrasBrowser).VLibrasWidget?.initBtn;
+  if (official && typeof official.click === 'function') return official;
+  // Compatibilidade com versões mais antigas.
   return document.querySelector<HTMLElement>('[vw-access-button]') ??
     document.querySelector<HTMLElement>('.vw-access-button');
+}
+
+function hideVLibrasLauncher(button: HTMLElement) {
+  // Aplica os estilos diretamente ao botão: CSS de fora não atravessa
+  // a shadow root criada pelo VLibras atual.
+  button.style.setProperty('visibility', 'hidden', 'important');
+  button.style.setProperty('opacity', '0', 'important');
+  button.style.setProperty('pointer-events', 'none', 'important');
+  button.setAttribute('aria-hidden', 'true');
+  button.setAttribute('tabindex', '-1');
 }
 export function AccessibilityToolbar() {
   const [open, setOpen] = useState(false);
@@ -42,19 +59,25 @@ export function AccessibilityToolbar() {
   const styles = useAccessibleStyles(baseStyles);
 
   useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    // O CSS em +html.tsx mantém o lançador oculto desde o carregamento.
-    // Apenas detectamos quando o widget está pronto para ser acionado no Aa.
-    const checkReady = () => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    // O script do VLibras chega após a hidratação React. Observamos o DOM e
+    // o handle oficial para ocultar o launcher assim que ele aparecer.
+    const sync = () => {
       const button = getVLibrasButton();
       if (!button) return;
-      button.setAttribute('tabindex', '-1');
-      button.setAttribute('aria-hidden', 'true');
-      setVlibrasReady(true);
+      hideVLibrasLauncher(button);
+      setVlibrasReady(previous => previous || true);
     };
-    checkReady();
-    const interval = setInterval(checkReady, 1500);
-    return () => clearInterval(interval);
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.body, { childList: true, subtree: true });
+    // O conteúdo de uma shadow root não dispara a observer externa;
+    // uma verificação leve cobre esse caso e reinicializações do widget.
+    const interval = window.setInterval(sync, 500);
+    return () => {
+      observer.disconnect();
+      window.clearInterval(interval);
+    };
   }, []);
 
   function openVLibras() {
@@ -64,7 +87,8 @@ export function AccessibilityToolbar() {
       return;
     }
     setVlibrasMessage('');
-    // Reutiliza o disparador oficial do widget, em vez de simular tradução.
+    // Aciona o botão oficial (mesmo invisível), preservando o painel tradutor.
+    hideVLibrasLauncher(button);
     button.click();
     setOpen(false);
   }
