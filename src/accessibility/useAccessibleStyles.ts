@@ -85,7 +85,7 @@ const LIGHT_PALETTE: Record<string, string> = {
  * explícita no próprio componente, preservando contraste.
  */
 export function useAccessibleStyles<T extends Record<string, ViewStyle | TextStyle | ImageStyle>>(base: T): T {
-  const { isDark, fontScale } = useAccessibility();
+  const { isDark, fontScale, highContrast } = useAccessibility();
   return useMemo(() => {
     const entries = Object.entries(base).map(([name, style]) => {
       const next: Record<string, unknown> = { ...(StyleSheet.flatten(style) ?? {}) };
@@ -104,10 +104,22 @@ export function useAccessibleStyles<T extends Record<string, ViewStyle | TextSty
           // define explicitamente os títulos que precisam escurecer.
           if (key === 'color' && value.toUpperCase() === '#FFFFFF') continue;
           next[key] = palette[value.toUpperCase()] ?? value;
+          // Contraste extra opcional: reforça textos neutros e contornos,
+          // sem afetar as cores semânticas de valores, receitas e alertas.
+          if (highContrast && key === 'color' &&
+              ['#111827', '#374151', '#4B5563', '#6B7280',
+               '#F8FAFC', '#E2E8F0', '#CBD5E1', '#C1CBD8',
+               '#94A3B8', '#A9B8D1'].includes(String(next[key]).toUpperCase())) {
+            next[key] = isDark ? '#FFFFFF' : '#111827';
+          }
+          if (highContrast && key.startsWith('border') &&
+              typeof next[key] === 'string' && /^#[0-9A-F]{6}$/i.test(String(next[key]))) {
+            next[key] = isDark ? '#B6C2D9' : '#475569';
+          }
         }
       }
       return [name, next];
     });
     return Object.fromEntries(entries) as T;
-  }, [base, isDark, fontScale]);
+  }, [base, isDark, fontScale, highContrast]);
 }

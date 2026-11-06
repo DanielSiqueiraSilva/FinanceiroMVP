@@ -7,6 +7,7 @@ import { Platform, useColorScheme } from 'react-native';
 
 export type ThemeChoice = 'light' | 'dark' | 'system';
 export type FontChoice = 'normal' | 'large' | 'extraLarge';
+export type AccessibilityFeature = 'highContrast' | 'reduceMotion' | 'focusHighlight' | 'keyboardNavigation' | 'textSpacing';
 
 /** Mantemos a chave anterior para não perder preferências já salvas. */
 export const ACCESSIBILITY_STORAGE_KEY = '@finanmvp:acessibilidade:v1';
@@ -16,8 +17,20 @@ const FONT_SCALE: Record<FontChoice, number> = {
   extraLarge: 1.4,
 };
 
-type Preferences = { theme: ThemeChoice; font: FontChoice };
-const DEFAULTS: Preferences = { theme: 'system', font: 'normal' };
+export type Preferences = {
+  theme: ThemeChoice;
+  font: FontChoice;
+  highContrast: boolean;
+  reduceMotion: boolean;
+  focusHighlight: boolean;
+  keyboardNavigation: boolean;
+  textSpacing: boolean;
+};
+export const DEFAULTS: Preferences = {
+  theme: 'system', font: 'normal', highContrast: false,
+  reduceMotion: false, focusHighlight: false,
+  keyboardNavigation: false, textSpacing: false,
+};
 
 type AccessibilityValue = Preferences & {
   isDark: boolean;
@@ -25,6 +38,8 @@ type AccessibilityValue = Preferences & {
   ready: boolean;
   setTheme: (value: ThemeChoice) => void;
   setFont: (value: FontChoice) => void;
+  setFeature: (feature: AccessibilityFeature, enabled: boolean) => void;
+  resetPreferences: () => void;
 };
 
 const AccessibilityContext = createContext<AccessibilityValue | null>(null);
@@ -44,6 +59,11 @@ function parsePreferences(raw: string | null): Preferences | null {
     return {
       theme: isTheme(parsed.theme) ? parsed.theme : 'system',
       font: isFont(parsed.font) ? parsed.font : 'normal',
+      highContrast: typeof parsed.highContrast === 'boolean' ? parsed.highContrast : false,
+      reduceMotion: typeof parsed.reduceMotion === 'boolean' ? parsed.reduceMotion : false,
+      focusHighlight: typeof parsed.focusHighlight === 'boolean' ? parsed.focusHighlight : false,
+      keyboardNavigation: typeof parsed.keyboardNavigation === 'boolean' ? parsed.keyboardNavigation : false,
+      textSpacing: typeof parsed.textSpacing === 'boolean' ? parsed.textSpacing : false,
     };
   } catch {
     return null;
@@ -131,14 +151,30 @@ export function AccessibilityProvider({ children }: PropsWithChildren) {
     save(next);
   }, [ready, save]);
 
+  const setFeature = useCallback((feature: AccessibilityFeature, enabled: boolean) => {
+    if (!ready) return;
+    const next = { ...latestPreferences.current, [feature]: enabled };
+    latestPreferences.current = next;
+    setPreferences(next);
+    save(next);
+  }, [ready, save]);
+
+  const resetPreferences = useCallback(() => {
+    if (!ready) return;
+    const next = { ...DEFAULTS };
+    latestPreferences.current = next;
+    setPreferences(next);
+    save(next);
+  }, [ready, save]);
+
   const value = useMemo<AccessibilityValue>(() => ({
     ...preferences,
     isDark: preferences.theme === 'dark' ||
       (preferences.theme === 'system' &&
         (systemWebDark ?? (reactNativeSystemTheme === 'dark'))),
     fontScale: FONT_SCALE[preferences.font],
-    ready, setTheme, setFont,
-  }), [preferences, ready, reactNativeSystemTheme, systemWebDark, setTheme, setFont]);
+    ready, setTheme, setFont, setFeature, resetPreferences,
+  }), [preferences, ready, reactNativeSystemTheme, systemWebDark, setTheme, setFont, setFeature, resetPreferences]);
 
   return <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>;
 }
