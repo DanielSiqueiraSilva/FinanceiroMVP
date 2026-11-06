@@ -58,7 +58,7 @@ export function SharedWallets() {
     // Convites e alertas recebidos chegam pelo mesmo sistema de notificações.
     // Verificação periódica de acesso fecha o intervalo quando o Realtime cai.
     void supabaseAuth.realtime.setAuth(session.access_token);
-    const channel = supabaseAuth.channel('wallet-list-' + userId)
+    const channel = supabaseAuth.channel('wallet-list-' + userId, { config: { private: true } })
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'shared_wallet_invitations',
         filter: 'invited_user_id=eq.' + userId,
