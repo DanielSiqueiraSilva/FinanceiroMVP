@@ -71,6 +71,8 @@ const LIGHT_PALETTE: Record<string, string> = {
   '#CBD5E1': '#374151',
   '#DDD6FE': '#5B21B6',
   '#D8B4FE': '#5B21B6',
+  '#C4B5FD': '#6D28D9',
+  '#A78BFA': '#6D28D9',
   '#FDA4AF': '#BE123C',
   '#FCA5A5': '#991B1B',
   '#332238': '#FFF1F2',
