@@ -57,7 +57,7 @@ export function SharedWallets() {
     if (!userId || !session?.access_token) return;
     // Convites e alertas recebidos chegam pelo mesmo sistema de notificações.
     // Verificação periódica de acesso fecha o intervalo quando o Realtime cai.
-    void supabaseAuth.realtime.setAuth(session.access_token);
+    let active = true;
     const channel = supabaseAuth.channel('wallet-list-' + userId, { config: { private: true } })
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'shared_wallet_invitations',
@@ -67,9 +67,13 @@ export function SharedWallets() {
         event: 'INSERT', schema: 'public', table: 'notification_items',
         filter: 'user_id=eq.' + userId,
       }, () => { void refresh(); })
-      .subscribe();
+      ;
+    // Private Realtime precisa receber o JWT antes da primeira assinatura.
+    void Promise.resolve(supabaseAuth.realtime.setAuth(session.access_token))
+      .then(() => { if (active) channel.subscribe(); })
+      .catch(() => { if (active) setError('O Realtime está indisponível. A lista continuará sendo atualizada.'); });
     const interval = setInterval(() => { void refresh(); }, 15000);
-    return () => { clearInterval(interval); void supabaseAuth.removeChannel(channel); };
+    return () => { active = false; clearInterval(interval); void supabaseAuth.removeChannel(channel); };
   }, [userId, session?.access_token, refresh]);
 
   async function create() {
