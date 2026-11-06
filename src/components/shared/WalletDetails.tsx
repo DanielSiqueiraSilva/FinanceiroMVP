@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
@@ -72,7 +72,7 @@ export function WalletDetails({
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [allMessagesLoaded, setAllMessagesLoaded] = useState(false);
   const [allTransactionsLoaded, setAllTransactionsLoaded] = useState(false);
-  const chatScrollRef = useRef<ScrollView | null>(null);
+  const chatScrollRef = useRef<ComponentRef<typeof ScrollView> | null>(null);
   const alive = useRef(true);
   const currentRequest = useRef(0);
 
