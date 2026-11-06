@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { ExpensePieChart } from '../components/finance/ExpensePieChart';
 import { MonthlyOverview } from '../components/finance/MonthlyOverview';
+import { PaymentReminders } from '../components/finance/PaymentReminders';
 import { PeriodSelector } from '../components/finance/PeriodSelector';
 import { SummaryCard } from '../components/finance/SummaryCard';
 import { CATEGORIAS, TransactionForm } from '../components/finance/TransactionForm';
@@ -243,6 +244,8 @@ function FinanceHome() {
       ) : (
         <>
           <MonthlyOverview totalDespesas={resumo?.totalDespesas ?? 0} limite={limite} salvando={salvandoLimite} onSalvarLimite={atualizarLimiteMensal} />
+
+          <PaymentReminders month={mes} year={ano} />
 
           <View style={styles.resumoGrid}>
             <SummaryCard titulo="Saldo" valor={formatarMoeda(resumo?.saldo ?? 0)} />
