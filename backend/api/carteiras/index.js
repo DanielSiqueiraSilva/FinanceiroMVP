@@ -6,11 +6,12 @@ export default async function handler(req, res) {
     if (!auth) return;
     const { token, userId } = auth;
     if (req.method === 'GET') {
-      const [wallets, invitations] = await Promise.all([
+      const [wallets, invitations, unreadCounts] = await Promise.all([
         queryShared(token, 'shared_wallets?select=*&order=created_at.desc&limit=100'),
         queryShared(token, 'rpc/shared_wallet_inbox', 'POST', {}),
+        queryShared(token, 'rpc/shared_wallet_unread_counts', 'POST', {}),
       ]);
-      return res.status(200).json({ wallets, invitations });
+      return res.status(200).json({ wallets, invitations, unreadCounts });
     }
     if (req.method === 'POST') {
       const action = String(req.body?.action || 'create');
