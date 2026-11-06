@@ -120,7 +120,7 @@ export function WalletDetails({
       sync();
       if (chatOpenRef.current) void markRead();
     };
-    const channel = supabaseAuth.channel('shared-wallet-' + walletId)
+    const channel = supabaseAuth.channel('shared-wallet-' + walletId, { config: { private: true } })
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'shared_wallet_transactions',
         filter: 'wallet_id=eq.' + walletId,
