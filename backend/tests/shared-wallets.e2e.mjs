@@ -61,42 +61,46 @@ async function ok(token, endpoint, method = 'GET', body) {
     endpoint + ': esperado sucesso, recebido ' + result.status + ': ' + JSON.stringify(result.body));
   return result.body;
 }
-function waitForChat(supabase, token, walletId, expectedText) {
-  return new Promise(async (resolve, reject) => {
-    let done = false;
-    const channel = supabase.channel('shared-wallet-' + walletId, { config: { private: true } })
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'shared_wallet_messages',
-        filter: 'wallet_id=eq.' + walletId,
-      }, payload => {
-        if (payload.new?.body === expectedText && !done) {
-          done = true; clearTimeout(timer);
-          void supabase.removeChannel(channel);
-          resolve(payload.new);
-        }
-      });
-    const timer = setTimeout(() => {
-      if (done) return;
-      done = true; void supabase.removeChannel(channel);
-      reject(new Error('Mensagem não chegou por Realtime em 20 segundos.'));
-    }, 20000);
-    try {
-      await supabase.realtime.setAuth(token);
-      channel.subscribe(status => {
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          if (done) return;
-          done = true; clearTimeout(timer);
-          void supabase.removeChannel(channel);
-          reject(new Error('Falha no canal privado Realtime: ' + status));
-        }
-      });
-    } catch (error) {
-      if (done) return;
-      done = true; clearTimeout(timer);
-      void supabase.removeChannel(channel);
-      reject(error);
+async function subscribeChat(supabase, token, walletId, expectedText) {
+  let readyResolve, readyReject, messageResolve, messageReject;
+  const ready = new Promise((resolve, reject) => { readyResolve = resolve; readyReject = reject; });
+  const received = new Promise((resolve, reject) => { messageResolve = resolve; messageReject = reject; });
+  let connected = false;
+  let finished = false;
+  const channel = supabase.channel('shared-wallet-' + walletId, { config: { private: true } })
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'shared_wallet_messages',
+      filter: 'wallet_id=eq.' + walletId,
+    }, payload => {
+      if (!finished && payload.new?.body === expectedText) {
+        finished = true; clearTimeout(timer); messageResolve(payload.new);
+      }
+    });
+  const timer = setTimeout(() => {
+    if (finished) return;
+    finished = true;
+    const error = new Error('Mensagem não chegou por Realtime em 20 segundos.');
+    if (!connected) readyReject(error);
+    messageReject(error);
+  }, 20000);
+  await supabase.realtime.setAuth(token);
+  channel.subscribe(status => {
+    if (status === 'SUBSCRIBED') {
+      connected = true;
+      readyResolve();
+    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+      if (finished) return;
+      finished = true; clearTimeout(timer);
+      const error = new Error('Falha no canal privado Realtime: ' + status);
+      if (!connected) readyReject(error);
+      messageReject(error);
     }
   });
+  await ready;
+  return {
+    received,
+    close: async () => { finished = true; clearTimeout(timer); await supabase.removeChannel(channel); },
+  };
 }
 
 const a = client(), b = client();
@@ -129,9 +133,11 @@ try {
 
   console.log('4/7 Criando despesa e validando saldo na conta B...');
   const now = new Date();
-  const date = new Intl.DateTimeFormat('en-CA', {
+  const dateParts = new Intl.DateTimeFormat('en-US', {
     year:'numeric',month:'2-digit',day:'2-digit',timeZone:'America/Sao_Paulo',
-  }).format(now);
+  }).formatToParts(now);
+  const part = key => dateParts.find(item => item.type === key)?.value;
+  const date = part('year') + '-' + part('month') + '-' + part('day');
   const tx = await ok(tokenA, '/' + walletId + '/actions', 'POST', {
     action: 'create_transaction', transaction: {
       type: 'despesa', amount: 80, category: 'Casa',
@@ -145,11 +151,13 @@ try {
 
   console.log('5/7 Recebendo mensagem de B no Realtime de A...');
   const marker = 'Mensagem teste real ' + Date.now();
-  const realtimeReceived = waitForChat(a, tokenA, walletId, marker);
-  // Espera a autorização do canal antes de enviar, para validar a entrega.
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  await ok(tokenB, '/' + walletId + '/actions', 'POST', { action:'send_message', body:marker });
-  await realtimeReceived;
+  const chat = await subscribeChat(a, tokenA, walletId, marker);
+  try {
+    await ok(tokenB, '/' + walletId + '/actions', 'POST', { action:'send_message', body:marker });
+    await chat.received;
+  } finally {
+    await chat.close();
+  }
   const persisted = await ok(tokenA, '/' + walletId);
   assert.ok(persisted.messages.some(message => message.body === marker));
 
