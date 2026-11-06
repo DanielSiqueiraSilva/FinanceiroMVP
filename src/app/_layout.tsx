@@ -25,7 +25,14 @@ function LayoutInterno() {
     document.body.style.backgroundColor = background;
   }, [isDark, ready, highContrast, reduceMotion, focusHighlight, keyboardNavigation, textSpacing]);
   return (
-    <View style={{ flex: 1, backgroundColor: isDark ? "#0B1220" : "#F7F5FA" }}>
+    <View style={{
+      flex: 1,
+      backgroundColor: isDark ? '#0B1220' : '#F7F5FA',
+      // O HTML inicial já pinta o fundo com o tema salvo. Esconde o
+      // conteúdo apenas até a restauração terminar, evitando que login,
+      // dashboard e janela Aa apareçam com paletas diferentes no refresh.
+      opacity: Platform.OS === 'web' && !ready ? 0 : 1,
+    }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Slot />
       {/* Fora de ProtectedFinance: acessível no login, cadastro e área financeira. */}
