@@ -31,7 +31,9 @@ jobs:
         run: |
           find backend/api -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Validate backend tests
-        run: node --test backend/tests/*.test.mjs
+        run: |
+          node --test backend/tests/*.test.mjs
+          node --check backend/tests/shared-wallets.e2e.mjs
       - name: Check TypeScript
         run: npx tsc --noEmit
       - name: Export Expo Web
