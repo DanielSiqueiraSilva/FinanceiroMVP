@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       if (!wallets?.length) return res.status(404).json({ error: 'Carteira não encontrada ou acesso revogado.' });
       const [members, transactions, messages, reads, invitations, totals] = await Promise.all([
         queryShared(token, 'shared_wallet_members?select=*&wallet_id=eq.' + filter + '&order=joined_at.asc'),
-        queryShared(token, 'shared_wallet_transactions?select=*&wallet_id=eq.' + filter + '&order=entry_date.desc,created_at.desc&limit=300'),
+        queryShared(token, 'shared_wallet_transactions?select=*&wallet_id=eq.' + filter + '&order=created_at.desc&limit=300'),
         queryShared(token, 'shared_wallet_messages?select=*&wallet_id=eq.' + filter + '&order=created_at.desc&limit=100'),
         queryShared(token, 'shared_wallet_message_reads?select=*&wallet_id=eq.' + filter),
         queryShared(token, 'shared_wallet_invitations?select=id,invited_user_id,status,created_at,expires_at&wallet_id=eq.' + filter),
