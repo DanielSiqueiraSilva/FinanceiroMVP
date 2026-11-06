@@ -9,6 +9,8 @@ import { supabaseAuth } from '../auth/supabaseClient';
 import { useProfileSession } from '../components/auth/ProtectedFinance';
 import { useAccessibleStyles } from '../accessibility/useAccessibleStyles';
 import { playNotificationSound, type SoundName } from './sound';
+import { readSiteSoundEnabled, writeSiteSoundEnabled, observeSiteSoundEnabled } from './soundPreference';
+import { useAccessibility } from '../accessibility/AccessibilityContext';
 
 export type NotificationKind = 'finance' | 'message' | 'warning' | 'system';
 export type NotificationEntry = {
@@ -60,7 +62,7 @@ function readSettings(userId: string): NotificationSettings {
   if (Platform.OS !== 'web' || typeof localStorage === 'undefined') return { ...defaults };
   try {
     const raw = localStorage.getItem(storageKey(userId));
-    if (!raw) return { ...defaults };
+    if (!raw) return { ...defaults, sounds: readSiteSoundEnabled() };
     const stored = JSON.parse(raw) as Partial<NotificationSettings>;
     const result = { ...defaults };
     for (const key of Object.keys(defaults) as (keyof NotificationSettings)[]) {
@@ -72,6 +74,7 @@ function readSettings(userId: string): NotificationSettings {
 
 export function NotificationsProvider({ children }: PropsWithChildren) {
   const session = useProfileSession()?.session;
+  const { reduceMotion } = useAccessibility();
   const userId = session?.user.id ?? null;
   const [entries, setEntries] = useState<NotificationEntry[]>([]);
   const [settings, setSettings] = useState<NotificationSettings>({ ...defaults });
@@ -100,15 +103,30 @@ export function NotificationsProvider({ children }: PropsWithChildren) {
     const loaded = userId ? readSettings(userId) : { ...defaults };
     settingsRef.current = loaded;
     setSettings(loaded);
+    if (userId && Platform.OS === 'web') writeSiteSoundEnabled(loaded.sounds);
     setEntries([]);
     setLive(false);
     setError('');
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    return observeSiteSoundEnabled(enabled => {
+      if (settingsRef.current.sounds === enabled) return;
+      const next = { ...settingsRef.current, sounds: enabled };
+      settingsRef.current = next;
+      setSettings(next);
+      if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(storageKey(userId), JSON.stringify(next)); } catch {}
+      }
+    });
   }, [userId]);
 
   const changeSettings = useCallback((changes: Partial<NotificationSettings>) => {
     const next = { ...settingsRef.current, ...changes };
     settingsRef.current = next;
     setSettings(next);
+    if (typeof changes.sounds === 'boolean') writeSiteSoundEnabled(changes.sounds);
     if (userId && Platform.OS === 'web' && typeof localStorage !== 'undefined') {
       try { localStorage.setItem(storageKey(userId), JSON.stringify(next)); } catch {}
     }
@@ -122,16 +140,16 @@ export function NotificationsProvider({ children }: PropsWithChildren) {
     const id = ++serial.current;
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
     setToast({ id, tone, title, description });
-    fade.setValue(reducedMotion ? 1 : 0);
-    rise.setValue(reducedMotion ? 0 : -12);
-    if (!reducedMotion) {
+    fade.setValue(reducedMotion || reduceMotion ? 1 : 0);
+    rise.setValue(reducedMotion || reduceMotion ? 0 : -12);
+    if (!reducedMotion && !reduceMotion) {
       Animated.parallel([
         Animated.timing(fade, { toValue: 1, duration: 240, useNativeDriver: true }),
         Animated.timing(rise, { toValue: 0, duration: 240, useNativeDriver: true }),
       ]).start();
     }
     toastTimeout.current = setTimeout(() => setToast(current => current?.id === id ? null : current), 4500);
-  }, [fade, reducedMotion, rise]);
+  }, [fade, reducedMotion, reduceMotion, rise]);
 
   const play = useCallback((sound: SoundName) => {
     if (settingsRef.current.enabled && settingsRef.current.sounds) playNotificationSound(sound);
