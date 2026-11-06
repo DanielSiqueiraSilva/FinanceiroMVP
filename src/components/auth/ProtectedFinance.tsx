@@ -87,24 +87,28 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
 
 
   const ui = useAccessibleStyles(styles);
+  // A tela de login utiliza exatamente o mesmo isDark do painel Aa.
+  // Aplicamos todas as superfícies e textos explicitamente para evitar
+  // diferenças de paleta na renderização inicial do Expo Web.
+  const loginTheme = isDark ? darkLoginStyles : lightLoginStyles;
 
   return (
     <ScrollView
-      style={[ui.loginBackground, !isDark && lightLoginStyles.loginBackground]}
+      style={[ui.loginBackground, loginTheme.loginBackground]}
       contentContainerStyle={ui.loginScroll}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={[ui.panel, !isDark && lightLoginStyles.panel]}>
+      <View style={[ui.panel, loginTheme.panel]}>
         <View style={ui.brand}>
           <Svg width={21} height={21} viewBox="0 0 24 24" fill="none">
             <Rect x={3} y={6} width={18} height={15} rx={3} stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={1.7} />
             <Path d="M6 6V4.5A2.5 2.5 0 0 1 8.5 2H19" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={1.7} strokeLinecap="round" />
             <Path d="M15.5 12h5.5v4h-5.5a2 2 0 0 1 0-4Z" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={1.7} />
           </Svg>
-          <Text accessibilityRole="header" style={[ui.brandTitle, !isDark && lightLoginStyles.brandTitle]}>FinanMVP</Text>
+          <Text accessibilityRole="header" style={[ui.brandTitle, loginTheme.brandTitle]}>FinanMVP</Text>
         </View>
 
-        <Text style={[ui.subtitle, !isDark && lightLoginStyles.subtitle]}>{cadastro ? 'Crie sua conta com segurança' : 'Entre na sua conta com segurança'}</Text>
+        <Text style={[ui.subtitle, loginTheme.subtitle]}>{cadastro ? 'Crie sua conta com segurança' : 'Entre na sua conta com segurança'}</Text>
 
         {!cadastro ? (
           <View style={ui.faceArea}>
@@ -140,10 +144,10 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
         ) : null}
 
         <View style={ui.emailSection}>
-          <Text style={[ui.emailTitle, !isDark && lightLoginStyles.emailTitle]}>{cadastro ? 'Dados para criar sua conta' : 'Ou entre com e-mail e senha'}</Text>
+          <Text style={[ui.emailTitle, loginTheme.emailTitle]}>{cadastro ? 'Dados para criar sua conta' : 'Ou entre com e-mail e senha'}</Text>
           {cadastro ? (
             <TextInput
-              style={[ui.input, !isDark && lightLoginStyles.input]}
+              style={[ui.input, loginTheme.input]}
               placeholder="Nome completo"
               placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
               value={nome}
@@ -154,7 +158,7 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
             />
           ) : null}
           <TextInput
-            style={[ui.input, !isDark && lightLoginStyles.input]}
+            style={[ui.input, loginTheme.input]}
             placeholder="E-mail"
             placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
             value={email}
@@ -165,7 +169,7 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
             autoComplete="email"
           />
           <TextInput
-            style={[ui.input, !isDark && lightLoginStyles.input]}
+            style={[ui.input, loginTheme.input]}
             placeholder="Senha"
             placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
             value={senha}
@@ -177,10 +181,10 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
           <Pressable
             accessibilityRole="button"
             disabled={busy}
-            style={[ui.passwordButton, !isDark && lightLoginStyles.passwordButton, busy && ui.disabled]}
+            style={[ui.passwordButton, loginTheme.passwordButton, busy && ui.disabled]}
             onPress={() => void login(false)}
           >
-            <Text style={[ui.passwordText, !isDark && lightLoginStyles.passwordText]}>
+            <Text style={[ui.passwordText, loginTheme.passwordText]}>
               {busy ? 'Verificando...' : cadastro ? 'Criar conta' : 'Entrar com e-mail e senha'}
             </Text>
           </Pressable>
@@ -192,12 +196,12 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
           style={ui.secondary}
           onPress={() => { setCadastro(!cadastro); setMensagem(''); }}
         >
-          <Text style={ui.link}>{cadastro ? 'Já tem conta? Entrar' : 'Ainda não tem conta? Criar conta'}</Text>
+          <Text style={[ui.link, loginTheme.link]}>{cadastro ? 'Já tem conta? Entrar' : 'Ainda não tem conta? Criar conta'}</Text>
         </Pressable>
 
-        {mensagem ? <Text style={[ui.message, !isDark && lightLoginStyles.message]} accessibilityLiveRegion="polite">{mensagem}</Text> : null}
+        {mensagem ? <Text style={[ui.message, loginTheme.message]} accessibilityLiveRegion="polite">{mensagem}</Text> : null}
         {!cadastro ? (
-          <Text style={[ui.hint, !isDark && lightLoginStyles.hint]}>Face ID, impressão digital ou método seguro disponível no dispositivo</Text>
+          <Text style={[ui.hint, loginTheme.hint]}>Face ID, impressão digital ou método seguro disponível no dispositivo</Text>
         ) : null}
       </View>
     </ScrollView>
@@ -508,8 +512,22 @@ const styles = StyleSheet.create({
   banner: { color: '#DDD6FE', textAlign: 'center', padding: 10 },
 });
 
-/** O login usa base escura conforme a referência; estas sobreposições
- * garantem contraste real quando o usuário escolhe "Claro" no Aa. */
+/** Cores explícitas do login escuro, sincronizadas com o isDark global. */
+const darkLoginStyles = StyleSheet.create({
+  loginBackground: { backgroundColor: '#090F1B' },
+  panel: { backgroundColor: '#111A2E', borderColor: '#283650' },
+  brandTitle: { color: '#FFFFFF' },
+  subtitle: { color: '#CBD5E1' },
+  emailTitle: { color: '#CBD5E1' },
+  input: { backgroundColor: '#18263D', borderColor: '#44516A', color: '#FFFFFF' },
+  passwordButton: { backgroundColor: '#111A2E', borderColor: '#475569' },
+  passwordText: { color: '#FFFFFF' },
+  hint: { color: '#94A3B8' },
+  message: { color: '#FCA5A5' },
+  link: { color: '#C4B5FD' },
+});
+
+/** O login claro preserva o layout e tem contraste equivalente. */
 const lightLoginStyles = StyleSheet.create({
   loginBackground: { backgroundColor: '#F7F5FA' },
   panel: { backgroundColor: '#FFFFFF', borderColor: '#DDD6E6' },
@@ -521,4 +539,5 @@ const lightLoginStyles = StyleSheet.create({
   passwordText: { color: '#5B21B6' },
   hint: { color: '#4B5563' },
   message: { color: '#991B1B' },
+  link: { color: '#6D28D9' },
 });
