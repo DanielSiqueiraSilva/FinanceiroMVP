@@ -21,21 +21,22 @@ const FONTS: { value: FontChoice; title: string }[] = [
   { value: 'extraLarge', title: 'Muito maior' },
 ];
 
+// Mesmas superfícies, bordas e acentos do FinanceiroMVP: sem néon.
 const DARK = {
-  panel: '#111326', surface: '#161A31', text: '#F9F7FF', subtle: '#C7C3DE',
-  edge: '#51436F', divider: '#3B3553', control: '#191A32',
+  panel: '#142033', surface: '#19273D', text: '#F8FAFC', subtle: '#CBD5E1',
+  edge: '#536177', divider: '#39475B', control: '#19273D',
   selected: '#7C3AED', selectedText: '#FFFFFF',
-  accent: '#C084FC', violetCard: '#251547', cardEdge: '#9F5EFF',
-  backdrop: 'rgba(4, 5, 20, 0.78)',
-  disabled: '#403C59', white: '#FFFFFF',
+  accent: '#C4B5FD', violetCard: '#19273D', cardEdge: '#536177',
+  backdrop: 'rgba(11, 18, 32, 0.72)',
+  disabled: '#475569', white: '#FFFFFF',
 };
 const LIGHT = {
-  panel: '#FFFFFF', surface: '#FAF8FF', text: '#1F1738', subtle: '#514A67',
-  edge: '#D3C5E9', divider: '#E9E1F3', control: '#F9F6FE',
-  selected: '#6D28D9', selectedText: '#FFFFFF',
-  accent: '#6D28D9', violetCard: '#F3EAFF', cardEdge: '#9F5EFF',
-  backdrop: 'rgba(15, 9, 39, 0.56)',
-  disabled: '#CBC2D7', white: '#FFFFFF',
+  panel: '#FFFFFF', surface: '#FCFBFD', text: '#111827', subtle: '#4B5563',
+  edge: '#DDD6E6', divider: '#ECE8F1', control: '#F4F1F8',
+  selected: '#7C3AED', selectedText: '#FFFFFF',
+  accent: '#6D28D9', violetCard: '#F4F1F8', cardEdge: '#DDD6E6',
+  backdrop: 'rgba(11, 18, 32, 0.48)',
+  disabled: '#CBD5E1', white: '#FFFFFF',
 };
 
 type Palette = typeof DARK;
@@ -108,7 +109,7 @@ function hideVLibrasExtras() {
   return Boolean(button);
 }
 
-/** Um único ponto flutuante Aa, em login e páginas autenticadas. */
+/** Um único ponto flutuante de acessibilidade, em login e páginas autenticadas. */
 export function AccessibilityToolbar() {
   const [open, setOpen] = useState(false);
   const [vlibrasMessage, setVlibrasMessage] = useState('');
@@ -117,8 +118,7 @@ export function AccessibilityToolbar() {
   const { width, height } = useWindowDimensions();
   const {
     theme, font, isDark, fontScale, ready, setTheme, setFont,
-    highContrast, reduceMotion, focusHighlight, keyboardNavigation,
-    textSpacing, setFeature, resetPreferences,
+    highContrast, setFeature, resetPreferences,
   } = useAccessibility();
   const colors = isDark ? DARK : LIGHT;
   const narrow = width < 620;
@@ -171,11 +171,17 @@ export function AccessibilityToolbar() {
           accessibilityHint="Configurar tema, tamanho de texto, som e tradução para Libras"
           accessibilityState={{ expanded: open }}
           onPress={() => setOpen(true)} style={ui.floatingButton}>
-          <Text style={ui.floatingIcon} accessible={false}>Aa</Text>
+          <Svg width={35} height={35} viewBox="0 0 48 48" fill="none"
+            accessibilityLabel="Símbolo de acessibilidade">
+            <Circle cx={24} cy={8.5} r={3.6} fill="#FFFFFF" />
+            <Path d="M9 18 24 16.5 39 18M24 17v12M24 29l-10 13M24 29l10 13"
+              stroke="#FFFFFF" strokeWidth={3.4} strokeLinecap="round"
+              strokeLinejoin="round" />
+          </Svg>
         </Pressable>
       </View>
 
-      <Modal visible={open} transparent animationType={reduceMotion ? 'none' : 'fade'}
+      <Modal visible={open} transparent animationType="fade"
         onRequestClose={() => setOpen(false)}>
         <View style={ui.modalRoot}>
           <Pressable accessibilityRole="button" accessibilityLabel="Fechar painel de acessibilidade"
@@ -191,7 +197,7 @@ export function AccessibilityToolbar() {
             <View style={[ui.header, { borderBottomColor: colors.divider }]}>
               <View style={[ui.headerSymbol, {
                 borderColor: colors.cardEdge,
-                backgroundColor: isDark ? '#312062' : '#F0E6FF',
+                backgroundColor: isDark ? '#243248' : '#EDE9FE',
               }]}>
                 <Svg width={38} height={38} viewBox="0 0 48 48" fill="none"
                   accessibilityLabel="Símbolo de acessibilidade">
@@ -273,25 +279,17 @@ export function AccessibilityToolbar() {
                 description="Reforça a legibilidade dos textos e das bordas do site."
                 enabled={highContrast} onChange={v => toggleFeature('highContrast', v)}
                 colors={colors} scale={fontScale} />
-              <ToggleRow icon="▷" title="Reduzir animações"
-                description="Diminui movimentos, transições e efeitos visuais."
-                enabled={reduceMotion} onChange={v => toggleFeature('reduceMotion', v)}
-                colors={colors} scale={fontScale} />
               <ToggleRow icon="♫" title="Som de notificações"
                 description={Platform.OS === 'web'
                   ? 'Reproduz sons discretos nos avisos importantes.'
                   : 'Sons disponíveis na versão web do site.'}
                 enabled={soundsEnabled} onChange={writeSiteSoundEnabled}
                 disabled={Platform.OS !== 'web'} colors={colors} scale={fontScale} />
-              <ToggleRow icon="▣" title="Leitor de foco"
-                description="Destaca os elementos ativos durante a navegação pelo teclado."
-                enabled={focusHighlight} onChange={v => toggleFeature('focusHighlight', v)}
-                colors={colors} scale={fontScale} />
 
               <View style={[ui.vlibrasCard, {
                 backgroundColor: colors.violetCard, borderColor: colors.cardEdge,
               }]}>
-                <View style={[ui.handSymbol, { backgroundColor: isDark ? '#412176' : '#E3D0FF' }]}>
+                <View style={[ui.handSymbol, { backgroundColor: isDark ? '#27334A' : '#EDE9FE' }]}>
                   <Text style={ui.handEmoji} accessible={false}>🤟</Text>
                 </View>
                 <View style={ui.vlibrasCopy}>
@@ -320,15 +318,6 @@ export function AccessibilityToolbar() {
                   </Pressable>
                 ) : <Text style={[ui.nativeHint, { color: colors.subtle }]}>Disponível na web</Text>}
               </View>
-
-              <ToggleRow icon="⌨" title="Navegação por teclado"
-                description="Reforça o destaque de foco usando Tab, Enter e Esc; o teclado permanece disponível."
-                enabled={keyboardNavigation} onChange={v => toggleFeature('keyboardNavigation', v)}
-                colors={colors} scale={fontScale} />
-              <ToggleRow icon="≡" title="Ajustar espaçamento do texto"
-                description="Aumenta o espaço entre letras e linhas para facilitar a leitura."
-                enabled={textSpacing} onChange={v => toggleFeature('textSpacing', v)}
-                colors={colors} scale={fontScale} />
 
               {!ready && <Text style={[ui.loading, { color: colors.subtle }]}>
                 Recuperando preferências...
@@ -385,9 +374,9 @@ const ui = StyleSheet.create({
   panel: {
     borderRadius: 24, borderWidth: 1.5, overflow: 'hidden',
     ...Platform.select({
-      web: { boxShadow: '0 0 18px rgba(124,58,237,0.38), 0 26px 68px rgba(7,3,23,0.50)' },
+      web: { boxShadow: '0 10px 32px rgba(11,18,32,0.24)' },
       android: { elevation: 15 },
-      ios: { shadowColor: '#7C3AED', shadowRadius: 24, shadowOpacity: .36,
+      ios: { shadowColor: '#0B1220', shadowRadius: 16, shadowOpacity: .24,
         shadowOffset: { width: 0, height: 10 } },
     }),
   },
@@ -450,9 +439,6 @@ const ui = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 13, flexWrap: 'wrap',
     borderWidth: 1.5, borderRadius: 18, paddingHorizontal: 16,
     paddingVertical: 15, marginVertical: 10,
-    ...Platform.select({
-      web: { boxShadow: '0 0 17px rgba(129,43,251,0.18)' },
-    }),
   },
   handSymbol: {
     width: 66, height: 66, borderRadius: 15, alignItems: 'center', justifyContent: 'center',
@@ -467,9 +453,6 @@ const ui = StyleSheet.create({
     borderWidth: 1.5, borderRadius: 12, alignItems: 'center',
     justifyContent: 'center', minHeight: 48, paddingHorizontal: 16,
     paddingVertical: 8, flexGrow: 0,
-    ...Platform.select({
-      web: { boxShadow: '0 0 13px rgba(168,85,247,0.40)' },
-    }),
   },
   vlibrasActionText: { color: '#FFFFFF', fontWeight: '800', textAlign: 'center' },
   nativeHint: { fontSize: 12 },
@@ -482,9 +465,6 @@ const ui = StyleSheet.create({
     minHeight: 52, borderWidth: 1, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center', flex: 1,
     paddingHorizontal: 12, paddingVertical: 12,
-    ...Platform.select({
-      web: { boxShadow: '0 0 15px rgba(147,51,234,0.32)' },
-    }),
   },
   primaryActionText: { color: '#FFFFFF', fontWeight: '900', textAlign: 'center' },
   secondaryAction: {
