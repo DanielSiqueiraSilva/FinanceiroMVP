@@ -1,4 +1,5 @@
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
+import { useNotifications } from '../../notifications/NotificationsContext';
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -21,12 +22,13 @@ export function AppButton({
   style,
 }: Props) {
   const styles = useAccessibleStyles(baseStyles);
+  const notifications = useNotifications();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityState={{ disabled }}
-      onPress={onPress}
+      onPress={() => { notifications?.click(); onPress(); }}
       disabled={disabled}
       style={({ pressed }) => [
         styles.base,

@@ -1,5 +1,7 @@
 import { ProfileCard } from '../components/auth/ProfileCard';
 import { AccountSettings } from '../components/auth/AccountSettings';
+import { NotificationCenter } from '../components/notifications/NotificationCenter';
+import { NotificationsProvider, useNotifications } from '../notifications/NotificationsContext';
 import { ProtectedFinance } from '../components/auth/ProtectedFinance';
 import { useAccessibility } from '../accessibility/AccessibilityContext';
 import { useAccessibleStyles } from '../accessibility/useAccessibleStyles';
@@ -43,6 +45,7 @@ function periodoAtual() {
 
 function FinanceHome() {
   const styles = useAccessibleStyles(baseStyles);
+  const notifications = useNotifications();
   const { isDark } = useAccessibility();
   const periodoInicial = periodoAtual();
   const [mes, setMes] = useState(periodoInicial.mes);
@@ -109,6 +112,7 @@ function FinanceHome() {
   }, [lancamentos]);
 
   function mostrarSucesso(texto: string) {
+    notifications?.feedback('success', 'Operação concluída', texto);
     setMensagem(texto);
     setTimeout(() => setMensagem(''), 3000);
   }
@@ -139,7 +143,9 @@ function FinanceHome() {
       }
       await carregarDados();
     } catch (error) {
-      setErro(error instanceof Error ? error.message : 'Não foi possível salvar o lançamento.');
+      const message = error instanceof Error ? error.message : 'Não foi possível salvar o lançamento.';
+      setErro(message);
+      notifications?.feedback('warning', 'Não foi possível salvar', message);
       throw error;
     } finally { setSalvando(false); }
   }
@@ -152,7 +158,9 @@ function FinanceHome() {
       await carregarDados();
       mostrarSucesso('Lançamento excluído com sucesso.');
     } catch (error) {
-      setErro(error instanceof Error ? error.message : 'Não foi possível excluir o lançamento.');
+      const message = error instanceof Error ? error.message : 'Não foi possível excluir o lançamento.';
+      setErro(message);
+      notifications?.feedback('warning', 'Não foi possível excluir', message);
     }
   }
 
@@ -164,7 +172,9 @@ function FinanceHome() {
       setLimite(resultado.valor);
       mostrarSucesso('Limite mensal atualizado.');
     } catch (error) {
-      setErro(error instanceof Error ? error.message : 'Não foi possível salvar o limite mensal.');
+      const message = error instanceof Error ? error.message : 'Não foi possível salvar o limite mensal.';
+      setErro(message);
+      notifications?.feedback('warning', 'Não foi possível atualizar o limite', message);
       throw error;
     } finally { setSalvandoLimite(false); }
   }
@@ -183,7 +193,10 @@ function FinanceHome() {
           <Text style={styles.saudacao}>Seu controle financeiro</Text>
           <Text style={styles.titulo}>FinanMVP</Text>
         </View>
-        <ProfileCard onOpenSettings={() => setActiveTab('configuracoes')} />
+        <View style={styles.headerActions}>
+          <NotificationCenter />
+          <ProfileCard onOpenSettings={() => { notifications?.click(); setActiveTab('configuracoes'); }} />
+        </View>
       </View>
 
 
@@ -192,7 +205,7 @@ function FinanceHome() {
           accessibilityRole="tab"
           accessibilityState={{ selected: activeTab === 'inicio' }}
           style={[styles.tabButton, activeTab === 'inicio' && styles.tabActive]}
-          onPress={() => setActiveTab('inicio')}
+          onPress={() => { notifications?.click(); setActiveTab('inicio'); }}
         >
           <Text style={[styles.tabText, activeTab === 'inicio' && styles.tabActiveText]}>Início</Text>
         </Pressable>
@@ -200,7 +213,7 @@ function FinanceHome() {
           accessibilityRole="tab"
           accessibilityState={{ selected: activeTab === 'configuracoes' }}
           style={[styles.tabButton, activeTab === 'configuracoes' && styles.tabActive]}
-          onPress={() => setActiveTab('configuracoes')}
+          onPress={() => { notifications?.click(); setActiveTab('configuracoes'); }}
         >
           <Text style={[styles.tabText, activeTab === 'configuracoes' && styles.tabActiveText]}>Configurações</Text>
         </Pressable>
@@ -338,7 +351,8 @@ function App() {
 const baseStyles = StyleSheet.create({
   tela: { flex: 1, backgroundColor: '#F7F5FA' },
   container: { width: '100%', maxWidth: 880, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 38, paddingBottom: 48, gap: 18 },
-  cabecalho: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' },
+  cabecalho: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, maxWidth: '100%' },
   tabNav: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderBottomWidth: 1, borderBottomColor: '#DDD6E6', paddingBottom: 10 },
   tabButton: { minHeight: 44, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDD6E6', justifyContent: 'center' },
   tabActive: { backgroundColor: '#EDE9FE', borderColor: '#8B5CF6' },
@@ -385,5 +399,11 @@ const baseStyles = StyleSheet.create({
 
 // Proteção da tela: desmonta todo o financeiro quando a sessão termina.
 export default function FinanceiroProtegido() {
-  return <ProtectedFinance><App /></ProtectedFinance>;
+  return (
+    <ProtectedFinance>
+      <NotificationsProvider>
+        <App />
+      </NotificationsProvider>
+    </ProtectedFinance>
+  );
 }
