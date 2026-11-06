@@ -1,8 +1,10 @@
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useProfileSession } from './ProtectedFinance';
+import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 
 export function NativeAccessControl() {
   const auth = useProfileSession();
+  const styles = useAccessibleStyles(baseStyles);
   if (!auth || Platform.OS === 'web') return null;
   return (
     <View style={styles.box}>
@@ -24,7 +26,7 @@ export function NativeAccessControl() {
     </View>
   );
 }
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   box: { gap: 8, width: '100%' },
   button: { alignSelf: 'flex-start', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#8B5CF6' },
   disabled: { opacity: .6 },
