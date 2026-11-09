@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import {
-  addRecurringRule, applyMonthlyRecurring, recurringDate, lastDay, monthIso, setPlannerActive,
+  addRecurringRule, applyMonthlyRecurring, recurringDate, lastDay, monthIso, setPlannerActive, confirmRecurring,
   type PlannerData, type MoneyType,
 } from '../../services/finance-planner';
 import { moeda } from './FinanceVisuals';
@@ -46,7 +46,8 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
     const list: Event[] = [];
     const last = lastDay(month, year);
     for (const rule of data.rules.filter(r => r.active &&
-      r.start_month <= monthStart && (!r.end_month || r.end_month >= monthStart))) {
+      r.start_month <= monthStart && (!r.end_month || r.end_month >= monthStart) &&
+      !data.posts.some(p => p.rule_id === r.id))) {
       const eventDate = recurringDate(month, year, rule.day_of_month);
       list.push({
         id: 'rec-' + rule.id, day: Number(eventDate.slice(-2)), title: rule.description,
@@ -70,20 +71,24 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
       });
     }
     return list.sort((a,b) => a.day - b.day);
-  }, [data.rules, data.cards, data.transactions, month, year, monthStart]);
+  }, [data.rules, data.cards, data.transactions, data.posts, month, year, monthStart]);
   const maxDay = lastDay(month, year);
   const padding = new Date(year, month - 1, 1).getDay();
   const days = Array.from({ length: Math.ceil((maxDay + padding) / 7) * 7 }, (_, i) => i - padding + 1);
   const dailyEvents = selectedDay == null ? events : events.filter(e => e.day === selectedDay);
 
-  async function run(fn: () => Promise<void>, success: string) {
-    if (busy) return;
+  async function run(fn: () => Promise<void>, success: string | (() => string)): Promise<boolean> {
+    if (busy) return false;
     setBusy(true); setError(''); setMessage('');
-    try { await fn(); await refresh(); setMessage(success); }
-    catch(e){ setError(e instanceof Error ? e.message : 'Não foi possível concluir a ação.'); }
-    finally { setBusy(false); }
+    try {
+      await fn(); await refresh(); setMessage(typeof success === 'function' ? success() : success);
+      return true;
+    } catch(e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível concluir a ação.');
+      return false;
+    } finally { setBusy(false); }
   }
-  function add() {
+  async function add() {
     const price = Number(amount.replace(',', '.')), n = Number(day);
     if (description.trim().length < 2 || description.trim().length > 120 ||
       !Number.isFinite(price) || price <= 0 || price > 1e12 ||
@@ -93,17 +98,24 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
     }
     const account_id = source.startsWith('a:') ? source.slice(2) : null;
     const card_id = source.startsWith('c:') ? source.slice(2) : null;
-    void run(() => addRecurringRule({ description, category, kind, amount: price, day_of_month: n,
-      start_month: monthStart, account_id, card_id }), 'Recorrência cadastrada. A geração do mês é controlada e evita duplicidade.');
-    setDescription(''); setAmount('');
+    const created = await run(() => addRecurringRule({ description, category, kind, amount: price, day_of_month: n,
+      start_month: monthStart, account_id, card_id }), 'Recorrência cadastrada. Ela aparece como previsão e será registrada após a data programada.');
+    if (created) { setDescription(''); setAmount(''); }
   }
   async function generate() {
     if (future) return;
     let count = 0;
     await run(async () => { count = await applyMonthlyRecurring(month, year); },
-      'Processamento concluído: ' + count + ' lançamento(s) novo(s). Repetir não cria duplicações.');
+      () => 'Processamento concluído: ' + count + ' lançamento(s) novo(s). Repetir não cria duplicações.');
   }
 
+  async function registerNow(ruleId: string) {
+    let created = false;
+    await run(async () => { created = await confirmRecurring(ruleId,month,year); },
+      () => created
+        ? 'Movimentação registrada uma única vez. Ela aparecerá em Lançamentos, Contas ou Cartões.'
+        : 'A movimentação deste mês já foi registrada. Nenhuma duplicação ocorreu.');
+  }
   return <View style={s.section}>
     <Text style={s.heading}>Automação e calendário</Text>
     <Text style={s.muted}>Cadastre receitas ou despesas que se repetem todos os meses. Elas viram lançamentos financeiros, sem cobrar dinheiro da sua conta.</Text>
@@ -111,7 +123,7 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
       <Text style={s.title}>Novo lançamento recorrente</Text>
       <View style={s.row}>
         <Chip label="Despesa mensal" active={kind === 'despesa'} onPress={() => setKind('despesa')}/>
-        <Chip label="Receita mensal" active={kind === 'receita'} onPress={() => setKind('receita')}/>
+        <Chip label="Receita mensal" active={kind === 'receita'} onPress={() => { setKind('receita'); if (source.startsWith('c:')) setSource(''); }}/>
       </View>
       <View style={s.fields}>
         <View style={s.wide}><Field label="Descrição (ex.: internet)" value={description} change={setDescription}/></View>
@@ -126,9 +138,9 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
       <View style={s.row}>
         <Chip label="Nenhum" active={!source} onPress={() => setSource('')}/>
         {data.accounts.filter(a => a.active).map(a => <Chip key={a.id} label={a.name} active={source === 'a:' + a.id} onPress={() => setSource('a:' + a.id)}/>)}
-        {data.cards.filter(c => c.active).map(c => <Chip key={c.id} label={c.name} active={source === 'c:' + c.id} onPress={() => setSource('c:' + c.id)}/>)}
+        {kind === 'despesa' && data.cards.filter(c => c.active).map(c => <Chip key={c.id} label={c.name} active={source === 'c:' + c.id} onPress={() => setSource('c:' + c.id)}/>)}
       </View>
-      <Pressable style={s.primary} accessibilityRole="button" disabled={busy} onPress={add}>
+      <Pressable style={s.primary} accessibilityRole="button" disabled={busy} onPress={() => void add()}>
         <Text style={s.primaryText}>Cadastrar recorrência</Text>
       </Pressable>
       <Text style={s.muted}>Início: mês selecionado ({String(month).padStart(2,'0')}/{year}). Para meses com menos dias, o dia 29, 30 ou 31 é ajustado ao último dia do mês.</Text>
@@ -140,17 +152,25 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
         <View style={s.ruleText}><Text style={s.label}>{rule.description}</Text>
           <Text style={s.muted}>{rule.kind === 'receita' ? 'Receita' : 'Despesa'} · {moeda(Number(rule.amount))} · dia {rule.day_of_month}</Text>
           <Text style={s.muted}>{rule.active ? 'Ativa' : 'Pausada'} · desde {rule.start_month.slice(0,7)}</Text>
+          <Text style={s.muted}>{data.posts.some(p => p.rule_id === rule.id)
+            ? 'Registrada neste mês'
+            : rule.start_month > monthStart ? 'Ainda não começou'
+            : 'Prevista: ainda não registrada neste mês'}</Text>
         </View>
-        <Chip label={rule.active ? 'Pausar' : 'Reativar'} onPress={() => void run(
-          () => setPlannerActive('finance_recurring_rules', rule.id, !rule.active),
-          rule.active ? 'Recorrência pausada.' : 'Recorrência reativada.'
-        )}/>
+        <View style={s.row}>
+          {rule.active && rule.start_month <= monthStart && !future &&
+            !data.posts.some(p => p.rule_id === rule.id) && <Chip label="Registrar agora" onPress={() => void registerNow(rule.id)}/>}
+          <Chip label={rule.active ? 'Pausar' : 'Reativar'} onPress={() => void run(
+            () => setPlannerActive('finance_recurring_rules', rule.id, !rule.active),
+            rule.active ? 'Recorrência pausada.' : 'Recorrência reativada.'
+          )}/>
+        </View>
       </View>)}
       <Pressable accessibilityRole="button" disabled={busy || future} style={[s.primary, future && s.disabled]}
         onPress={() => void generate()}>
         <Text style={s.primaryText}>{busy ? 'Processando...' : 'Gerar lançamentos deste mês'}</Text>
       </Pressable>
-      <Text style={s.muted}>O processamento é repetível sem duplicar registros. Ao abrir essa área no mês atual, o app também poderá processar as regras ativas automaticamente. Não gera lançamentos de meses futuros.</Text>
+      <Text style={s.muted}>Previsto = compromisso agendado. Registrado = movimentação contabilizada. O processamento registra apenas regras vencidas; "Registrar agora" permite contabilizar antecipadamente somente quando a movimentação realmente aconteceu. Não é um pagamento automático, e nenhum valor é debitado de bancos. A atualização não duplica registros.</Text>
       {!!message && <Text style={s.positive} accessibilityLiveRegion="polite">{message}</Text>}
       {!!error && <Text style={s.error} accessibilityLiveRegion="polite">{error}</Text>}
     </View>

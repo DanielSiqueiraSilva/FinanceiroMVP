@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import {
-  addAccount, addCard, linkTransaction, setPlannerActive,
+  addAccount, addCard, linkTransaction, setPlannerActive, recordAccountTransfer, recordCardPayment,
   type FinanceAccount, type FinanceCard, type PlannerData,
 } from '../../services/finance-planner';
 import { moeda } from './FinanceVisuals';
@@ -45,6 +45,12 @@ export function PlannerAccounts({ data, refresh }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [fromAccount, setFromAccount] = useState('');
+  const [toAccount, setToAccount] = useState('');
+  const [transferAmount, setTransferAmount] = useState('');
+  const [payAccount, setPayAccount] = useState('');
+  const [payCard, setPayCard] = useState('');
+  const [payAmount, setPayAmount] = useState('');
   const activeAccounts = data.accounts.filter(x => x.active);
   const activeCards = data.cards.filter(x => x.active);
 
@@ -79,6 +85,23 @@ export function PlannerAccounts({ data, refresh }: Props) {
   async function toggle(table: 'finance_accounts'|'finance_cards', id: string, active: boolean) {
     await run(() => setPlannerActive(table, id, !active),
       active ? 'Item arquivado. Os lançamentos permanecem preservados.' : 'Item reativado.');
+  }
+  async function saveTransfer() {
+    const n = decimal(transferAmount);
+    if (!fromAccount || !toAccount || fromAccount === toAccount || !Number.isFinite(n) || n <= 0 || n > 1e12) {
+      setError('Escolha duas contas diferentes e um valor maior que zero.'); return;
+    }
+    await run(() => recordAccountTransfer(fromAccount,toAccount,n),'Transferência registrada entre contas, sem criar receita ou despesa.');
+    setTransferAmount('');
+  }
+  async function savePayment() {
+    const n = decimal(payAmount);
+    if (!payAccount || !payCard || !Number.isFinite(n) || n <= 0 || n > 1e12) {
+      setError('Escolha a conta, o cartão e um valor positivo.'); return;
+    }
+    await run(() => recordCardPayment(payCard,payAccount,n),
+      'Pagamento da fatura registrado. Não foi lançada uma segunda despesa.');
+    setPayAmount('');
   }
   async function saveLink() {
     if (!linkTx) return;
@@ -129,7 +152,8 @@ export function PlannerAccounts({ data, refresh }: Props) {
           return <View key={item.id} style={s.entry}>
             <View style={s.entryText}><Text style={s.entryTitle}>{item.name}{!item.active ? ' (arquivada)' : ''}</Text>
               <Text style={s.muted}>Saldo inicial: {moeda(Number(item.opening_balance))}</Text>
-              <Text style={s.muted}>Movimento vinculado neste mês: {moeda(value)}</Text></View>
+              <Text style={s.muted}>Movimentações vinculadas neste mês: {moeda(value)}</Text>
+              <Text style={s.entryTitle}>Saldo estimado: {moeda(Number(data.accountOverview.find(o => o.account_id === item.id)?.estimated_balance ?? item.opening_balance))}</Text></View>
             <Chip label={item.active ? 'Arquivar' : 'Reativar'} onPress={() => void toggle('finance_accounts', item.id, item.active)} />
           </View>;
         })}
@@ -144,13 +168,39 @@ export function PlannerAccounts({ data, refresh }: Props) {
             <View style={s.entryText}>
               <Text style={s.entryTitle}>{item.name}{!item.active ? ' (arquivado)' : ''}</Text>
               <Text style={s.muted}>Limite informado: {moeda(Number(item.credit_limit))}</Text>
-              <Text style={s.muted}>Compras vinculadas ao período: {moeda(spent)}</Text>
+              <Text style={s.muted}>Compras vinculadas neste mês: {moeda(spent)}</Text>
+              <Text style={s.entryTitle}>Compras ainda não marcadas como pagas: {moeda(Number(data.cardOverview.find(o => o.card_id === item.id)?.unpaid_total ?? 0))}</Text>
               <Text style={s.muted}>Fecha dia {item.closing_day} · vence dia {item.due_day}</Text>
             </View>
             <Chip label={item.active ? 'Arquivar' : 'Reativar'} onPress={() => void toggle('finance_cards', item.id, item.active)} />
           </View>;
         })}
       </View>
+    </View>
+    <View style={s.card}>
+      <Text style={s.title}>Transferir dinheiro entre contas</Text>
+      <Text style={s.muted}>Exemplo: transferir R$ 200 da Conta Principal para a Carteira. O total do seu patrimônio não muda.</Text>
+      <Text style={s.label}>De qual conta o dinheiro sai?</Text>
+      <View style={s.row}>{activeAccounts.map(a=><Chip key={a.id} label={a.name} selected={fromAccount===a.id} onPress={()=>setFromAccount(a.id)}/>)}</View>
+      <Text style={s.label}>Para qual conta ele vai?</Text>
+      <View style={s.row}>{activeAccounts.map(a=><Chip key={a.id} label={a.name} selected={toAccount===a.id} onPress={()=>setToAccount(a.id)}/>)}</View>
+      <Field label="Valor transferido (R$)" value={transferAmount} change={setTransferAmount}/>
+      <Pressable accessibilityRole="button" style={s.primary} disabled={busy||activeAccounts.length<2} onPress={()=>void saveTransfer()}>
+        <Text style={s.primaryText}>Registrar transferência</Text>
+      </Pressable>
+    </View>
+    <View style={s.card}>
+      <Text style={s.title}>Registrar pagamento do cartão</Text>
+      <Text style={s.muted}>Use depois de pagar a fatura de verdade. Escolha o cartão e a conta de onde saiu o dinheiro. O app reduz o valor pendente do cartão e o saldo estimado da conta, sem duplicar a despesa.</Text>
+      <Text style={s.label}>Cartão pago</Text>
+      <View style={s.row}>{activeCards.map(a=><Chip key={a.id} label={a.name} selected={payCard===a.id} onPress={()=>setPayCard(a.id)}/>)}</View>
+      <Text style={s.label}>Conta usada para pagar</Text>
+      <View style={s.row}>{activeAccounts.map(a=><Chip key={a.id} label={a.name} selected={payAccount===a.id} onPress={()=>setPayAccount(a.id)}/>)}</View>
+      <Field label="Valor pago (R$)" value={payAmount} change={setPayAmount}/>
+      <Pressable accessibilityRole="button" style={s.primary} disabled={busy||!activeAccounts.length||!activeCards.length} onPress={()=>void savePayment()}>
+        <Text style={s.primaryText}>Registrar pagamento</Text>
+      </Pressable>
+      <Text style={s.muted}>Esta ferramenta não recebe a fatura do banco. O total pendente é calculado pelas compras que você associou ao cartão menos pagamentos registrados no app.</Text>
     </View>
     <View style={s.card}>
       <Text style={s.title}>Vincular lançamentos existentes</Text>

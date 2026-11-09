@@ -93,7 +93,20 @@ export function validarLancamento(body = {}) {
   if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) {
     throw Object.assign(new Error('Data inexistente.'), { status: 400 });
   }
-  return { descricao, categoria, data, tipo, valor: Number(valor.toFixed(2)) };
+  const fields = { descricao, categoria, data, tipo, valor: Number(valor.toFixed(2)) };
+  const hasAccount = Object.prototype.hasOwnProperty.call(body,'account_id');
+  const hasCard = Object.prototype.hasOwnProperty.call(body,'card_id');
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const accountId = body.account_id == null || body.account_id === '' ? null : String(body.account_id);
+  const cardId = body.card_id == null || body.card_id === '' ? null : String(body.card_id);
+  if ((accountId && !uuid.test(accountId)) || (cardId && !uuid.test(cardId)) ||
+      (accountId && cardId) || (cardId && tipo !== 'despesa')) {
+    throw Object.assign(new Error('Conta ou cartão inválido para este lançamento.'), { status: 400 });
+  }
+  if (hasAccount) fields.account_id = accountId;
+  if (hasCard) fields.card_id = cardId;
+  // Referential composite keys in the database enforce owner isolation.
+  return fields;
 }
 
 export function validarId(id) {

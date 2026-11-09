@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Lancamento, LancamentoInput, TipoLancamento } from '../../types/finance';
 import { AppButton } from './AppButton';
+import type { FinanceAccount, FinanceCard } from '../../services/finance-planner';
 
 export const CATEGORIAS = [
   'Salário',
@@ -25,6 +26,8 @@ type TransactionFormProps = {
   salvando: boolean;
   onSalvar: (input: LancamentoInput) => Promise<void>;
   onCancelarEdicao: () => void;
+  accounts?: FinanceAccount[];
+  cards?: FinanceCard[];
 };
 
 function dataPadraoPeriodo(mes: number, ano: number) {
@@ -41,7 +44,7 @@ export function TransactionForm({
   lancamentoEmEdicao,
   salvando,
   onSalvar,
-  onCancelarEdicao,
+  onCancelarEdicao, accounts = [], cards = [],
 }: TransactionFormProps) {
   const styles = useAccessibleStyles(baseStyles);
   const { isDark } = useAccessibility();
@@ -51,6 +54,7 @@ export function TransactionForm({
   const [valor, setValor] = useState('');
   const [data, setData] = useState(() => dataPadraoPeriodo(mes, ano));
   const [erro, setErro] = useState('');
+  const [source, setSource] = useState('');
 
   useEffect(() => {
     if (lancamentoEmEdicao) {
@@ -63,6 +67,8 @@ export function TransactionForm({
       );
       setValor(String(lancamentoEmEdicao.valor).replace('.', ','));
       setData(lancamentoEmEdicao.data);
+      setSource(lancamentoEmEdicao.account_id ? 'a:' + lancamentoEmEdicao.account_id :
+        lancamentoEmEdicao.card_id ? 'c:' + lancamentoEmEdicao.card_id : '');
       setErro('');
       return;
     }
@@ -76,11 +82,13 @@ export function TransactionForm({
     setCategoria('Outros');
     setValor('');
     setData(dataPadraoPeriodo(mes, ano));
+    setSource('');
     setErro('');
   }
 
   function alterarTipo(novoTipo: TipoLancamento) {
     setTipo(novoTipo);
+    if (novoTipo === 'receita' && source.startsWith('c:')) setSource('');
     if (novoTipo === 'receita' && categoria === 'Outros') {
       setCategoria('Salário');
     }
@@ -139,6 +147,8 @@ export function TransactionForm({
       valor: valorNumerico,
       data: dataNormalizada,
       tipo,
+      account_id: source.startsWith('a:') ? source.slice(2) : null,
+      card_id: source.startsWith('c:') ? source.slice(2) : null,
     });
 
     if (!lancamentoEmEdicao) limparFormulario();
@@ -232,6 +242,27 @@ export function TransactionForm({
         </View>
       </View>
 
+      <View style={styles.campo}>
+        <Text style={styles.rotulo}>De onde vem ou para onde vai o dinheiro?</Text>
+        <Text style={styles.subtitulo}>Selecione uma conta para movimentar o saldo estimado. Compras no cartão ficam pendentes até registrar o pagamento da fatura. Você também pode deixar sem vínculo.</Text>
+        <View style={styles.categorias}>
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: source === '' }} onPress={() => setSource('')}
+            style={[styles.categoria, !source && styles.categoriaAtiva]}>
+            <Text style={[styles.categoriaTexto, !source && styles.categoriaTextoAtiva]}>Não vincular</Text>
+          </Pressable>
+          {accounts.filter(a=>a.active).map(a=><Pressable key={a.id} accessibilityRole="button"
+            accessibilityState={{ selected: source === 'a:' + a.id }} onPress={() => setSource('a:' + a.id)}
+            style={[styles.categoria, source === 'a:' + a.id && styles.categoriaAtiva]}>
+            <Text style={[styles.categoriaTexto, source === 'a:' + a.id && styles.categoriaTextoAtiva]}>{a.name} · Conta</Text>
+          </Pressable>)}
+          {tipo === 'despesa' && cards.filter(a=>a.active).map(a=><Pressable key={a.id} accessibilityRole="button"
+            accessibilityState={{ selected: source === 'c:' + a.id }} onPress={() => setSource('c:' + a.id)}
+            style={[styles.categoria, source === 'c:' + a.id && styles.categoriaAtiva]}>
+            <Text style={[styles.categoriaTexto, source === 'c:' + a.id && styles.categoriaTextoAtiva]}>{a.name} · Cartão</Text>
+          </Pressable>)}
+        </View>
+        {!accounts.length && !cards.length && <Text style={styles.subtitulo}>Cadastre sua primeira conta ou cartão em “Contas e cartões” para vincular lançamentos.</Text>}
+      </View>
       {erro ? <Text accessibilityLiveRegion="polite" style={styles.erro}>{erro}</Text> : null}
 
       <View style={styles.acoes}>

@@ -25,7 +25,8 @@ import { ChartsArea, Metric, moeda, type MesAnalise } from './FinanceVisuals';
 import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
-import { applyMonthlyRecurring } from '../../services/finance-planner';
+import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
+import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
 
 type Aba = 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'planos' | 'carteiras' | 'configuracoes' | 'automacao' | 'contas' | 'metas';
 const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] = [
@@ -81,6 +82,9 @@ export function FinanceWorkspace() {
   const [sucesso, setSucesso] = useState('');
   const [editando, setEditando] = useState<Lancamento | null>(null);
   const [historico, setHistorico] = useState<MesAnalise[]>([]);
+  const [accountOptions,setAccountOptions] = useState<FinanceAccount[]>([]);
+  const [cardOptions,setCardOptions] = useState<FinanceCard[]>([]);
+  const [plannerSnapshot,setPlannerSnapshot] = useState<PlannerData | null>(null);
   const [histLoading, setHistLoading] = useState(false);
   const [histError, setHistError] = useState('');
   const [mostrarMais, setMostrarMais] = useState(false);
@@ -111,6 +115,17 @@ export function FinanceWorkspace() {
   }, [mes, ano]);
 
   useEffect(() => { void carregar(); }, [carregar]);
+  useEffect(() => {
+    if (aba !== 'lancamentos' && aba !== 'painel') return;
+    let active = true;
+    setPlannerSnapshot(null);
+    void loadPlanner(mes,ano).then(p => {
+      if (active) { setAccountOptions(p.accounts); setCardOptions(p.cards); setPlannerSnapshot(p); }
+    }).catch(() => {
+      if (active) { setAccountOptions([]); setCardOptions([]); setPlannerSnapshot(null); }
+    });
+    return () => { active = false; };
+  },[aba,mes,ano]);
   useEffect(() => {
     // Regras são registradas como lançamentos comuns, nunca débitos bancários.
     // Processamento limitado ao mês atual, uma tentativa por sessão e mês.
@@ -153,6 +168,7 @@ export function FinanceWorkspace() {
   }, [aba, mes, ano]);
 
   const irPara = (id: Aba) => {
+    if (['painel','lancamentos','graficos','dados'].includes(id)) void carregar(true);
     notifications?.click();
     setMostrarMais(false);
     setAba(id);
@@ -209,16 +225,42 @@ export function FinanceWorkspace() {
     const categoria = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
     return { maior, categoria };
   }, [lista]);
+  const accountValue = plannerSnapshot?.accountOverview.reduce((a,b) => a + Number(b.estimated_balance),0);
+  const cardPending = plannerSnapshot?.cardOverview.reduce((a,b) => a + Number(b.unpaid_total),0);
+  const forecasts = useMemo(() => plannerSnapshot?.rules.filter(r => r.active &&
+    r.start_month <= String(ano)+'-'+String(mes).padStart(2,'0')+'-01' &&
+    (!r.end_month || r.end_month >= String(ano)+'-'+String(mes).padStart(2,'0')+'-01')
+  ).map(rule => ({
+    rule, posted: plannerSnapshot.posts.some(p => p.rule_id === rule.id)
+  })) || [],[plannerSnapshot,mes,ano]);
   const page = PAGINAS.find(p => p.id === aba) || PAGINAS[0];
   const mostrarFiltroPeriodo = !['planos', 'carteiras', 'configuracoes'].includes(aba);
 
+  const forecastNotice = () => !forecasts.length ? null : (
+    <View style={s.forecastCard}>
+      <Text style={s.title}>Recorrências deste mês</Text>
+      <Text style={s.muted}>Previstas não entram no saldo ou gráficos até serem registradas. Quando uma regra é contabilizada, ela aparece em Lançamentos uma única vez.</Text>
+      {forecasts.slice(0,5).map(({rule,posted}) => (
+        <View key={rule.id} style={s.forecastItem}>
+          <View style={{ flex:1, minWidth:0 }}>
+            <Text style={s.quickTitle}>{rule.description} · {moeda(Number(rule.amount))}</Text>
+            <Text style={s.muted}>Dia {rule.day_of_month} · {rule.kind === 'receita' ? 'Receita' : 'Despesa'}</Text>
+          </View>
+          <Text style={posted ? s.forecastDone : s.forecastPending}>{posted ? 'Registrado' : 'Previsto'}</Text>
+        </View>
+      ))}
+      <Pressable accessibilityRole="button" onPress={() => irPara('automacao')} style={s.link}>
+        <Text style={s.linkText}>Abrir calendário e registrar recorrências →</Text>
+      </Pressable>
+    </View>
+  );
   const conteudo = () => {
     if (aba === 'configuracoes') return <AccountSettings onBack={() => irPara('painel')} />;
     if (aba === 'carteiras') return <SharedWallets />;
     if (aba === 'planos') return <FuturePlans />;
-    if (aba === 'automacao') return <PlannerCenter section="automation" month={mes} year={ano} />;
-    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano} />;
-    if (aba === 'metas') return <PlannerCenter section="goals" month={mes} year={ano} />;
+    if (aba === 'automacao') return <PlannerCenter section="automation" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
+    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
+    if (aba === 'metas') return <PlannerCenter section="goals" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
     if (loading) return <View style={s.loading}><ActivityIndicator size="large" color="#7C3AED" /><Text style={s.muted}>Carregando seus dados...</Text></View>;
     if (aba === 'graficos') return histLoading ? <View style={s.loading}><ActivityIndicator color="#7C3AED" /><Text style={s.muted}>Carregando histórico...</Text></View> :
       histError ? <Text style={s.error}>{histError}</Text> : <ChartsArea meses={historico} lancamentos={lista} />;
@@ -226,9 +268,11 @@ export function FinanceWorkspace() {
     if (aba === 'lancamentos') return (
       <View style={s.section}>
         <Text style={s.heading}>Lançamentos</Text>
-        <Text style={s.muted}>Cadastre, edite e organize suas receitas e despesas em {mesAno(mes, ano)}.</Text>
+        <Text style={s.muted}>Cadastre, edite e organize suas receitas e despesas em {mesAno(mes, ano)}. Vincule cada movimentação à conta ou cartão escolhido.</Text>
+        {forecastNotice()}
         <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo')} mes={mes} ano={ano}
           lancamentoEmEdicao={editando} salvando={saving} onSalvar={salvar}
+          accounts={accountOptions} cards={cardOptions}
           onCancelarEdicao={() => setEditando(null)} />
         <Text style={s.title}>Movimentações do mês ({lista.length})</Text>
         {!lista.length ? <Text style={s.muted}>Ainda não há lançamentos nesse mês.</Text> : (
@@ -244,7 +288,7 @@ export function FinanceWorkspace() {
         <Text style={s.muted}>Uma visão rápida das suas finanças no mês e atalhos para as áreas do app.</Text>
         <View style={s.heroRow}>
           <View style={s.heroCard} accessible accessibilityLabel={'Resultado do mês: ' + moeda(resumo?.saldo ?? 0)}>
-            <Text style={s.heroLabel}>Saldo do mês</Text>
+            <Text style={s.heroLabel}>Resultado do mês</Text>
             <Text style={s.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
               {moeda(resumo?.saldo ?? 0)}
             </Text>
@@ -255,6 +299,17 @@ export function FinanceWorkspace() {
             <Metric titulo="Despesas do mês" valor={moeda(resumo?.totalDespesas ?? 0)} />
           </View>
         </View>
+        {plannerSnapshot && (plannerSnapshot.accounts.length > 0 || plannerSnapshot.cards.length > 0) && (
+          <View style={s.metricRow}>
+            {plannerSnapshot.accounts.length > 0 && <Metric
+              titulo="Nas contas (estimativa)" valor={moeda(accountValue || 0)}
+              detalhe="Saldo inicial + histórico vinculado + transferências − faturas pagas" />}
+            {plannerSnapshot.cards.length > 0 && <Metric
+              titulo="Cartões: compras pendentes" valor={moeda(cardPending || 0)}
+              detalhe="Compras lançadas menos pagamentos registrados, não é a fatura oficial" />}
+          </View>
+        )}
+        {forecastNotice()}
         <Text style={s.title}>Acesse rapidamente</Text>
         <View style={s.quickGrid}>
           {PAGINAS.filter(p => p.id !== 'painel').map(p => (
@@ -390,6 +445,10 @@ const base = StyleSheet.create({
   appNameMobile: { fontSize: 20 },
   mobileHeading: { gap: 2 },
   section: { gap: 16 },
+  forecastCard: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 18, padding: 15, gap: 10 },
+  forecastItem: { flexDirection: 'row', gap: 8, justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#ECE8F1', paddingTop: 9 },
+  forecastDone: { color: '#15803D', fontWeight: '800', fontSize: 12 },
+  forecastPending: { color: '#7C3AED', fontWeight: '800', fontSize: 12 },
   title: { color: '#111827', fontWeight: '800', fontSize: 19 },
   heading: { color: '#111827', fontWeight: '900', fontSize: 25 },
   muted: { color: '#6B7280', fontSize: 12, lineHeight: 18 },
