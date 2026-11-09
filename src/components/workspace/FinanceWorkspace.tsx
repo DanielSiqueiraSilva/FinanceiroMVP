@@ -25,7 +25,8 @@ import { ChartsArea, Metric, moeda, type MesAnalise } from './FinanceVisuals';
 import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
-import { applyMonthlyRecurring } from '../../services/finance-planner';
+import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
+import type { FinanceAccount, FinanceCard } from '../../services/finance-planner';
 
 type Aba = 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'planos' | 'carteiras' | 'configuracoes' | 'automacao' | 'contas' | 'metas';
 const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] = [
@@ -81,6 +82,8 @@ export function FinanceWorkspace() {
   const [sucesso, setSucesso] = useState('');
   const [editando, setEditando] = useState<Lancamento | null>(null);
   const [historico, setHistorico] = useState<MesAnalise[]>([]);
+  const [accountOptions,setAccountOptions] = useState<FinanceAccount[]>([]);
+  const [cardOptions,setCardOptions] = useState<FinanceCard[]>([]);
   const [histLoading, setHistLoading] = useState(false);
   const [histError, setHistError] = useState('');
   const [mostrarMais, setMostrarMais] = useState(false);
@@ -111,6 +114,16 @@ export function FinanceWorkspace() {
   }, [mes, ano]);
 
   useEffect(() => { void carregar(); }, [carregar]);
+  useEffect(() => {
+    if (aba !== 'lancamentos') return;
+    let active = true;
+    void loadPlanner(mes,ano).then(p => {
+      if (active) { setAccountOptions(p.accounts); setCardOptions(p.cards); }
+    }).catch(() => {
+      if (active) { setAccountOptions([]); setCardOptions([]); }
+    });
+    return () => { active = false; };
+  },[aba,mes,ano]);
   useEffect(() => {
     // Regras são registradas como lançamentos comuns, nunca débitos bancários.
     // Processamento limitado ao mês atual, uma tentativa por sessão e mês.
@@ -153,6 +166,7 @@ export function FinanceWorkspace() {
   }, [aba, mes, ano]);
 
   const irPara = (id: Aba) => {
+    if (['painel','lancamentos','graficos','dados'].includes(id)) void carregar(true);
     notifications?.click();
     setMostrarMais(false);
     setAba(id);
@@ -216,9 +230,9 @@ export function FinanceWorkspace() {
     if (aba === 'configuracoes') return <AccountSettings onBack={() => irPara('painel')} />;
     if (aba === 'carteiras') return <SharedWallets />;
     if (aba === 'planos') return <FuturePlans />;
-    if (aba === 'automacao') return <PlannerCenter section="automation" month={mes} year={ano} />;
-    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano} />;
-    if (aba === 'metas') return <PlannerCenter section="goals" month={mes} year={ano} />;
+    if (aba === 'automacao') return <PlannerCenter section="automation" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
+    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
+    if (aba === 'metas') return <PlannerCenter section="goals" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
     if (loading) return <View style={s.loading}><ActivityIndicator size="large" color="#7C3AED" /><Text style={s.muted}>Carregando seus dados...</Text></View>;
     if (aba === 'graficos') return histLoading ? <View style={s.loading}><ActivityIndicator color="#7C3AED" /><Text style={s.muted}>Carregando histórico...</Text></View> :
       histError ? <Text style={s.error}>{histError}</Text> : <ChartsArea meses={historico} lancamentos={lista} />;
@@ -229,6 +243,7 @@ export function FinanceWorkspace() {
         <Text style={s.muted}>Cadastre, edite e organize suas receitas e despesas em {mesAno(mes, ano)}.</Text>
         <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo')} mes={mes} ano={ano}
           lancamentoEmEdicao={editando} salvando={saving} onSalvar={salvar}
+          accounts={accountOptions} cards={cardOptions}
           onCancelarEdicao={() => setEditando(null)} />
         <Text style={s.title}>Movimentações do mês ({lista.length})</Text>
         {!lista.length ? <Text style={s.muted}>Ainda não há lançamentos nesse mês.</Text> : (
