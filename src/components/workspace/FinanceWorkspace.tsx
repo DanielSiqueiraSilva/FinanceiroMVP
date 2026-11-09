@@ -26,6 +26,7 @@ import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
 import { BRAND, BrandMark, WorkspaceIcon, HeroSignature } from '../../design/brand';
+import { OCEAFIN } from '../../design/tokens';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
 import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
@@ -370,8 +371,8 @@ export function FinanceWorkspace() {
           <View style={s.sidebarBrandRow}>
             <BrandMark size={40}/>
             <View style={{ flex: 1 }}>
-              <Text style={s.brand}>financeiro.</Text>
-              <Text style={s.sidebarHint}>SEU ESPAÇO FINANCEIRO</Text>
+              <Text style={s.brand}>{OCEAFIN.name.toLowerCase()}</Text>
+              <Text style={s.sidebarHint}>SEU DINHEIRO EM EQUILÍBRIO</Text>
             </View>
           </View>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={s.sidebarSections}>
@@ -395,7 +396,7 @@ export function FinanceWorkspace() {
           {desktop ? (
             <View style={s.header}>
               <View style={s.headerCopy}>
-                <Text style={s.overline}>SEU DINHEIRO, COM MAIS CLAREZA</Text>
+                <Text style={s.overline}>OCEAFIN · SEU ESPAÇO FINANCEIRO</Text>
                 <Text style={s.appName}>{page.titulo === 'Painel' ? 'Visão geral' : page.titulo}</Text>
               </View>
               <View style={s.headerActions}>
@@ -407,7 +408,7 @@ export function FinanceWorkspace() {
             <View style={s.mobileTopBar}>
               <View style={s.mobileBrandWrap}>
                 <BrandMark size={36}/>
-                <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>financeiro.</Text>
+                <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{OCEAFIN.name.toLowerCase()}</Text>
               </View>
               <View style={s.mobileActions}>
                 <NotificationCenter />

@@ -22,6 +22,8 @@ export default function RootHtml({ children }: PropsWithChildren) {
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
         <meta name="color-scheme" content="light dark" />
+        <meta name="theme-color" content="#071727" />
+        <meta name="description" content="Oceafin: seu dinheiro em equilíbrio. Organize contas, cartões, lançamentos e planejamento." />
         <ScrollViewStyleReset />
         {/* Executado antes da hidratação: evita que o tema padrão sobrescreva
             a aparência salva enquanto o JavaScript do React está carregando. */}
@@ -45,22 +47,22 @@ export default function RootHtml({ children }: PropsWithChildren) {
                 root.setAttribute('data-finance-keyboard', String(Boolean(value && value.keyboardNavigation)));
                 root.setAttribute('data-finance-text-spacing', String(Boolean(value && value.textSpacing)));
                 root.style.colorScheme = resolved;
-                root.style.backgroundColor = resolved === 'dark' ? '#0B1220' : '#F7F5FA';
+                root.style.backgroundColor = resolved === 'dark' ? '#071727' : '#EFF6F8';
               } catch (_) {
                 var fallback = window.matchMedia &&
                   window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 document.documentElement.setAttribute('data-finance-theme', fallback);
                 document.documentElement.style.colorScheme = fallback;
                 document.documentElement.style.backgroundColor =
-                  fallback === 'dark' ? '#0B1220' : '#F7F5FA';
+                  fallback === 'dark' ? '#071727' : '#EFF6F8';
               }
             })();`
           }}
         />
         <style>{`
-          :root { --finance-page-bg: #F7F5FA; color-scheme: light; }
+          :root { --finance-page-bg: #EFF6F8; color-scheme: light; }
           :root[data-finance-theme="dark"] {
-            --finance-page-bg: #0B1220; color-scheme: dark;
+            --finance-page-bg: #071727; color-scheme: dark;
           }
           html, body { background-color: var(--finance-page-bg); }
           :root[data-finance-theme-ready="true"] body,
@@ -96,14 +98,14 @@ export default function RootHtml({ children }: PropsWithChildren) {
           }
           :root[data-finance-focus="true"] :is(a, input, button, select, textarea,
             [role="button"], [role="switch"], [role="radio"], [tabindex]):focus-visible {
-            outline: 3px solid #A78BFA !important;
+            outline: 3px solid #67DCCE !important;
             outline-offset: 3px !important;
-            box-shadow: 0 0 0 5px rgba(124,58,237,0.22) !important;
+            box-shadow: 0 0 0 5px rgba(17,156,176,0.22) !important;
           }
           /* O teclado já funciona normalmente: a opção melhora a visibilidade do foco. */
           :root[data-finance-keyboard="true"] :is(a, input, button, select, textarea,
             [role="button"], [role="switch"], [role="radio"], [tabindex]):focus-visible {
-            outline: 4px solid #C084FC !important;
+            outline: 4px solid #67DCCE !important;
             outline-offset: 4px !important;
           }
           :root[data-finance-text-spacing="true"] body {

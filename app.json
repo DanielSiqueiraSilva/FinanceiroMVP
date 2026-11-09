@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "FinanceiroMVP",
+    "name": "Oceafin",
     "slug": "FinanceiroMVP",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#071727",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -34,7 +34,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#071727",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
@@ -42,13 +42,13 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Permitir que o FinanMVP use o Face ID para confirmar sua identidade."
+          "faceIDPermission": "Permitir que o Oceafin use o Face ID para confirmar sua identidade."
         }
       ],
       [
         "expo-secure-store",
         {
-          "faceIDPermission": "Permitir que o FinanMVP proteja o acesso às suas finanças por Face ID.",
+          "faceIDPermission": "Permitir que o Oceafin proteja o acesso às suas finanças por Face ID.",
           "configureAndroidBackup": true
         }
       ]

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48" role="img" aria-label="Oceafin, letra O com ondas">
+  <rect width="48" height="48" rx="14" fill="#0C293D"/>
+  <circle cx="24" cy="24" r="15" fill="none" stroke="#67DCCE" stroke-width="5"/>
+  <path d="M10 23C16 17 21 17 27 23S37 29 38 23" fill="none" stroke="#EAF7F9" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M13 30C18 26 22 26 27 30S34 34 36 30" fill="none" stroke="#2DB6C1" stroke-width="2.4" stroke-linecap="round"/>
+</svg>
