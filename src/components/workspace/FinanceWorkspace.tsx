@@ -25,12 +25,13 @@ import { ChartsArea, Metric, moeda, type MesAnalise } from './FinanceVisuals';
 import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
+import { BRAND, BrandMark, WorkspaceIcon, HeroSignature } from '../../design/brand';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
 import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
 
 type Aba = 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'planos' | 'carteiras' | 'configuracoes' | 'automacao' | 'contas' | 'metas';
 const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] = [
-  { id: 'painel', titulo: 'Painel', simbolo: '⌂', detalhe: 'Resumo e atalhos' },
+  { id: 'painel', titulo: 'Painel', simbolo: '⌂', detalhe: 'Seu ponto de partida' },
   { id: 'lancamentos', titulo: 'Lançamentos', simbolo: '+', detalhe: 'Receitas e despesas' },
   { id: 'graficos', titulo: 'Gráficos', simbolo: '▥', detalhe: 'Evolução financeira' },
   { id: 'dados', titulo: 'Dados', simbolo: '▤', detalhe: 'Filtros e exportação' },
@@ -52,8 +53,10 @@ function NavButton({ pagina, ativa, onClick, compacto = false }: {
     <Pressable onPress={onClick} accessibilityRole="button" accessibilityState={{ selected: ativa }}
       accessibilityLabel={'Abrir ' + pagina.titulo}
       style={[s.navButton, ativa && s.navActive, compacto && s.navCompact]}>
-      <Text style={[s.navIcon, ativa && s.navIconActive]}>{pagina.simbolo}</Text>
-      <Text numberOfLines={compacto ? 2 : 2} style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive]}>{pagina.titulo}</Text>
+      <WorkspaceIcon name={pagina.id} size={compacto ? 22 : 19}
+        color={ativa ? BRAND.ink : compacto ? '#645777' : '#D9CDEE'}/>
+      <Text numberOfLines={compacto ? 2 : 2}
+        style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive]}>{pagina.titulo}</Text>
     </Pressable>
   );
 }
@@ -284,15 +287,22 @@ export function FinanceWorkspace() {
     );
     return (
       <View style={s.section}>
-        <Text style={s.heading}>Seu painel financeiro</Text>
-        <Text style={s.muted}>Uma visão rápida das suas finanças no mês e atalhos para as áreas do app.</Text>
+        <Text style={s.overline}>SEU DINHEIRO EM FOCO</Text>
+        <Text style={s.heading}>Tudo começa com clareza.</Text>
+        <Text style={s.muted}>Seu mês em um só lugar. Entenda os números e escolha seu próximo passo.</Text>
         <View style={s.heroRow}>
           <View style={s.heroCard} accessible accessibilityLabel={'Resultado do mês: ' + moeda(resumo?.saldo ?? 0)}>
+            <View style={s.heroDecoration}><HeroSignature/></View>
+            <View style={s.heroEyebrowRow}>
+              <Text style={s.heroEyebrow}>VISÃO DO MÊS</Text>
+              <Text style={s.heroStar}>✦</Text>
+            </View>
             <Text style={s.heroLabel}>Resultado do mês</Text>
             <Text style={s.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
               {moeda(resumo?.saldo ?? 0)}
             </Text>
-            <Text style={s.heroSub}>Receitas menos despesas neste período</Text>
+            <Text style={s.heroSub}>Receitas − despesas no período selecionado</Text>
+            <Text style={s.heroFootnote}>O que importa é entender para onde seu dinheiro vai.</Text>
           </View>
           <View style={s.heroMetrics}>
             <Metric titulo="Receitas do mês" valor={moeda(resumo?.totalReceitas ?? 0)} />
@@ -310,14 +320,22 @@ export function FinanceWorkspace() {
           </View>
         )}
         {forecastNotice()}
-        <Text style={s.title}>Acesse rapidamente</Text>
+        <View style={s.sectionHeadingRow}>
+          <View style={{ flex:1, minWidth: 0 }}>
+            <Text style={s.overline}>EXPLORE SEU ESPAÇO</Text>
+            <Text style={s.title}>O que vamos fazer hoje?</Text>
+          </View>
+        </View>
         <View style={s.quickGrid}>
-          {PAGINAS.filter(p => p.id !== 'painel').map(p => (
+          {PAGINAS.filter(p => ['lancamentos','contas','automacao','metas','graficos','planos'].includes(p.id)).map(p => (
             <Pressable key={p.id} onPress={() => irPara(p.id)} accessibilityRole="button"
               style={[s.quickCard, !desktop && s.quickCardMobile]}>
-              <Text style={s.quickIcon}>{p.simbolo}</Text>
+              <View style={s.quickIconBadge}>
+                <WorkspaceIcon name={p.id} size={22} color={BRAND.ink}/>
+              </View>
               <Text style={s.quickTitle}>{p.titulo}</Text>
               <Text style={s.muted}>{p.detalhe}</Text>
+              <Text style={s.quickArrow}>Explorar  →</Text>
             </Pressable>
           ))}
         </View>
@@ -336,14 +354,35 @@ export function FinanceWorkspace() {
   };
 
   const primarias = PAGINAS.filter(p => ['painel', 'lancamentos', 'graficos'].includes(p.id));
+  const grupos = [
+    { titulo: 'PRINCIPAL', ids: ['painel','lancamentos','graficos','dados'] },
+    { titulo: 'ORGANIZAR', ids: ['contas','automacao','carteiras'] },
+    { titulo: 'PLANEJAR', ids: ['metas','planos'] },
+    { titulo: 'PREFERÊNCIAS', ids: ['configuracoes'] },
+  ];
   return (
     <View style={s.root}>
       {desktop && (
         <View style={s.sidebar}>
-          <Text style={s.brand}>◫  Financeiro</Text>
-          <Text style={s.sidebarHint}>Seu espaço financeiro</Text>
-          <View style={s.navList}>
-            {PAGINAS.map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+          <View style={s.sidebarBrandRow}>
+            <BrandMark size={40}/>
+            <View style={{ flex: 1 }}>
+              <Text style={s.brand}>financeiro.</Text>
+              <Text style={s.sidebarHint}>SEU ESPAÇO FINANCEIRO</Text>
+            </View>
+          </View>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={s.sidebarSections}>
+            {grupos.map(grupo => (
+              <View key={grupo.titulo} style={s.sidebarGroup}>
+                <Text style={s.groupLabel}>{grupo.titulo}</Text>
+                {PAGINAS.filter(p => grupo.ids.includes(p.id)).map(p =>
+                  <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+              </View>
+            ))}
+          </ScrollView>
+          <View style={s.sidebarFooter}>
+            <Text style={s.sidebarFooterTitle}>Menos complicação.</Text>
+            <Text style={s.sidebarFooterText}>Mais clareza no seu dia.</Text>
           </View>
         </View>
       )}
@@ -353,8 +392,8 @@ export function FinanceWorkspace() {
           {desktop ? (
             <View style={s.header}>
               <View style={s.headerCopy}>
-                <Text style={s.overline}>FINANCEIRO · {page.titulo.toUpperCase()}</Text>
-                <Text style={s.appName}>Bem-vindo ao seu Financeiro</Text>
+                <Text style={s.overline}>SEU DINHEIRO, COM MAIS CLAREZA</Text>
+                <Text style={s.appName}>{page.titulo === 'Painel' ? 'Visão geral' : page.titulo}</Text>
               </View>
               <View style={s.headerActions}>
                 <NotificationCenter />
@@ -364,8 +403,8 @@ export function FinanceWorkspace() {
           ) : (
             <View style={s.mobileTopBar}>
               <View style={s.mobileBrandWrap}>
-                <Text style={s.mobileLogo} accessibilityElementsHidden>▥</Text>
-                <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Financeiro</Text>
+                <BrandMark size={36}/>
+                <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>financeiro.</Text>
               </View>
               <View style={s.mobileActions}>
                 <NotificationCenter />
@@ -397,12 +436,16 @@ export function FinanceWorkspace() {
           <View style={s.bottom}>
             {primarias.map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} compacto />)}
             <Pressable onPress={() => setMostrarMais(v => !v)} accessibilityRole="button" accessibilityLabel="Abrir outras áreas"
-              style={s.moreButton}><Text style={s.navIcon}>•••</Text><Text style={s.moreText}>Mais</Text></Pressable>
+              style={s.moreButton}><Text style={s.moreDots}>•••</Text><Text style={s.moreText}>Mais</Text></Pressable>
           </View>
         )}
         {!desktop && mostrarMais && (
           <View style={s.moreMenu}>
-            {PAGINAS.filter(p => !primarias.includes(p)).map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+            <ScrollView style={{ maxHeight: 370 }} contentContainerStyle={{ gap: 5 }}>
+              <Text style={s.groupLabel}>TODAS AS ÁREAS</Text>
+              {PAGINAS.filter(p => !primarias.includes(p)).map(p =>
+                <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+            </ScrollView>
           </View>
         )}
       </View>
