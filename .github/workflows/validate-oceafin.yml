@@ -23,7 +23,7 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit
       - name: Lint Oceafin design foundation
-        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx
+        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx
       - name: Legacy full-repository lint audit (non-blocking)
         continue-on-error: true
         run: npm run lint

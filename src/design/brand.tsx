@@ -11,7 +11,7 @@ export const BRAND = {
   muted: '#D9EDF3',
 } as const;
 
-type IconName =
+export type WorkspaceIconName =
   | 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'automacao'
   | 'contas' | 'metas' | 'planos' | 'carteiras' | 'configuracoes';
 
@@ -30,7 +30,7 @@ export function BrandMark({ size = 38 }: { size?: number }) {
 
 export function WorkspaceIcon({
   name, size = 20, color = BRAND.ink,
-}: { name: IconName; size?: number; color?: string }) {
+}: { name: WorkspaceIconName; size?: number; color?: string }) {
   const common = {
     fill: 'none' as const,
     stroke: color,

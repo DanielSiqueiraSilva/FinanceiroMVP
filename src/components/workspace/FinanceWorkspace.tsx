@@ -25,9 +25,9 @@ import { ChartsArea, Metric, moeda, type MesAnalise } from './FinanceVisuals';
 import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
-import { BRAND, BrandMark, WorkspaceIcon, HeroSignature } from '../../design/brand';
+import { BrandMark, HeroSignature } from '../../design/brand';
+import { OceanBottomNavigation, OceanSidebar } from '../navigation/OceanNavigation';
 import { OCEAFIN } from '../../design/tokens';
-import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
 import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
 
@@ -47,27 +47,9 @@ const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] =
 const hoje = () => { const data = new Date(); return { mes: data.getMonth() + 1, ano: data.getFullYear() }; };
 const mesAno = (mes: number, ano: number) => String(mes).padStart(2, '0') + '/' + ano;
 
-function NavButton({ pagina, ativa, onClick, compacto = false }: {
-  pagina: typeof PAGINAS[number]; ativa: boolean; onClick: () => void; compacto?: boolean;
-}) {
-  const s = useAccessibleStyles(base);
-  const { isDark } = useAccessibility();
-  return (
-    <Pressable onPress={onClick} accessibilityRole="button" accessibilityState={{ selected: ativa }}
-      accessibilityLabel={'Abrir ' + pagina.titulo}
-      style={[s.navButton, ativa && s.navActive, compacto && s.navCompact]}>
-      <WorkspaceIcon name={pagina.id} size={compacto ? 22 : 19}
-        color={ativa ? BRAND.ink : compacto ? (isDark ? '#CBD5E1' : '#645777') : '#D9CDEE'}/>
-      <Text numberOfLines={compacto ? 2 : 2}
-        style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive, compacto && ativa && isDark && s.navTextMobileDarkActive]}>{pagina.titulo}</Text>
-    </Pressable>
-  );
-}
-
 export function FinanceWorkspace() {
   const s = useAccessibleStyles(base);
   const notifications = useNotifications();
-  const { isDark } = useAccessibility();
   const account = useProfileSession();
   const accountName = account?.session.user.user_metadata?.full_name;
   const displayName = typeof accountName === 'string' && accountName.trim() ? accountName.trim() : (account?.session.user.email?.split('@')[0] || 'Usuário');
@@ -94,7 +76,6 @@ export function FinanceWorkspace() {
   const [plannerSnapshot,setPlannerSnapshot] = useState<PlannerData | null>(null);
   const [histLoading, setHistLoading] = useState(false);
   const [histError, setHistError] = useState('');
-  const [mostrarMais, setMostrarMais] = useState(false);
   const seq = useRef(0);
   const histSeq = useRef(0);
   const recurringRun = useRef<string>('');
@@ -177,7 +158,6 @@ export function FinanceWorkspace() {
   const irPara = (id: Aba) => {
     if (['painel','lancamentos','graficos','dados'].includes(id)) void carregar(true);
     notifications?.click();
-    setMostrarMais(false);
     setAba(id);
   };
   function selecionarPeriodo(mesNovo: number, anoNovo: number) {
@@ -357,7 +337,6 @@ export function FinanceWorkspace() {
     );
   };
 
-  const primarias = PAGINAS.filter(p => ['painel', 'lancamentos', 'graficos'].includes(p.id));
   const grupos = [
     { titulo: 'PRINCIPAL', ids: ['painel','lancamentos','graficos','dados'] },
     { titulo: 'ORGANIZAR', ids: ['contas','automacao','carteiras'] },
@@ -366,30 +345,8 @@ export function FinanceWorkspace() {
   ];
   return (
     <View style={s.root}>
-      {desktop && (
-        <View style={s.sidebar}>
-          <View style={s.sidebarBrandRow}>
-            <BrandMark size={40}/>
-            <View style={{ flex: 1 }}>
-              <Text style={s.brand}>{OCEAFIN.name.toLowerCase()}</Text>
-              <Text style={s.sidebarHint}>SEU DINHEIRO EM EQUILÍBRIO</Text>
-            </View>
-          </View>
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={s.sidebarSections}>
-            {grupos.map(grupo => (
-              <View key={grupo.titulo} style={s.sidebarGroup}>
-                <Text style={s.groupLabel}>{grupo.titulo}</Text>
-                {PAGINAS.filter(p => grupo.ids.includes(p.id)).map(p =>
-                  <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
-              </View>
-            ))}
-          </ScrollView>
-          <View style={s.sidebarFooter}>
-            <Text style={s.sidebarFooterTitle}>Menos complicação.</Text>
-            <Text style={s.sidebarFooterText}>Mais clareza no seu dia.</Text>
-          </View>
-        </View>
-      )}
+      {desktop && <OceanSidebar pages={PAGINAS} groups={grupos}
+        active={aba} onNavigate={irPara} />}
       <View style={s.main}>
         <ScrollView style={s.scroll} contentContainerStyle={[s.content, { maxWidth: desktop ? 1180 : 740 }, !desktop && s.contentMobile]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void carregar(true)} />}>
@@ -436,22 +393,8 @@ export function FinanceWorkspace() {
             <Text style={s.successText}>{sucesso}  ×</Text></Pressable> : null}
           {conteudo()}
         </ScrollView>
-        {!desktop && (
-          <View style={s.bottom}>
-            {primarias.map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} compacto />)}
-            <Pressable onPress={() => setMostrarMais(v => !v)} accessibilityRole="button" accessibilityLabel="Abrir outras áreas"
-              style={s.moreButton}><Text style={s.moreDots}>•••</Text><Text style={s.moreText}>Mais</Text></Pressable>
-          </View>
-        )}
-        {!desktop && mostrarMais && (
-          <View style={s.moreMenu}>
-            <ScrollView style={{ maxHeight: 370 }} contentContainerStyle={{ gap: 5 }}>
-              <Text style={s.groupLabel}>TODAS AS ÁREAS</Text>
-              {PAGINAS.filter(p => !primarias.includes(p)).map(p =>
-                <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
-            </ScrollView>
-          </View>
-        )}
+        {!desktop && <OceanBottomNavigation pages={PAGINAS}
+          active={aba} onNavigate={irPara} />}
       </View>
     </View>
   );
