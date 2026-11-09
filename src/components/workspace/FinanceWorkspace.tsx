@@ -46,7 +46,7 @@ function NavButton({ pagina, ativa, onClick, compacto = false }: {
       accessibilityLabel={'Abrir ' + pagina.titulo}
       style={[s.navButton, ativa && s.navActive, compacto && s.navCompact]}>
       <Text style={[s.navIcon, ativa && s.navIconActive]}>{pagina.simbolo}</Text>
-      <Text numberOfLines={compacto ? 1 : 2} style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive]}>{pagina.titulo}</Text>
+      <Text numberOfLines={compacto ? 2 : 2} style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive]}>{pagina.titulo}</Text>
     </Pressable>
   );
 }
@@ -129,10 +129,12 @@ export function FinanceWorkspace() {
     setMostrarMais(false);
     setAba(id);
   };
-  function trocarPeriodo(delta: number) {
-    const p = new Date(ano, mes - 1 + delta, 1);
-    setMes(p.getMonth() + 1); setAno(p.getFullYear());
+  function selecionarPeriodo(mesNovo: number, anoNovo: number) {
+    if (mesNovo === mes && anoNovo === ano) return;
+    setMes(mesNovo);
+    setAno(anoNovo);
     setEditando(null);
+    setSucesso('');
   }
   async function salvar(input: LancamentoInput) {
     setSaving(true); setErro('');
@@ -219,7 +221,7 @@ export function FinanceWorkspace() {
         <View style={s.quickGrid}>
           {PAGINAS.filter(p => p.id !== 'painel').map(p => (
             <Pressable key={p.id} onPress={() => irPara(p.id)} accessibilityRole="button"
-              style={[s.quickCard, { minWidth: desktop ? 210 : 145 }]}>
+              style={[s.quickCard, !desktop && s.quickCardMobile]}>
               <Text style={s.quickIcon}>{p.simbolo}</Text>
               <Text style={s.quickTitle}>{p.titulo}</Text>
               <Text style={s.muted}>{p.detalhe}</Text>
@@ -240,7 +242,7 @@ export function FinanceWorkspace() {
     );
   };
 
-  const primarias = PAGINAS.filter(p => ['painel', 'lancamentos', 'graficos', 'dados'].includes(p.id));
+  const primarias = PAGINAS.filter(p => ['painel', 'lancamentos', 'graficos'].includes(p.id));
   return (
     <View style={s.root}>
       {desktop && (
@@ -253,12 +255,12 @@ export function FinanceWorkspace() {
         </View>
       )}
       <View style={s.main}>
-        <ScrollView style={s.scroll} contentContainerStyle={[s.content, { maxWidth: desktop ? 1180 : 740 }]}
+        <ScrollView style={s.scroll} contentContainerStyle={[s.content, { maxWidth: desktop ? 1180 : 740 }, !desktop && s.contentMobile]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void carregar(true)} />}>
-          <View style={s.header}>
-            <View style={s.headerCopy}>
+          <View style={[s.header, !desktop && s.headerMobile]}>
+            <View style={[s.headerCopy, !desktop && s.headerCopyMobile]}>
               <Text style={s.overline}>FINANCEIRO · {page.titulo.toUpperCase()}</Text>
-              <Text style={s.appName}>{desktop ? 'Bem-vindo ao seu Financeiro' : 'Financeiro'}</Text>
+              <Text style={[s.appName, !desktop && s.appNameMobile]}>{desktop ? 'Bem-vindo ao seu Financeiro' : 'Financeiro'}</Text>
             </View>
             <View style={s.headerActions}>
               <NotificationCenter />
@@ -271,7 +273,7 @@ export function FinanceWorkspace() {
               <Text style={s.muted}>{page.detalhe}</Text>
             </View>
           )}
-          {mostrarFiltroPeriodo && <PeriodSelector mes={mes} ano={ano} onAnterior={() => trocarPeriodo(-1)} onProximo={() => trocarPeriodo(1)} />}
+          {mostrarFiltroPeriodo && <PeriodSelector mes={mes} ano={ano} onSelecionar={selecionarPeriodo} />}
           {erro ? <View style={s.notice}><Text style={s.error} accessibilityLiveRegion="assertive">{erro}</Text>
             <Pressable onPress={() => void carregar()} style={s.link}><Text style={s.linkText}>Tentar novamente</Text></Pressable></View> : null}
           {sucesso ? <Pressable onPress={() => setSucesso('')} style={s.success} accessibilityRole="button" accessibilityLabel="Fechar mensagem de sucesso">
@@ -307,16 +309,20 @@ const base = StyleSheet.create({
   navIconActive: { color: '#6D28D9' },
   navText: { color: '#E2E8F0', fontSize: 13, fontWeight: '700', flexShrink: 1 },
   navTextActive: { color: '#5B21B6' },
-  navTextMobile: { color: '#374151', fontSize: 10, textAlign: 'center' },
+  navTextMobile: { color: '#374151', fontSize: 10, textAlign: 'center', flexShrink: 1, lineHeight: 13 },
   navCompact: { flex: 1, flexDirection: 'column', gap: 1, paddingHorizontal: 1, minHeight: 56, justifyContent: 'center' },
   main: { flex: 1 },
   scroll: { flex: 1 },
   content: { width: '100%', alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 24, paddingBottom: 92, gap: 20 },
+  contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 28, gap: 14 },
   header: { flexDirection: 'row', gap: 10, justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
+  headerMobile: { flexWrap: 'nowrap', gap: 5 },
   headerCopy: { gap: 3, flexShrink: 1 },
+  headerCopyMobile: { flex: 1, minWidth: 0 },
   headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   overline: { color: '#6D28D9', fontWeight: '800', fontSize: 10, letterSpacing: 1 },
   appName: { color: '#111827', fontWeight: '900', fontSize: 25 },
+  appNameMobile: { fontSize: 20 },
   mobileHeading: { gap: 2 },
   section: { gap: 16 },
   title: { color: '#111827', fontWeight: '800', fontSize: 19 },
@@ -325,6 +331,7 @@ const base = StyleSheet.create({
   metricRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   quickCard: { flexGrow: 1, flexBasis: 210, gap: 7, backgroundColor: '#FFFFFF', borderRadius: 18, borderColor: '#ECE8F1', borderWidth: 1, padding: 17 },
+  quickCardMobile: { flexBasis: 138, minWidth: 0, padding: 13 },
   quickIcon: { fontSize: 24, fontWeight: '800', color: '#7C3AED' },
   quickTitle: { color: '#111827', fontSize: 15, fontWeight: '800' },
   list: { gap: 10 },
@@ -335,8 +342,8 @@ const base = StyleSheet.create({
   error: { color: '#B91C1C', fontSize: 13 },
   success: { backgroundColor: '#ECFDF5', borderRadius: 14, padding: 14 },
   successText: { color: '#047857', fontWeight: '700', fontSize: 13 },
-  bottom: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#ECE8F1', paddingHorizontal: 5, paddingBottom: 6, paddingTop: 5 },
+  bottom: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#ECE8F1', paddingHorizontal: 5, paddingBottom: 8, paddingTop: 6, alignItems: 'center' },
   moreButton: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 56 },
   moreText: { fontSize: 11, color: '#6B7280', fontWeight: '700' },
-  moreMenu: { position: 'absolute', bottom: 74, right: 12, width: 260, backgroundColor: '#27104D', borderRadius: 18, padding: 10, gap: 5, shadowColor: '#111827', shadowOpacity: .25, shadowRadius: 14, elevation: 9 },
+  moreMenu: { position: 'absolute', bottom: 76, right: 8, width: 260, maxWidth: '90%', backgroundColor: '#27104D', borderRadius: 18, padding: 10, gap: 5, shadowColor: '#111827', shadowOpacity: .25, shadowRadius: 14, elevation: 9 },
 });
