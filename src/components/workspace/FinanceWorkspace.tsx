@@ -26,6 +26,7 @@ import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
 import { BRAND, BrandMark, WorkspaceIcon, HeroSignature } from '../../design/brand';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
 import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
 
@@ -49,14 +50,15 @@ function NavButton({ pagina, ativa, onClick, compacto = false }: {
   pagina: typeof PAGINAS[number]; ativa: boolean; onClick: () => void; compacto?: boolean;
 }) {
   const s = useAccessibleStyles(base);
+  const { isDark } = useAccessibility();
   return (
     <Pressable onPress={onClick} accessibilityRole="button" accessibilityState={{ selected: ativa }}
       accessibilityLabel={'Abrir ' + pagina.titulo}
       style={[s.navButton, ativa && s.navActive, compacto && s.navCompact]}>
       <WorkspaceIcon name={pagina.id} size={compacto ? 22 : 19}
-        color={ativa ? BRAND.ink : compacto ? '#645777' : '#D9CDEE'}/>
+        color={ativa ? (compacto && isDark ? BRAND.lime : BRAND.ink) : compacto ? (isDark ? '#CBD5E1' : '#645777') : '#D9CDEE'}/>
       <Text numberOfLines={compacto ? 2 : 2}
-        style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive]}>{pagina.titulo}</Text>
+        style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive, compacto && ativa && isDark && s.navTextMobileDarkActive]}>{pagina.titulo}</Text>
     </Pressable>
   );
 }
@@ -64,6 +66,7 @@ function NavButton({ pagina, ativa, onClick, compacto = false }: {
 export function FinanceWorkspace() {
   const s = useAccessibleStyles(base);
   const notifications = useNotifications();
+  const { isDark } = useAccessibility();
   const account = useProfileSession();
   const accountName = account?.session.user.user_metadata?.full_name;
   const displayName = typeof accountName === 'string' && accountName.trim() ? accountName.trim() : (account?.session.user.email?.split('@')[0] || 'Usuário');
@@ -469,7 +472,7 @@ const base = StyleSheet.create({
   sectionHeadingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   quickIconBadge: { height: 43, width: 43, borderRadius: 14, backgroundColor: '#CBF28A', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   quickArrow: { color: '#6D28D9', fontSize: 12, fontWeight: '900', marginTop: 5 },
-  moreDots: { color: '#21143C', fontSize: 19, fontWeight: '900' },
+  moreDots: { color: '#111827', fontSize: 19, fontWeight: '900' },
 
   root: { flex: 1, flexDirection: 'row', backgroundColor: '#F7F5FA' },
   sidebar: { width: 244, backgroundColor: '#21143C', paddingTop: 25, paddingHorizontal: 14, gap: 6 },
@@ -482,7 +485,8 @@ const base = StyleSheet.create({
   navIconActive: { color: '#6D28D9' },
   navText: { color: '#EAE5F5', fontSize: 13, fontWeight: '700', flexShrink: 1 },
   navTextActive: { color: '#21143C' },
-  navTextMobile: { color: '#645777', fontSize: 10, textAlign: 'center', flexShrink: 1, lineHeight: 13 },
+  navTextMobile: { color: '#4B5563', fontSize: 10, textAlign: 'center', flexShrink: 1, lineHeight: 13 },
+  navTextMobileDarkActive: { color: '#CBF28A' },
   navCompact: { flex: 1, flexDirection: 'column', gap: 1, paddingHorizontal: 1, minHeight: 56, justifyContent: 'center' },
   main: { flex: 1, minWidth: 0 },
   scroll: { flex: 1, minWidth: 0 },
@@ -501,7 +505,7 @@ const base = StyleSheet.create({
   headerCopyMobile: { flex: 1, minWidth: 0 },
   headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   overline: { color: '#6D28D9', fontWeight: '900', fontSize: 10, letterSpacing: 1.5 },
-  appName: { color: '#21143C', fontWeight: '900', fontSize: 27, letterSpacing: -0.6 },
+  appName: { color: '#111827', fontWeight: '900', fontSize: 27, letterSpacing: -0.6 },
   appNameMobile: { fontSize: 20 },
   mobileHeading: { gap: 2 },
   section: { gap: 16 },
@@ -509,8 +513,8 @@ const base = StyleSheet.create({
   forecastItem: { flexDirection: 'row', gap: 8, justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#ECE8F1', paddingTop: 9 },
   forecastDone: { color: '#15803D', fontWeight: '800', fontSize: 12 },
   forecastPending: { color: '#7C3AED', fontWeight: '800', fontSize: 12 },
-  title: { color: '#21143C', fontWeight: '900', fontSize: 19, letterSpacing: -0.3 },
-  heading: { color: '#21143C', fontWeight: '900', fontSize: 28, letterSpacing: -0.7 },
+  title: { color: '#111827', fontWeight: '900', fontSize: 19, letterSpacing: -0.3 },
+  heading: { color: '#111827', fontWeight: '900', fontSize: 28, letterSpacing: -0.7 },
   muted: { color: '#6B7280', fontSize: 12, lineHeight: 18 },
   metricRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   heroRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
@@ -523,7 +527,7 @@ const base = StyleSheet.create({
   quickCard: { flexGrow: 1, flexBasis: 210, gap: 7, backgroundColor: '#FFFFFF', borderRadius: 21, borderColor: '#E6E0EC', borderWidth: 1, padding: 17, minHeight: 156 },
   quickCardMobile: { flexBasis: 138, minWidth: 0, padding: 13, minHeight: 148 },
   quickIcon: { fontSize: 24, fontWeight: '800', color: '#7C3AED' },
-  quickTitle: { color: '#21143C', fontSize: 15, fontWeight: '900' },
+  quickTitle: { color: '#111827', fontSize: 15, fontWeight: '900' },
   list: { gap: 10 },
   link: { minHeight: 43, justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 12 },
   linkText: { color: '#6D28D9', fontWeight: '800', fontSize: 13 },
