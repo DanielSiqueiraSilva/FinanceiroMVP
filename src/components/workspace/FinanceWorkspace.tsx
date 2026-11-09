@@ -1,0 +1,341 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet,
+  Text, View, useWindowDimensions,
+} from 'react-native';
+import type { Lancamento, LancamentoInput, ResumoFinanceiro } from '../../types/finance';
+import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
+import { useNotifications } from '../../notifications/NotificationsContext';
+import { ProfileCard } from '../auth/ProfileCard';
+import { AccountSettings } from '../auth/AccountSettings';
+import { NotificationCenter } from '../notifications/NotificationCenter';
+import { MonthlyOverview } from '../finance/MonthlyOverview';
+import { PaymentReminders } from '../finance/PaymentReminders';
+import { PeriodSelector } from '../finance/PeriodSelector';
+import { TransactionForm } from '../finance/TransactionForm';
+import { TransactionItem } from '../finance/TransactionItem';
+import { ExpensePieChart } from '../finance/ExpensePieChart';
+import { SharedWallets } from '../shared/SharedWallets';
+import {
+  atualizarLancamento, buscarLimite, buscarResumo, criarLancamento,
+  excluirLancamento, listarLancamentos, salvarLimite,
+} from '../../services/finance-api';
+import { ChartsArea, Metric, moeda, type MesAnalise } from './FinanceVisuals';
+import { DataArea } from './DataArea';
+import { FuturePlans } from './FuturePlans';
+
+type Aba = 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'planos' | 'carteiras' | 'configuracoes';
+const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] = [
+  { id: 'painel', titulo: 'Painel', simbolo: '⌂', detalhe: 'Resumo e atalhos' },
+  { id: 'lancamentos', titulo: 'Lançamentos', simbolo: '+', detalhe: 'Receitas e despesas' },
+  { id: 'graficos', titulo: 'Gráficos', simbolo: '▥', detalhe: 'Evolução financeira' },
+  { id: 'dados', titulo: 'Dados', simbolo: '▤', detalhe: 'Filtros e exportação' },
+  { id: 'planos', titulo: 'Planos Futuros', simbolo: '◎', detalhe: 'Simule suas metas' },
+  { id: 'carteiras', titulo: 'Carteiras Compartilhadas', simbolo: '♧', detalhe: 'Finanças em conjunto' },
+  { id: 'configuracoes', titulo: 'Configurações', simbolo: '⚙', detalhe: 'Sua conta e preferências' },
+];
+const hoje = () => { const data = new Date(); return { mes: data.getMonth() + 1, ano: data.getFullYear() }; };
+const mesAno = (mes: number, ano: number) => String(mes).padStart(2, '0') + '/' + ano;
+
+function NavButton({ pagina, ativa, onClick, compacto = false }: {
+  pagina: typeof PAGINAS[number]; ativa: boolean; onClick: () => void; compacto?: boolean;
+}) {
+  const s = useAccessibleStyles(base);
+  return (
+    <Pressable onPress={onClick} accessibilityRole="button" accessibilityState={{ selected: ativa }}
+      accessibilityLabel={'Abrir ' + pagina.titulo}
+      style={[s.navButton, ativa && s.navActive, compacto && s.navCompact]}>
+      <Text style={[s.navIcon, ativa && s.navIconActive]}>{pagina.simbolo}</Text>
+      <Text numberOfLines={compacto ? 1 : 2} style={[s.navText, ativa && s.navTextActive]}>{pagina.titulo}</Text>
+    </Pressable>
+  );
+}
+
+export function FinanceWorkspace() {
+  const s = useAccessibleStyles(base);
+  const notifications = useNotifications();
+  const { width } = useWindowDimensions();
+  const desktop = width >= 900;
+  const initial = useMemo(hoje, []);
+  const [aba, setAba] = useState<Aba>('painel');
+  const [mes, setMes] = useState(initial.mes);
+  const [ano, setAno] = useState(initial.ano);
+  const [lista, setLista] = useState<Lancamento[]>([]);
+  const [resumo, setResumo] = useState<ResumoFinanceiro | null>(null);
+  const [limite, setLimite] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savingLimit, setSavingLimit] = useState(false);
+  const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState('');
+  const [editando, setEditando] = useState<Lancamento | null>(null);
+  const [historico, setHistorico] = useState<MesAnalise[]>([]);
+  const [histLoading, setHistLoading] = useState(false);
+  const [histError, setHistError] = useState('');
+  const [mostrarMais, setMostrarMais] = useState(false);
+  const seq = useRef(0);
+  const histSeq = useRef(0);
+  const mounted = useRef(true);
+
+  useEffect(() => () => { mounted.current = false; seq.current++; histSeq.current++; }, []);
+
+  const carregar = useCallback(async (refresh = false) => {
+    const id = ++seq.current;
+    refresh ? setRefreshing(true) : setLoading(true);
+    setErro('');
+    try {
+      const [dados, total, teto] = await Promise.all([
+        listarLancamentos(mes, ano),
+        buscarResumo(mes, ano),
+        buscarLimite(mes, ano),
+      ]);
+      if (!mounted.current || id !== seq.current) return;
+      setLista(dados); setResumo(total); setLimite(teto.valor ?? 0);
+    } catch (e) {
+      if (mounted.current && id === seq.current) setErro(e instanceof Error ? e.message : 'Erro ao carregar as finanças.');
+    } finally {
+      if (mounted.current && id === seq.current) { setLoading(false); setRefreshing(false); }
+    }
+  }, [mes, ano]);
+
+  useEffect(() => { void carregar(); }, [carregar]);
+
+  useEffect(() => {
+    if (aba !== 'graficos') return;
+    const id = ++histSeq.current;
+    setHistLoading(true); setHistError('');
+    const periodos = Array.from({ length: 6 }, (_, i) => {
+      const date = new Date(ano, mes - 1 - (5 - i), 1);
+      return { mes: date.getMonth() + 1, ano: date.getFullYear() };
+    });
+    void Promise.all(periodos.map(async p => ({
+      ...p, resumo: await buscarResumo(p.mes, p.ano),
+    }))).then(items => {
+      if (mounted.current && id === histSeq.current) setHistorico(items);
+    }).catch(e => {
+      if (mounted.current && id === histSeq.current) {
+        setHistorico([]);
+        setHistError(e instanceof Error ? e.message : 'Não foi possível carregar o histórico.');
+      }
+    }).finally(() => {
+      if (mounted.current && id === histSeq.current) setHistLoading(false);
+    });
+    return () => { histSeq.current++; };
+  }, [aba, mes, ano]);
+
+  const irPara = (id: Aba) => {
+    notifications?.click();
+    setMostrarMais(false);
+    setAba(id);
+  };
+  function trocarPeriodo(delta: number) {
+    const p = new Date(ano, mes - 1 + delta, 1);
+    setMes(p.getMonth() + 1); setAno(p.getFullYear());
+    setEditando(null);
+  }
+  async function salvar(input: LancamentoInput) {
+    setSaving(true); setErro('');
+    try {
+      if (editando) await atualizarLancamento(editando.id, input);
+      else await criarLancamento(input);
+      setEditando(null);
+      await carregar();
+      setSucesso('Lançamento salvo com sucesso.');
+      notifications?.feedback('success', 'Operação concluída', 'Lançamento salvo.');
+    } catch (e) {
+      const text = e instanceof Error ? e.message : 'Falha ao salvar lançamento.';
+      setErro(text); notifications?.feedback('warning', 'Erro', text);
+      throw e;
+    } finally { setSaving(false); }
+  }
+  async function remover(id: string) {
+    setErro('');
+    try {
+      await excluirLancamento(id);
+      if (editando?.id === id) setEditando(null);
+      await carregar();
+      setSucesso('Lançamento excluído.');
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Não foi possível excluir.');
+    }
+  }
+  async function atualizarLimite(valor: number) {
+    setSavingLimit(true); setErro('');
+    try {
+      const result = await salvarLimite(mes, ano, valor);
+      setLimite(result.valor);
+      setSucesso('Limite atualizado.');
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Erro ao atualizar limite.');
+      throw e;
+    } finally { setSavingLimit(false); }
+  }
+  const maiores = useMemo(() => {
+    const despesas = lista.filter(l => l.tipo === 'despesa');
+    const maior = despesas.reduce<Lancamento | null>((r, v) => !r || v.valor > r.valor ? v : r, null);
+    const porCategoria: Record<string, number> = {};
+    despesas.forEach(l => { porCategoria[l.categoria] = (porCategoria[l.categoria] ?? 0) + l.valor; });
+    const categoria = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
+    return { maior, categoria };
+  }, [lista]);
+  const page = PAGINAS.find(p => p.id === aba) || PAGINAS[0];
+  const mostrarFiltroPeriodo = aba === 'painel' || aba === 'lancamentos' || aba === 'graficos' || aba === 'dados';
+
+  const conteudo = () => {
+    if (aba === 'configuracoes') return <AccountSettings onBack={() => irPara('painel')} />;
+    if (aba === 'carteiras') return <SharedWallets />;
+    if (aba === 'planos') return <FuturePlans />;
+    if (loading) return <View style={s.loading}><ActivityIndicator size="large" color="#7C3AED" /><Text style={s.muted}>Carregando seus dados...</Text></View>;
+    if (aba === 'graficos') return histLoading ? <View style={s.loading}><ActivityIndicator color="#7C3AED" /><Text style={s.muted}>Carregando histórico...</Text></View> :
+      histError ? <Text style={s.error}>{histError}</Text> : <ChartsArea meses={historico} lancamentos={lista} />;
+    if (aba === 'dados') return <DataArea lancamentos={lista} periodo={mesAno(mes, ano)} />;
+    if (aba === 'lancamentos') return (
+      <View style={s.section}>
+        <Text style={s.heading}>Lançamentos</Text>
+        <Text style={s.muted}>Cadastre, edite e organize suas receitas e despesas em {mesAno(mes, ano)}.</Text>
+        <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo')} mes={mes} ano={ano}
+          lancamentoEmEdicao={editando} salvando={saving} onSalvar={salvar}
+          onCancelarEdicao={() => setEditando(null)} />
+        <Text style={s.title}>Movimentações do mês ({lista.length})</Text>
+        {!lista.length ? <Text style={s.muted}>Ainda não há lançamentos nesse mês.</Text> : (
+          <View style={s.list}>{[...lista].sort((a, b) => b.data.localeCompare(a.data)).map(l => (
+            <TransactionItem key={l.id} lancamento={l} onEditar={setEditando} onExcluir={remover} />
+          ))}</View>
+        )}
+      </View>
+    );
+    return (
+      <View style={s.section}>
+        <Text style={s.heading}>Seu painel financeiro</Text>
+        <Text style={s.muted}>Uma visão rápida das suas finanças no mês e atalhos para as áreas do app.</Text>
+        <View style={s.metricRow}>
+          <Metric titulo="Resultado do mês" valor={moeda(resumo?.saldo ?? 0)} />
+          <Metric titulo="Receitas" valor={moeda(resumo?.totalReceitas ?? 0)} />
+          <Metric titulo="Despesas" valor={moeda(resumo?.totalDespesas ?? 0)} />
+          <Metric titulo="Lançamentos" valor={String(resumo?.quantidadeLancamentos ?? 0)} />
+        </View>
+        <Text style={s.title}>Acesso rápido</Text>
+        <View style={s.quickGrid}>
+          {PAGINAS.filter(p => p.id !== 'painel').map(p => (
+            <Pressable key={p.id} onPress={() => irPara(p.id)} accessibilityRole="button"
+              style={[s.quickCard, { minWidth: desktop ? 210 : 145 }]}>
+              <Text style={s.quickIcon}>{p.simbolo}</Text>
+              <Text style={s.quickTitle}>{p.titulo}</Text>
+              <Text style={s.muted}>{p.detalhe}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <MonthlyOverview totalDespesas={resumo?.totalDespesas ?? 0} limite={limite} salvando={savingLimit} onSalvarLimite={atualizarLimite} />
+        <PaymentReminders month={mes} year={ano} />
+        <View style={s.metricRow}>
+          <Metric titulo="Maior despesa" valor={maiores.maior ? moeda(maiores.maior.valor) : '—'} detalhe={maiores.maior?.descricao} />
+          <Metric titulo="Categoria com maior gasto" valor={maiores.categoria ? maiores.categoria[0] : '—'} detalhe={maiores.categoria ? moeda(maiores.categoria[1]) : 'Sem despesas'} />
+        </View>
+        <ExpensePieChart lancamentos={lista} />
+        <Pressable onPress={() => irPara('graficos')} style={s.link} accessibilityRole="button">
+          <Text style={s.linkText}>Explorar gráficos e tendências →</Text>
+        </Pressable>
+      </View>
+    );
+  };
+
+  const primarias = PAGINAS.filter(p => ['painel', 'lancamentos', 'graficos', 'dados'].includes(p.id));
+  return (
+    <View style={s.root}>
+      {desktop && (
+        <View style={s.sidebar}>
+          <Text style={s.brand}>◫  Financeiro</Text>
+          <Text style={s.sidebarHint}>Seu espaço financeiro</Text>
+          <View style={s.navList}>
+            {PAGINAS.map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+          </View>
+        </View>
+      )}
+      <View style={s.main}>
+        <ScrollView style={s.scroll} contentContainerStyle={[s.content, { maxWidth: desktop ? 1180 : 740 }]}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void carregar(true)} />}>
+          <View style={s.header}>
+            <View style={s.headerCopy}>
+              <Text style={s.overline}>FINANCEIRO · {page.titulo.toUpperCase()}</Text>
+              <Text style={s.appName}>{desktop ? 'Bem-vindo ao seu Financeiro' : 'Financeiro'}</Text>
+            </View>
+            <View style={s.headerActions}>
+              <NotificationCenter />
+              <ProfileCard onOpenSettings={() => irPara('configuracoes')} />
+            </View>
+          </View>
+          {!desktop && (
+            <View style={s.mobileHeading}>
+              <Text style={s.title}>{page.titulo}</Text>
+              <Text style={s.muted}>{page.detalhe}</Text>
+            </View>
+          )}
+          {mostrarFiltroPeriodo && <PeriodSelector mes={mes} ano={ano} onAnterior={() => trocarPeriodo(-1)} onProximo={() => trocarPeriodo(1)} />}
+          {erro ? <View style={s.notice}><Text style={s.error} accessibilityLiveRegion="assertive">{erro}</Text>
+            <Pressable onPress={() => void carregar()} style={s.link}><Text style={s.linkText}>Tentar novamente</Text></Pressable></View> : null}
+          {sucesso ? <Pressable onPress={() => setSucesso('')} style={s.success} accessibilityRole="button" accessibilityLabel="Fechar mensagem de sucesso">
+            <Text style={s.successText}>{sucesso}  ×</Text></Pressable> : null}
+          {conteudo()}
+        </ScrollView>
+        {!desktop && (
+          <View style={s.bottom}>
+            {primarias.map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} compacto />)}
+            <Pressable onPress={() => setMostrarMais(v => !v)} accessibilityRole="button" accessibilityLabel="Abrir outras áreas"
+              style={s.moreButton}><Text style={s.navIcon}>•••</Text><Text style={s.moreText}>Mais</Text></Pressable>
+          </View>
+        )}
+        {!desktop && mostrarMais && (
+          <View style={s.moreMenu}>
+            {PAGINAS.filter(p => !primarias.includes(p)).map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const base = StyleSheet.create({
+  root: { flex: 1, flexDirection: 'row', backgroundColor: '#F7F5FA' },
+  sidebar: { width: 235, backgroundColor: '#27104D', paddingTop: 28, paddingHorizontal: 12, gap: 6 },
+  brand: { fontSize: 23, fontWeight: '900', color: '#FFFFFF', marginBottom: 8, paddingHorizontal: 12 },
+  sidebarHint: { color: '#C4B5FD', fontSize: 12, paddingHorizontal: 12, marginBottom: 18 },
+  navList: { gap: 5 },
+  navButton: { flexDirection: 'row', gap: 10, borderRadius: 12, paddingHorizontal: 14, minHeight: 47, alignItems: 'center' },
+  navActive: { backgroundColor: '#EDE9FE' },
+  navIcon: { color: '#A78BFA', fontSize: 20, fontWeight: '800', minWidth: 24, textAlign: 'center' },
+  navIconActive: { color: '#6D28D9' },
+  navText: { color: '#E2E8F0', fontSize: 13, fontWeight: '700', flexShrink: 1 },
+  navTextActive: { color: '#5B21B6' },
+  navCompact: { flex: 1, flexDirection: 'column', gap: 1, paddingHorizontal: 1, minHeight: 56, justifyContent: 'center' },
+  main: { flex: 1 },
+  scroll: { flex: 1 },
+  content: { width: '100%', alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 24, paddingBottom: 92, gap: 20 },
+  header: { flexDirection: 'row', gap: 10, justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
+  headerCopy: { gap: 3, flexShrink: 1 },
+  headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  overline: { color: '#6D28D9', fontWeight: '800', fontSize: 10, letterSpacing: 1 },
+  appName: { color: '#111827', fontWeight: '900', fontSize: 25 },
+  mobileHeading: { gap: 2 },
+  section: { gap: 16 },
+  title: { color: '#111827', fontWeight: '800', fontSize: 19 },
+  heading: { color: '#111827', fontWeight: '900', fontSize: 25 },
+  muted: { color: '#6B7280', fontSize: 12, lineHeight: 18 },
+  metricRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  quickCard: { flexGrow: 1, flexBasis: 210, gap: 7, backgroundColor: '#FFFFFF', borderRadius: 18, borderColor: '#ECE8F1', borderWidth: 1, padding: 17 },
+  quickIcon: { fontSize: 24, fontWeight: '800', color: '#7C3AED' },
+  quickTitle: { color: '#111827', fontSize: 15, fontWeight: '800' },
+  list: { gap: 10 },
+  link: { minHeight: 43, justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 12 },
+  linkText: { color: '#6D28D9', fontWeight: '800', fontSize: 13 },
+  loading: { gap: 12, paddingVertical: 50, alignItems: 'center' },
+  notice: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, gap: 7 },
+  error: { color: '#B91C1C', fontSize: 13 },
+  success: { backgroundColor: '#ECFDF5', borderRadius: 14, padding: 14 },
+  successText: { color: '#047857', fontWeight: '700', fontSize: 13 },
+  bottom: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#ECE8F1', paddingHorizontal: 5, paddingBottom: 6, paddingTop: 5 },
+  moreButton: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 56 },
+  moreText: { fontSize: 11, color: '#6B7280', fontWeight: '700' },
+  moreMenu: { position: 'absolute', bottom: 74, right: 12, width: 260, backgroundColor: '#27104D', borderRadius: 18, padding: 10, gap: 5, shadowColor: '#111827', shadowOpacity: .25, shadowRadius: 14, elevation: 9 },
+});
