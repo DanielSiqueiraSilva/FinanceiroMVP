@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useMemo, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import type { Lancamento, ResumoFinanceiro } from '../../types/finance';
@@ -58,8 +58,8 @@ export function TrendLine({ values, labels, title }: {
   values: number[]; labels: string[]; title: string;
 }) {
   const s = useAccessibleStyles(styles);
-  const { width } = useWindowDimensions();
-  const chartWidth = Math.max(240, Math.min(width > 800 ? 620 : width - 92, 620));
+  const [availableWidth, setAvailableWidth] = useState(320);
+  const chartWidth = Math.max(120, Math.min(620, availableWidth));
   const h = 180, pad = 16, safe = values.length ? values : [0];
   const low = Math.min(0, ...safe), high = Math.max(1, ...safe);
   const extent = Math.max(1, high - low);
@@ -69,7 +69,10 @@ export function TrendLine({ values, labels, title }: {
   }));
   const d = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(2) + ',' + p.y.toFixed(2)).join(' ');
   return (
-    <View style={s.card}>
+    <View style={s.card} onLayout={e => {
+      const measured = e.nativeEvent.layout.width - 34;
+      if (Math.abs(measured - availableWidth) > 2) setAvailableWidth(measured);
+    }}>
       <Text style={s.title}>{title}</Text>
       <View accessibilityLabel={title + ': ' + safe.map((v, i) => (labels[i] || i + 1) + ' ' + moeda(v)).join(', ')}>
         <Svg width={chartWidth} height={h} viewBox={'0 0 ' + chartWidth + ' ' + h}>
@@ -121,7 +124,7 @@ const styles = StyleSheet.create({
   section: { gap: 16 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   metric: { flexGrow: 1, flexBasis: 170, minWidth: 145, backgroundColor: '#FFFFFF', borderColor: '#ECE8F1', borderWidth: 1, borderRadius: 18, padding: 17, gap: 7 },
-  metricNumber: { fontSize: 22, fontWeight: '800', color: '#111827' },
+  metricNumber: { fontSize: 20, fontWeight: '800', color: '#111827', flexShrink: 1 },
   title: { color: '#111827', fontWeight: '800', fontSize: 18 },
   heading: { fontSize: 25, fontWeight: '900', color: '#111827' },
   subtle: { color: '#6B7280', fontSize: 12, lineHeight: 19 },
@@ -130,8 +133,8 @@ const styles = StyleSheet.create({
   barRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-around', alignItems: 'flex-end', gap: 4, minHeight: 157 },
   barSlot: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
   barGroup: { height: 136, flexDirection: 'row', alignItems: 'flex-end', gap: 3 },
-  barIncome: { backgroundColor: '#7C3AED', borderTopLeftRadius: 4, borderTopRightRadius: 4, width: 13 },
-  barExpense: { backgroundColor: '#3B82F6', borderTopLeftRadius: 4, borderTopRightRadius: 4, width: 13 },
+  barIncome: { backgroundColor: '#7C3AED', borderTopLeftRadius: 4, borderTopRightRadius: 4, width: 10 },
+  barExpense: { backgroundColor: '#3B82F6', borderTopLeftRadius: 4, borderTopRightRadius: 4, width: 10 },
   barLabel: { fontSize: 10, color: '#6B7280' },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
 });
