@@ -27,6 +27,7 @@ create table if not exists public.finance_goals (
   name text not null check (char_length(btrim(name)) between 2 and 90),
   target_amount numeric(14,2) not null check (target_amount > 0),
   saved_initial numeric(14,2) not null default 0 check (saved_initial >= 0),
+  active boolean not null default true,
   target_date date,
   created_at timestamptz not null default now(),
   unique (user_id,id)
