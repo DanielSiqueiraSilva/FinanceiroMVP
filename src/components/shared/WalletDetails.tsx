@@ -240,9 +240,9 @@ export function WalletDetails({
     finally { setLoadingOlder(false); }
   }
 
-  function moveMonth(delta: number) {
-    const date = new Date(year, month - 1 + delta, 1);
-    setMonth(date.getMonth() + 1); setYear(date.getFullYear());
+  function selectMonth(monthSelected: number, yearSelected: number) {
+    setMonth(monthSelected);
+    setYear(yearSelected);
     setEditing(null);
   }
 
@@ -347,7 +347,7 @@ export function WalletDetails({
         </View>
       ) : (
         <>
-          <PeriodSelector mes={month} ano={year} onAnterior={() => moveMonth(-1)} onProximo={() => moveMonth(1)} />
+          <PeriodSelector mes={month} ano={year} onSelecionar={selectMonth} />
           <TransactionForm key={String(editing?.id ?? 'new') + String(month) + String(year)}
             mes={month} ano={year}
             lancamentoEmEdicao={editing ? toPersonal(editing) : null}
