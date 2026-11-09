@@ -25,7 +25,7 @@ import { ChartsArea, Metric, moeda, type MesAnalise } from './FinanceVisuals';
 import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
-import { BrandMark, HeroSignature } from '../../design/brand';
+import { BRAND, BrandMark, HeroSignature, WorkspaceIcon } from '../../design/brand';
 import { OceanBottomNavigation, OceanSidebar } from '../navigation/OceanNavigation';
 import { OCEAFIN } from '../../design/tokens';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
