@@ -39,7 +39,7 @@ export function PlannerGoals({ data, month, year, refresh }: Props) {
   const [contributeId, setContributeId] = useState<string | null>(null);
   const [contributeAmount, setContributeAmount] = useState('');
   const [category, setCategory] = useState<string>('Alimentação');
-  const [budget, setBudget] = useState('');
+  const [budget, setBudgetInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -81,7 +81,7 @@ export function PlannerGoals({ data, month, year, refresh }: Props) {
     const amount = number(budget);
     if (!validMoney(amount)) { setError('Informe um orçamento positivo.'); return; }
     void run(() => setBudget(year, month, category, amount), 'Orçamento atualizado para o mês escolhido.');
-    setBudget('');
+    setBudgetInput('');
   }
 
   return <View style={s.section}>
@@ -139,10 +139,10 @@ export function PlannerGoals({ data, month, year, refresh }: Props) {
       <Text style={s.label}>Categoria</Text>
       <View style={s.row}>{CATEGORIAS.filter(c => c !== 'Salário').map(c => (
         <Chip key={c} label={c} active={category === c} press={() => {
-          setCategory(c); setBudget(data.budgets.find(b => b.category === c)?.amount.toString() || '');
+          setCategory(c); setBudgetInput(data.budgets.find(b => b.category === c)?.amount.toString() || '');
         }}/>
       ))}</View>
-      <Field label="Valor máximo planejado (R$)" value={budget} onChange={setBudget}/>
+      <Field label="Valor máximo planejado (R$)" value={budget} onChange={setBudgetInput}/>
       <Pressable accessibilityRole="button" disabled={busy} style={s.primary} onPress={saveBudget}>
         <Text style={s.primaryText}>Salvar orçamento do mês</Text>
       </Pressable>
