@@ -96,7 +96,7 @@ export function validarLancamento(body = {}) {
   const fields = { descricao, categoria, data, tipo, valor: Number(valor.toFixed(2)) };
   const hasAccount = Object.prototype.hasOwnProperty.call(body,'account_id');
   const hasCard = Object.prototype.hasOwnProperty.call(body,'card_id');
-  const uuid = /^[a-f\\d]{8}-[a-f\\d]{4}-[a-f\\d]{4}-[a-f\\d]{4}-[a-f\\d]{12}$/i;
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const accountId = body.account_id == null || body.account_id === '' ? null : String(body.account_id);
   const cardId = body.card_id == null || body.card_id === '' ? null : String(body.card_id);
   if ((accountId && !uuid.test(accountId)) || (cardId && !uuid.test(cardId)) ||
