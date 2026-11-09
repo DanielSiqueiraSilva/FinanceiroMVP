@@ -166,6 +166,15 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
       </View>
 
       <View style={styles.section}>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>Sessão</Text>
+        <Text style={styles.description}>Encerre seu acesso com segurança neste dispositivo.</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Sair da conta" style={styles.secondary}
+          onPress={() => void auth.signOut()}>
+          <Text style={styles.secondaryText}>Sair da conta</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.sectionTitle}>Excluir minha conta</Text>
         <Text style={styles.description}>
           A exclusão é definitiva e remove seu acesso, lançamentos, limites mensais e histórico
