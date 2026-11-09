@@ -77,14 +77,18 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
   const days = Array.from({ length: Math.ceil((maxDay + padding) / 7) * 7 }, (_, i) => i - padding + 1);
   const dailyEvents = selectedDay == null ? events : events.filter(e => e.day === selectedDay);
 
-  async function run(fn: () => Promise<void>, success: string | (() => string)) {
-    if (busy) return;
+  async function run(fn: () => Promise<void>, success: string | (() => string)): Promise<boolean> {
+    if (busy) return false;
     setBusy(true); setError(''); setMessage('');
-    try { await fn(); await refresh(); setMessage(typeof success === 'function' ? success() : success); }
-    catch(e){ setError(e instanceof Error ? e.message : 'Não foi possível concluir a ação.'); }
-    finally { setBusy(false); }
+    try {
+      await fn(); await refresh(); setMessage(typeof success === 'function' ? success() : success);
+      return true;
+    } catch(e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível concluir a ação.');
+      return false;
+    } finally { setBusy(false); }
   }
-  function add() {
+  async function add() {
     const price = Number(amount.replace(',', '.')), n = Number(day);
     if (description.trim().length < 2 || description.trim().length > 120 ||
       !Number.isFinite(price) || price <= 0 || price > 1e12 ||
@@ -94,9 +98,9 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
     }
     const account_id = source.startsWith('a:') ? source.slice(2) : null;
     const card_id = source.startsWith('c:') ? source.slice(2) : null;
-    void run(() => addRecurringRule({ description, category, kind, amount: price, day_of_month: n,
+    const created = await run(() => addRecurringRule({ description, category, kind, amount: price, day_of_month: n,
       start_month: monthStart, account_id, card_id }), 'Recorrência cadastrada. Ela aparece como previsão e será registrada após a data programada.');
-    setDescription(''); setAmount('');
+    if (created) { setDescription(''); setAmount(''); }
   }
   async function generate() {
     if (future) return;
@@ -119,7 +123,7 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
       <Text style={s.title}>Novo lançamento recorrente</Text>
       <View style={s.row}>
         <Chip label="Despesa mensal" active={kind === 'despesa'} onPress={() => setKind('despesa')}/>
-        <Chip label="Receita mensal" active={kind === 'receita'} onPress={() => setKind('receita')}/>
+        <Chip label="Receita mensal" active={kind === 'receita'} onPress={() => { setKind('receita'); if (source.startsWith('c:')) setSource(''); }}/>
       </View>
       <View style={s.fields}>
         <View style={s.wide}><Field label="Descrição (ex.: internet)" value={description} change={setDescription}/></View>
@@ -134,9 +138,9 @@ export function PlannerAutomation({ data, month, year, refresh }: Props) {
       <View style={s.row}>
         <Chip label="Nenhum" active={!source} onPress={() => setSource('')}/>
         {data.accounts.filter(a => a.active).map(a => <Chip key={a.id} label={a.name} active={source === 'a:' + a.id} onPress={() => setSource('a:' + a.id)}/>)}
-        {data.cards.filter(c => c.active).map(c => <Chip key={c.id} label={c.name} active={source === 'c:' + c.id} onPress={() => setSource('c:' + c.id)}/>)}
+        {kind === 'despesa' && data.cards.filter(c => c.active).map(c => <Chip key={c.id} label={c.name} active={source === 'c:' + c.id} onPress={() => setSource('c:' + c.id)}/>)}
       </View>
-      <Pressable style={s.primary} accessibilityRole="button" disabled={busy} onPress={add}>
+      <Pressable style={s.primary} accessibilityRole="button" disabled={busy} onPress={() => void add()}>
         <Text style={s.primaryText}>Cadastrar recorrência</Text>
       </Pressable>
       <Text style={s.muted}>Início: mês selecionado ({String(month).padStart(2,'0')}/{year}). Para meses com menos dias, o dia 29, 30 ou 31 é ajustado ao último dia do mês.</Text>
