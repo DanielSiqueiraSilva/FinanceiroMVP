@@ -7,8 +7,8 @@ import { PlannerAutomation } from './PlannerAutomation';
 import { PlannerGoals } from './PlannerGoals';
 
 type Section = 'accounts' | 'automation' | 'goals';
-export function PlannerCenter({ section, month, year }: {
-  section: Section; month: number; year: number;
+export function PlannerCenter({ section, month, year, onUpdated }: {
+  section: Section; month: number; year: number; onUpdated?: () => void;
 }) {
   const s = useAccessibleStyles(styles);
   const [data, setData] = useState<PlannerData | null>(null);
@@ -22,7 +22,7 @@ export function PlannerCenter({ section, month, year }: {
     setError('');
     try {
       const result = await loadPlanner(month, year);
-      if (mounted.current && id === seq.current) setData(result);
+      if (mounted.current && id === seq.current) { setData(result); onUpdated?.(); }
     } catch(e) {
       if (mounted.current && id === seq.current) setError(e instanceof Error ? e.message : 'Não foi possível consultar o planejamento.');
     } finally {
