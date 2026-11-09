@@ -34,6 +34,7 @@ export type AccountOverview = {
 export type CardOverview = {
   card_id: string; purchases_total: number; payments_total: number; unpaid_total: number;
 };
+export type RecurringPost = { rule_id: string; transaction_id: string; month_start: string };
 export type PlannerTransaction = {
   id: string; user_id: string; tipo: MoneyType; valor: number;
   descricao: string; categoria: string; data: string;
@@ -43,7 +44,7 @@ export type PlannerData = {
   accounts: FinanceAccount[]; cards: FinanceCard[]; goals: FinanceGoal[];
   contributions: GoalContribution[]; budgets: FinanceBudget[];
   rules: RecurringRule[]; transactions: PlannerTransaction[];
-  accountOverview: AccountOverview[]; cardOverview: CardOverview[];
+  accountOverview: AccountOverview[]; cardOverview: CardOverview[]; posts: RecurringPost[];
 };
 
 const check = (error: { message?: string } | null) => {
@@ -71,7 +72,7 @@ export async function loadPlanner(month: number, year: number): Promise<PlannerD
   const start = monthIso(month, year);
   const end = monthIso(month === 12 ? 1 : month + 1, month === 12 ? year + 1 : year);
   // RLS applies to each request; explicit user_id filters also reduce bandwidth.
-  const [a, c, g, gc, b, rr, t, ao, co] = await Promise.all([
+  const [a, c, g, gc, b, rr, t, ao, co, posts] = await Promise.all([
     supabaseAuth.from('finance_accounts').select('*').eq('user_id', uid).order('name'),
     supabaseAuth.from('finance_cards').select('*').eq('user_id', uid).order('name'),
     supabaseAuth.from('finance_goals').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
@@ -82,8 +83,10 @@ export async function loadPlanner(month: number, year: number): Promise<PlannerD
       .eq('user_id', uid).gte('data', start).lt('data', end).order('data', { ascending: false }).limit(1500),
     supabaseAuth.rpc('finance_account_overview'),
     supabaseAuth.rpc('finance_card_overview'),
+    supabaseAuth.from('finance_recurring_posts').select('rule_id,transaction_id,month_start')
+      .eq('user_id', uid).eq('month_start',start),
   ]);
-  for (const result of [a, c, g, gc, b, rr, t, ao, co]) check(result.error);
+  for (const result of [a, c, g, gc, b, rr, t, ao, co, posts]) check(result.error);
   return {
     accounts: (a.data || []) as FinanceAccount[],
     cards: (c.data || []) as FinanceCard[],
@@ -94,6 +97,7 @@ export async function loadPlanner(month: number, year: number): Promise<PlannerD
     transactions: (t.data || []) as PlannerTransaction[],
     accountOverview: (ao.data || []) as AccountOverview[],
     cardOverview: (co.data || []) as CardOverview[],
+    posts: (posts.data || []) as RecurringPost[],
   };
 }
 async function insertRecord(table: string, record: Record<string, unknown>) {
