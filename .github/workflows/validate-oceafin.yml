@@ -23,7 +23,7 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit
       - name: Lint Oceafin design foundation
-        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx src/components/dashboard/OceanDashboard.tsx src/components/dashboard/dashboard-data.ts
+        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx src/components/dashboard/OceanDashboard.tsx src/components/dashboard/dashboard-data.ts src/components/workspace/finance-flow-validation.ts
       - name: Legacy full-repository lint audit (non-blocking)
         continue-on-error: true
         run: npm run lint
@@ -31,5 +31,7 @@ jobs:
         run: node --test backend/tests/*.test.mjs
       - name: Dashboard selector tests
         run: node --experimental-strip-types --test tools/tests/oceafin-dashboard.test.mjs
+      - name: Financial flow validation tests
+        run: node --experimental-strip-types --test tools/tests/oceafin-finance-flow.test.mjs
       - name: Expo Web build
         run: npm run build:web
