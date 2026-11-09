@@ -24,13 +24,18 @@ import {
 import { ChartsArea, Metric, moeda, type MesAnalise } from './FinanceVisuals';
 import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
+import { PlannerCenter } from './PlannerCenter';
+import { applyMonthlyRecurring } from '../../services/finance-planner';
 
-type Aba = 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'planos' | 'carteiras' | 'configuracoes';
+type Aba = 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'planos' | 'carteiras' | 'configuracoes' | 'automacao' | 'contas' | 'metas';
 const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] = [
   { id: 'painel', titulo: 'Painel', simbolo: '⌂', detalhe: 'Resumo e atalhos' },
   { id: 'lancamentos', titulo: 'Lançamentos', simbolo: '+', detalhe: 'Receitas e despesas' },
   { id: 'graficos', titulo: 'Gráficos', simbolo: '▥', detalhe: 'Evolução financeira' },
   { id: 'dados', titulo: 'Dados', simbolo: '▤', detalhe: 'Filtros e exportação' },
+  { id: 'automacao', titulo: 'Automação e calendário', simbolo: '▦', detalhe: 'Recorrências e vencimentos' },
+  { id: 'contas', titulo: 'Contas e cartões', simbolo: '▣', detalhe: 'Organize suas contas' },
+  { id: 'metas', titulo: 'Metas e orçamento', simbolo: '◎', detalhe: 'Objetivos e análises' },
   { id: 'planos', titulo: 'Planos Futuros', simbolo: '◎', detalhe: 'Simule suas metas' },
   { id: 'carteiras', titulo: 'Carteiras Compartilhadas', simbolo: '♧', detalhe: 'Finanças em conjunto' },
   { id: 'configuracoes', titulo: 'Configurações', simbolo: '⚙', detalhe: 'Sua conta e preferências' },
@@ -81,6 +86,7 @@ export function FinanceWorkspace() {
   const [mostrarMais, setMostrarMais] = useState(false);
   const seq = useRef(0);
   const histSeq = useRef(0);
+  const recurringRun = useRef<string>('');
   const mounted = useRef(true);
 
   useEffect(() => () => { mounted.current = false; seq.current++; histSeq.current++; }, []);
@@ -105,6 +111,23 @@ export function FinanceWorkspace() {
   }, [mes, ano]);
 
   useEffect(() => { void carregar(); }, [carregar]);
+  useEffect(() => {
+    // Regras são registradas como lançamentos comuns, nunca débitos bancários.
+    // Processamento limitado ao mês atual, uma tentativa por sessão e mês.
+    const now = new Date();
+    if (mes !== now.getMonth() + 1 || ano !== now.getFullYear()) return;
+    const key = ano + '-' + mes;
+    if (recurringRun.current === key) return;
+    recurringRun.current = key;
+    let active = true;
+    void applyMonthlyRecurring(mes, ano).then(created => {
+      if (active && created > 0) void carregar(true);
+    }).catch(() => {
+      // O painel continua utilizável se o recurso ainda não estiver implantado.
+      // A tela de automação exibe erros explícitos quando aberta.
+    });
+    return () => { active = false; };
+  }, [mes, ano, carregar]);
 
   useEffect(() => {
     if (aba !== 'graficos') return;
@@ -187,12 +210,15 @@ export function FinanceWorkspace() {
     return { maior, categoria };
   }, [lista]);
   const page = PAGINAS.find(p => p.id === aba) || PAGINAS[0];
-  const mostrarFiltroPeriodo = aba === 'painel' || aba === 'lancamentos' || aba === 'graficos' || aba === 'dados';
+  const mostrarFiltroPeriodo = !['planos', 'carteiras', 'configuracoes'].includes(aba);
 
   const conteudo = () => {
     if (aba === 'configuracoes') return <AccountSettings onBack={() => irPara('painel')} />;
     if (aba === 'carteiras') return <SharedWallets />;
     if (aba === 'planos') return <FuturePlans />;
+    if (aba === 'automacao') return <PlannerCenter section="automation" month={mes} year={ano} />;
+    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano} />;
+    if (aba === 'metas') return <PlannerCenter section="goals" month={mes} year={ano} />;
     if (loading) return <View style={s.loading}><ActivityIndicator size="large" color="#7C3AED" /><Text style={s.muted}>Carregando seus dados...</Text></View>;
     if (aba === 'graficos') return histLoading ? <View style={s.loading}><ActivityIndicator color="#7C3AED" /><Text style={s.muted}>Carregando histórico...</Text></View> :
       histError ? <Text style={s.error}>{histError}</Text> : <ChartsArea meses={historico} lancamentos={lista} />;
