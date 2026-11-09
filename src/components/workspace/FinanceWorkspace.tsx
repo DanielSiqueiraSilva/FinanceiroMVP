@@ -7,6 +7,7 @@ import type { Lancamento, LancamentoInput, ResumoFinanceiro } from '../../types/
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useNotifications } from '../../notifications/NotificationsContext';
 import { ProfileCard } from '../auth/ProfileCard';
+import { useProfileSession } from '../auth/ProtectedFinance';
 import { AccountSettings } from '../auth/AccountSettings';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { MonthlyOverview } from '../finance/MonthlyOverview';
@@ -54,6 +55,10 @@ function NavButton({ pagina, ativa, onClick, compacto = false }: {
 export function FinanceWorkspace() {
   const s = useAccessibleStyles(base);
   const notifications = useNotifications();
+  const account = useProfileSession();
+  const accountName = account?.session.user.user_metadata?.full_name;
+  const displayName = typeof accountName === 'string' && accountName.trim() ? accountName.trim() : (account?.session.user.email?.split('@')[0] || 'Usuário');
+  const initialLetter = Array.from(displayName)[0]?.toLocaleUpperCase('pt-BR') || 'U';
   const { width } = useWindowDimensions();
   const desktop = width >= 900;
   const initial = useMemo(hoje, []);
@@ -211,13 +216,20 @@ export function FinanceWorkspace() {
       <View style={s.section}>
         <Text style={s.heading}>Seu painel financeiro</Text>
         <Text style={s.muted}>Uma visão rápida das suas finanças no mês e atalhos para as áreas do app.</Text>
-        <View style={s.metricRow}>
-          <Metric titulo="Resultado do mês" valor={moeda(resumo?.saldo ?? 0)} />
-          <Metric titulo="Receitas" valor={moeda(resumo?.totalReceitas ?? 0)} />
-          <Metric titulo="Despesas" valor={moeda(resumo?.totalDespesas ?? 0)} />
-          <Metric titulo="Lançamentos" valor={String(resumo?.quantidadeLancamentos ?? 0)} />
+        <View style={s.heroRow}>
+          <View style={s.heroCard} accessible accessibilityLabel={'Resultado do mês: ' + moeda(resumo?.saldo ?? 0)}>
+            <Text style={s.heroLabel}>Saldo do mês</Text>
+            <Text style={s.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
+              {moeda(resumo?.saldo ?? 0)}
+            </Text>
+            <Text style={s.heroSub}>Receitas menos despesas neste período</Text>
+          </View>
+          <View style={s.heroMetrics}>
+            <Metric titulo="Receitas do mês" valor={moeda(resumo?.totalReceitas ?? 0)} />
+            <Metric titulo="Despesas do mês" valor={moeda(resumo?.totalDespesas ?? 0)} />
+          </View>
         </View>
-        <Text style={s.title}>Acesso rápido</Text>
+        <Text style={s.title}>Acesse rapidamente</Text>
         <View style={s.quickGrid}>
           {PAGINAS.filter(p => p.id !== 'painel').map(p => (
             <Pressable key={p.id} onPress={() => irPara(p.id)} accessibilityRole="button"
@@ -257,16 +269,36 @@ export function FinanceWorkspace() {
       <View style={s.main}>
         <ScrollView style={s.scroll} contentContainerStyle={[s.content, { maxWidth: desktop ? 1180 : 740 }, !desktop && s.contentMobile]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void carregar(true)} />}>
-          <View style={[s.header, !desktop && s.headerMobile]}>
-            <View style={[s.headerCopy, !desktop && s.headerCopyMobile]}>
-              <Text style={s.overline}>FINANCEIRO · {page.titulo.toUpperCase()}</Text>
-              <Text style={[s.appName, !desktop && s.appNameMobile]}>{desktop ? 'Bem-vindo ao seu Financeiro' : 'Financeiro'}</Text>
+          {desktop ? (
+            <View style={s.header}>
+              <View style={s.headerCopy}>
+                <Text style={s.overline}>FINANCEIRO · {page.titulo.toUpperCase()}</Text>
+                <Text style={s.appName}>Bem-vindo ao seu Financeiro</Text>
+              </View>
+              <View style={s.headerActions}>
+                <NotificationCenter />
+                <ProfileCard onOpenSettings={() => irPara('configuracoes')} />
+              </View>
             </View>
-            <View style={s.headerActions}>
-              <NotificationCenter />
-              <ProfileCard onOpenSettings={() => irPara('configuracoes')} />
+          ) : (
+            <View style={s.mobileTopBar}>
+              <View style={s.mobileBrandWrap}>
+                <Text style={s.mobileLogo} accessibilityElementsHidden>▥</Text>
+                <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Financeiro</Text>
+              </View>
+              <View style={s.mobileActions}>
+                <NotificationCenter />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={'Abrir configurações de ' + displayName}
+                  onPress={() => irPara('configuracoes')}
+                  style={s.mobileAvatarButton}
+                >
+                  <Text style={s.mobileAvatarText}>{initialLetter}</Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
+          )}
           {!desktop && (
             <View style={s.mobileHeading}>
               <Text style={s.title}>{page.titulo}</Text>
@@ -311,10 +343,17 @@ const base = StyleSheet.create({
   navTextActive: { color: '#5B21B6' },
   navTextMobile: { color: '#374151', fontSize: 10, textAlign: 'center', flexShrink: 1, lineHeight: 13 },
   navCompact: { flex: 1, flexDirection: 'column', gap: 1, paddingHorizontal: 1, minHeight: 56, justifyContent: 'center' },
-  main: { flex: 1 },
-  scroll: { flex: 1 },
+  main: { flex: 1, minWidth: 0 },
+  scroll: { flex: 1, minWidth: 0 },
   content: { width: '100%', alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 24, paddingBottom: 92, gap: 20 },
   contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 28, gap: 14 },
+  mobileTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, minHeight: 66, backgroundColor: '#27104D', borderRadius: 17, paddingHorizontal: 12, paddingVertical: 9 },
+  mobileBrandWrap: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: 7 },
+  mobileLogo: { fontSize: 23, fontWeight: '900', color: '#C4B5FD' },
+  mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 19, fontWeight: '900' },
+  mobileActions: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0 },
+  mobileAvatarButton: { width: 45, height: 45, borderRadius: 23, borderColor: '#DDD6FE', borderWidth: 2, backgroundColor: '#7C3AED', justifyContent: 'center', alignItems: 'center' },
+  mobileAvatarText: { fontSize: 17, fontWeight: '900', color: '#FFFFFF' },
   header: { flexDirection: 'row', gap: 10, justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
   headerMobile: { flexWrap: 'nowrap', gap: 5 },
   headerCopy: { gap: 3, flexShrink: 1 },
@@ -329,6 +368,12 @@ const base = StyleSheet.create({
   heading: { color: '#111827', fontWeight: '900', fontSize: 25 },
   muted: { color: '#6B7280', fontSize: 12, lineHeight: 18 },
   metricRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  heroRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  heroCard: { flexGrow: 1, flexBasis: 260, minWidth: 0, backgroundColor: '#6D28D9', borderRadius: 19, padding: 20, gap: 8, justifyContent: 'center' },
+  heroLabel: { color: '#FFFFFF', opacity: 0.92, fontSize: 13, fontWeight: '700' },
+  heroValue: { color: '#FFFFFF', fontSize: 29, fontWeight: '900' },
+  heroSub: { color: '#FFFFFF', opacity: 0.84, fontSize: 11 },
+  heroMetrics: { flexGrow: 2, flexBasis: 280, flexDirection: 'row', flexWrap: 'wrap', gap: 10, minWidth: 0 },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   quickCard: { flexGrow: 1, flexBasis: 210, gap: 7, backgroundColor: '#FFFFFF', borderRadius: 18, borderColor: '#ECE8F1', borderWidth: 1, padding: 17 },
   quickCardMobile: { flexBasis: 138, minWidth: 0, padding: 13 },
