@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { Metric, moeda, TrendLine } from './FinanceVisuals';
@@ -117,7 +117,7 @@ export function FuturePlans() {
           </View>
           <View style={s.card}>
             <Text style={s.title}>Progresso projetado: {simulacao.atingimento.toFixed(1).replace('.', ',')}%</Text>
-            <View style={s.track}><View style={[s.trackFill, { width: String(simulacao.atingimento) + '%' }]} /></View>
+            <View style={s.track}><View style={[s.trackFill, { width: (simulacao.atingimento + '%') as `${number}%` }]} /></View>
             <Text style={s.muted}>Período: {simulacao.tempoAnos} anos. Aportes considerados ao fim de cada mês. O progresso é uma comparação matemática, não uma probabilidade de sucesso.</Text>
           </View>
           <TrendLine title="Evolução prevista do patrimônio" values={simulacao.pontos} labels={simulacao.idades} />
