@@ -27,6 +27,13 @@ export type RecurringRule = {
   start_month: string; end_month: string | null; active: boolean;
   account_id: string | null; card_id: string | null;
 };
+export type AccountOverview = {
+  account_id: string; income_total: number; expense_total: number;
+  transfer_in: number; transfer_out: number; card_paid: number; estimated_balance: number;
+};
+export type CardOverview = {
+  card_id: string; purchases_total: number; payments_total: number; unpaid_total: number;
+};
 export type PlannerTransaction = {
   id: string; user_id: string; tipo: MoneyType; valor: number;
   descricao: string; categoria: string; data: string;
@@ -36,6 +43,7 @@ export type PlannerData = {
   accounts: FinanceAccount[]; cards: FinanceCard[]; goals: FinanceGoal[];
   contributions: GoalContribution[]; budgets: FinanceBudget[];
   rules: RecurringRule[]; transactions: PlannerTransaction[];
+  accountOverview: AccountOverview[]; cardOverview: CardOverview[];
 };
 
 const check = (error: { message?: string } | null) => {
@@ -63,7 +71,7 @@ export async function loadPlanner(month: number, year: number): Promise<PlannerD
   const start = monthIso(month, year);
   const end = monthIso(month === 12 ? 1 : month + 1, month === 12 ? year + 1 : year);
   // RLS applies to each request; explicit user_id filters also reduce bandwidth.
-  const [a, c, g, gc, b, rr, t] = await Promise.all([
+  const [a, c, g, gc, b, rr, t, ao, co] = await Promise.all([
     supabaseAuth.from('finance_accounts').select('*').eq('user_id', uid).order('name'),
     supabaseAuth.from('finance_cards').select('*').eq('user_id', uid).order('name'),
     supabaseAuth.from('finance_goals').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
@@ -72,8 +80,10 @@ export async function loadPlanner(month: number, year: number): Promise<PlannerD
     supabaseAuth.from('finance_recurring_rules').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
     supabaseAuth.from('lancamentos').select('id,user_id,tipo,valor,descricao,categoria,data,account_id,card_id')
       .eq('user_id', uid).gte('data', start).lt('data', end).order('data', { ascending: false }).limit(1500),
+    supabaseAuth.rpc('finance_account_overview'),
+    supabaseAuth.rpc('finance_card_overview'),
   ]);
-  for (const result of [a, c, g, gc, b, rr, t]) check(result.error);
+  for (const result of [a, c, g, gc, b, rr, t, ao, co]) check(result.error);
   return {
     accounts: (a.data || []) as FinanceAccount[],
     cards: (c.data || []) as FinanceCard[],
@@ -82,6 +92,8 @@ export async function loadPlanner(month: number, year: number): Promise<PlannerD
     budgets: (b.data || []) as FinanceBudget[],
     rules: (rr.data || []) as RecurringRule[],
     transactions: (t.data || []) as PlannerTransaction[],
+    accountOverview: (ao.data || []) as AccountOverview[],
+    cardOverview: (co.data || []) as CardOverview[],
   };
 }
 async function insertRecord(table: string, record: Record<string, unknown>) {
@@ -198,4 +210,29 @@ export function buildInsights(data: PlannerData): Insight[] {
     });
   }
   return result.slice(0, 8);
+}
+
+/** Bookkeeping transfers. No external banking operation occurs. */
+export async function recordAccountTransfer(from: string, to: string, amount: number) {
+  await userId();
+  const { error } = await supabaseAuth.rpc('finance_record_transfer', {
+    p_from: from, p_to: to, p_amount: amount,
+  });
+  check(error);
+}
+/** Settles recorded card purchases from an internal account, without double-counting an expense. */
+export async function recordCardPayment(card: string, account: string, amount: number) {
+  await userId();
+  const { error } = await supabaseAuth.rpc('finance_record_card_payment', {
+    p_card: card, p_account: account, p_amount: amount,
+  });
+  check(error);
+}
+export async function confirmRecurring(ruleId: string, month: number, year: number): Promise<boolean> {
+  await userId();
+  const { data, error } = await supabaseAuth.rpc('finance_confirm_recurring', {
+    p_rule: ruleId, p_month: monthIso(month, year),
+  });
+  check(error);
+  return Boolean(data);
 }
