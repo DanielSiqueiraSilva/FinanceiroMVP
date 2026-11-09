@@ -46,7 +46,7 @@ function NavButton({ pagina, ativa, onClick, compacto = false }: {
       accessibilityLabel={'Abrir ' + pagina.titulo}
       style={[s.navButton, ativa && s.navActive, compacto && s.navCompact]}>
       <Text style={[s.navIcon, ativa && s.navIconActive]}>{pagina.simbolo}</Text>
-      <Text numberOfLines={compacto ? 1 : 2} style={[s.navText, ativa && s.navTextActive]}>{pagina.titulo}</Text>
+      <Text numberOfLines={compacto ? 1 : 2} style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive]}>{pagina.titulo}</Text>
     </Pressable>
   );
 }
@@ -307,6 +307,7 @@ const base = StyleSheet.create({
   navIconActive: { color: '#6D28D9' },
   navText: { color: '#E2E8F0', fontSize: 13, fontWeight: '700', flexShrink: 1 },
   navTextActive: { color: '#5B21B6' },
+  navTextMobile: { color: '#374151', fontSize: 10, textAlign: 'center' },
   navCompact: { flex: 1, flexDirection: 'column', gap: 1, paddingHorizontal: 1, minHeight: 56, justifyContent: 'center' },
   main: { flex: 1 },
   scroll: { flex: 1 },
