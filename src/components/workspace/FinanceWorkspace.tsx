@@ -216,13 +216,20 @@ export function FinanceWorkspace() {
       <View style={s.section}>
         <Text style={s.heading}>Seu painel financeiro</Text>
         <Text style={s.muted}>Uma visão rápida das suas finanças no mês e atalhos para as áreas do app.</Text>
-        <View style={s.metricRow}>
-          <Metric titulo="Resultado do mês" valor={moeda(resumo?.saldo ?? 0)} />
-          <Metric titulo="Receitas" valor={moeda(resumo?.totalReceitas ?? 0)} />
-          <Metric titulo="Despesas" valor={moeda(resumo?.totalDespesas ?? 0)} />
-          <Metric titulo="Lançamentos" valor={String(resumo?.quantidadeLancamentos ?? 0)} />
+        <View style={s.heroRow}>
+          <View style={s.heroCard} accessible accessibilityLabel={'Resultado do mês: ' + moeda(resumo?.saldo ?? 0)}>
+            <Text style={s.heroLabel}>Saldo do mês</Text>
+            <Text style={s.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
+              {moeda(resumo?.saldo ?? 0)}
+            </Text>
+            <Text style={s.heroSub}>Receitas menos despesas neste período</Text>
+          </View>
+          <View style={s.heroMetrics}>
+            <Metric titulo="Receitas do mês" valor={moeda(resumo?.totalReceitas ?? 0)} />
+            <Metric titulo="Despesas do mês" valor={moeda(resumo?.totalDespesas ?? 0)} />
+          </View>
         </View>
-        <Text style={s.title}>Acesso rápido</Text>
+        <Text style={s.title}>Acesse rapidamente</Text>
         <View style={s.quickGrid}>
           {PAGINAS.filter(p => p.id !== 'painel').map(p => (
             <Pressable key={p.id} onPress={() => irPara(p.id)} accessibilityRole="button"
@@ -361,6 +368,12 @@ const base = StyleSheet.create({
   heading: { color: '#111827', fontWeight: '900', fontSize: 25 },
   muted: { color: '#6B7280', fontSize: 12, lineHeight: 18 },
   metricRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  heroRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  heroCard: { flexGrow: 1, flexBasis: 260, minWidth: 0, backgroundColor: '#6D28D9', borderRadius: 19, padding: 20, gap: 8, justifyContent: 'center' },
+  heroLabel: { color: '#FFFFFF', opacity: 0.92, fontSize: 13, fontWeight: '700' },
+  heroValue: { color: '#FFFFFF', fontSize: 29, fontWeight: '900' },
+  heroSub: { color: '#FFFFFF', opacity: 0.84, fontSize: 11 },
+  heroMetrics: { flexGrow: 2, flexBasis: 280, flexDirection: 'row', flexWrap: 'wrap', gap: 10, minWidth: 0 },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   quickCard: { flexGrow: 1, flexBasis: 210, gap: 7, backgroundColor: '#FFFFFF', borderRadius: 18, borderColor: '#ECE8F1', borderWidth: 1, padding: 17 },
   quickCardMobile: { flexBasis: 138, minWidth: 0, padding: 13 },
