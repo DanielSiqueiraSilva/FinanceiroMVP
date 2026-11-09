@@ -178,7 +178,7 @@ export function PlannerAccounts({ data, refresh }: Props) {
       </View>
     </View>
     {!!error && <Text style={s.error} accessibilityLiveRegion="assertive">{error}</Text>}
-    {!!message && <Text style={s.positive} accessibilityLiveRegion="polite">{message}</Text>
+    {!!message && <Text style={s.positive} accessibilityLiveRegion="polite">{message}</Text>}
     <View style={s.card}>
       <Text style={s.title}>Adicionar {type === 'accounts' ? 'conta' : 'cartão'}</Text>
       <View style={s.row}>
