@@ -25,12 +25,14 @@ import { ChartsArea, Metric, moeda, type MesAnalise } from './FinanceVisuals';
 import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
+import { BRAND, BrandMark, WorkspaceIcon, HeroSignature } from '../../design/brand';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
 import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
 
 type Aba = 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'planos' | 'carteiras' | 'configuracoes' | 'automacao' | 'contas' | 'metas';
 const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] = [
-  { id: 'painel', titulo: 'Painel', simbolo: '⌂', detalhe: 'Resumo e atalhos' },
+  { id: 'painel', titulo: 'Painel', simbolo: '⌂', detalhe: 'Seu ponto de partida' },
   { id: 'lancamentos', titulo: 'Lançamentos', simbolo: '+', detalhe: 'Receitas e despesas' },
   { id: 'graficos', titulo: 'Gráficos', simbolo: '▥', detalhe: 'Evolução financeira' },
   { id: 'dados', titulo: 'Dados', simbolo: '▤', detalhe: 'Filtros e exportação' },
@@ -48,12 +50,15 @@ function NavButton({ pagina, ativa, onClick, compacto = false }: {
   pagina: typeof PAGINAS[number]; ativa: boolean; onClick: () => void; compacto?: boolean;
 }) {
   const s = useAccessibleStyles(base);
+  const { isDark } = useAccessibility();
   return (
     <Pressable onPress={onClick} accessibilityRole="button" accessibilityState={{ selected: ativa }}
       accessibilityLabel={'Abrir ' + pagina.titulo}
       style={[s.navButton, ativa && s.navActive, compacto && s.navCompact]}>
-      <Text style={[s.navIcon, ativa && s.navIconActive]}>{pagina.simbolo}</Text>
-      <Text numberOfLines={compacto ? 2 : 2} style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive]}>{pagina.titulo}</Text>
+      <WorkspaceIcon name={pagina.id} size={compacto ? 22 : 19}
+        color={ativa ? BRAND.ink : compacto ? (isDark ? '#CBD5E1' : '#645777') : '#D9CDEE'}/>
+      <Text numberOfLines={compacto ? 2 : 2}
+        style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive, compacto && ativa && isDark && s.navTextMobileDarkActive]}>{pagina.titulo}</Text>
     </Pressable>
   );
 }
@@ -61,6 +66,7 @@ function NavButton({ pagina, ativa, onClick, compacto = false }: {
 export function FinanceWorkspace() {
   const s = useAccessibleStyles(base);
   const notifications = useNotifications();
+  const { isDark } = useAccessibility();
   const account = useProfileSession();
   const accountName = account?.session.user.user_metadata?.full_name;
   const displayName = typeof accountName === 'string' && accountName.trim() ? accountName.trim() : (account?.session.user.email?.split('@')[0] || 'Usuário');
@@ -284,15 +290,22 @@ export function FinanceWorkspace() {
     );
     return (
       <View style={s.section}>
-        <Text style={s.heading}>Seu painel financeiro</Text>
-        <Text style={s.muted}>Uma visão rápida das suas finanças no mês e atalhos para as áreas do app.</Text>
+        <Text style={s.overline}>SEU DINHEIRO EM FOCO</Text>
+        <Text style={s.heading}>Tudo começa com clareza.</Text>
+        <Text style={s.muted}>Seu mês em um só lugar. Entenda os números e escolha seu próximo passo.</Text>
         <View style={s.heroRow}>
           <View style={s.heroCard} accessible accessibilityLabel={'Resultado do mês: ' + moeda(resumo?.saldo ?? 0)}>
+            <View style={s.heroDecoration}><HeroSignature/></View>
+            <View style={s.heroEyebrowRow}>
+              <Text style={s.heroEyebrow}>VISÃO DO MÊS</Text>
+              <Text style={s.heroStar}>✦</Text>
+            </View>
             <Text style={s.heroLabel}>Resultado do mês</Text>
             <Text style={s.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
               {moeda(resumo?.saldo ?? 0)}
             </Text>
-            <Text style={s.heroSub}>Receitas menos despesas neste período</Text>
+            <Text style={s.heroSub}>Receitas − despesas no período selecionado</Text>
+            <Text style={s.heroFootnote}>O que importa é entender para onde seu dinheiro vai.</Text>
           </View>
           <View style={s.heroMetrics}>
             <Metric titulo="Receitas do mês" valor={moeda(resumo?.totalReceitas ?? 0)} />
@@ -310,14 +323,22 @@ export function FinanceWorkspace() {
           </View>
         )}
         {forecastNotice()}
-        <Text style={s.title}>Acesse rapidamente</Text>
+        <View style={s.sectionHeadingRow}>
+          <View style={{ flex:1, minWidth: 0 }}>
+            <Text style={s.overline}>EXPLORE SEU ESPAÇO</Text>
+            <Text style={s.title}>O que vamos fazer hoje?</Text>
+          </View>
+        </View>
         <View style={s.quickGrid}>
-          {PAGINAS.filter(p => p.id !== 'painel').map(p => (
+          {PAGINAS.filter(p => ['lancamentos','contas','automacao','metas','graficos','planos'].includes(p.id)).map(p => (
             <Pressable key={p.id} onPress={() => irPara(p.id)} accessibilityRole="button"
               style={[s.quickCard, !desktop && s.quickCardMobile]}>
-              <Text style={s.quickIcon}>{p.simbolo}</Text>
+              <View style={s.quickIconBadge}>
+                <WorkspaceIcon name={p.id} size={22} color={BRAND.ink}/>
+              </View>
               <Text style={s.quickTitle}>{p.titulo}</Text>
               <Text style={s.muted}>{p.detalhe}</Text>
+              <Text style={s.quickArrow}>Explorar  →</Text>
             </Pressable>
           ))}
         </View>
@@ -336,14 +357,35 @@ export function FinanceWorkspace() {
   };
 
   const primarias = PAGINAS.filter(p => ['painel', 'lancamentos', 'graficos'].includes(p.id));
+  const grupos = [
+    { titulo: 'PRINCIPAL', ids: ['painel','lancamentos','graficos','dados'] },
+    { titulo: 'ORGANIZAR', ids: ['contas','automacao','carteiras'] },
+    { titulo: 'PLANEJAR', ids: ['metas','planos'] },
+    { titulo: 'PREFERÊNCIAS', ids: ['configuracoes'] },
+  ];
   return (
     <View style={s.root}>
       {desktop && (
         <View style={s.sidebar}>
-          <Text style={s.brand}>◫  Financeiro</Text>
-          <Text style={s.sidebarHint}>Seu espaço financeiro</Text>
-          <View style={s.navList}>
-            {PAGINAS.map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+          <View style={s.sidebarBrandRow}>
+            <BrandMark size={40}/>
+            <View style={{ flex: 1 }}>
+              <Text style={s.brand}>financeiro.</Text>
+              <Text style={s.sidebarHint}>SEU ESPAÇO FINANCEIRO</Text>
+            </View>
+          </View>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={s.sidebarSections}>
+            {grupos.map(grupo => (
+              <View key={grupo.titulo} style={s.sidebarGroup}>
+                <Text style={s.groupLabel}>{grupo.titulo}</Text>
+                {PAGINAS.filter(p => grupo.ids.includes(p.id)).map(p =>
+                  <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+              </View>
+            ))}
+          </ScrollView>
+          <View style={s.sidebarFooter}>
+            <Text style={s.sidebarFooterTitle}>Menos complicação.</Text>
+            <Text style={s.sidebarFooterText}>Mais clareza no seu dia.</Text>
           </View>
         </View>
       )}
@@ -353,8 +395,8 @@ export function FinanceWorkspace() {
           {desktop ? (
             <View style={s.header}>
               <View style={s.headerCopy}>
-                <Text style={s.overline}>FINANCEIRO · {page.titulo.toUpperCase()}</Text>
-                <Text style={s.appName}>Bem-vindo ao seu Financeiro</Text>
+                <Text style={s.overline}>SEU DINHEIRO, COM MAIS CLAREZA</Text>
+                <Text style={s.appName}>{page.titulo === 'Painel' ? 'Visão geral' : page.titulo}</Text>
               </View>
               <View style={s.headerActions}>
                 <NotificationCenter />
@@ -364,8 +406,8 @@ export function FinanceWorkspace() {
           ) : (
             <View style={s.mobileTopBar}>
               <View style={s.mobileBrandWrap}>
-                <Text style={s.mobileLogo} accessibilityElementsHidden>▥</Text>
-                <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Financeiro</Text>
+                <BrandMark size={36}/>
+                <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>financeiro.</Text>
               </View>
               <View style={s.mobileActions}>
                 <NotificationCenter />
@@ -397,12 +439,16 @@ export function FinanceWorkspace() {
           <View style={s.bottom}>
             {primarias.map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} compacto />)}
             <Pressable onPress={() => setMostrarMais(v => !v)} accessibilityRole="button" accessibilityLabel="Abrir outras áreas"
-              style={s.moreButton}><Text style={s.navIcon}>•••</Text><Text style={s.moreText}>Mais</Text></Pressable>
+              style={s.moreButton}><Text style={s.moreDots}>•••</Text><Text style={s.moreText}>Mais</Text></Pressable>
           </View>
         )}
         {!desktop && mostrarMais && (
           <View style={s.moreMenu}>
-            {PAGINAS.filter(p => !primarias.includes(p)).map(p => <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+            <ScrollView style={{ maxHeight: 370 }} contentContainerStyle={{ gap: 5 }}>
+              <Text style={s.groupLabel}>TODAS AS ÁREAS</Text>
+              {PAGINAS.filter(p => !primarias.includes(p)).map(p =>
+                <NavButton key={p.id} pagina={p} ativa={aba === p.id} onClick={() => irPara(p.id)} />)}
+            </ScrollView>
           </View>
         )}
       </View>
@@ -411,37 +457,55 @@ export function FinanceWorkspace() {
 }
 
 const base = StyleSheet.create({
+  sidebarBrandRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 4, marginBottom: 21 },
+  sidebarSections: { gap: 15, paddingBottom: 18 },
+  sidebarGroup: { gap: 5 },
+  groupLabel: { color: '#C4B5D9', fontSize: 10, fontWeight: '900', letterSpacing: 1.1, paddingHorizontal: 12, marginBottom: 6 },
+  sidebarFooter: { padding: 15, borderRadius: 17, backgroundColor: '#3A2957', gap: 4, marginBottom: 16 },
+  sidebarFooterTitle: { color: '#CBF28A', fontSize: 13, fontWeight: '900' },
+  sidebarFooterText: { color: '#D9CDEE', fontSize: 12 },
+  heroDecoration: { position: 'absolute', right: -12, top: 5, opacity: 0.72 },
+  heroEyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  heroEyebrow: { color: '#CBF28A', letterSpacing: 1.1, fontWeight: '900', fontSize: 10 },
+  heroStar: { color: '#CBF28A', fontSize: 22 },
+  heroFootnote: { color: '#CBF28A', fontSize: 11, fontWeight: '700', marginTop: 12 },
+  sectionHeadingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  quickIconBadge: { height: 43, width: 43, borderRadius: 14, backgroundColor: '#CBF28A', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  quickArrow: { color: '#6D28D9', fontSize: 12, fontWeight: '900', marginTop: 5 },
+  moreDots: { color: '#111827', fontSize: 19, fontWeight: '900' },
+
   root: { flex: 1, flexDirection: 'row', backgroundColor: '#F7F5FA' },
-  sidebar: { width: 235, backgroundColor: '#27104D', paddingTop: 28, paddingHorizontal: 12, gap: 6 },
-  brand: { fontSize: 23, fontWeight: '900', color: '#FFFFFF', marginBottom: 8, paddingHorizontal: 12 },
-  sidebarHint: { color: '#C4B5FD', fontSize: 12, paddingHorizontal: 12, marginBottom: 18 },
+  sidebar: { width: 244, backgroundColor: '#21143C', paddingTop: 25, paddingHorizontal: 14, gap: 6 },
+  brand: { fontSize: 23, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.8 },
+  sidebarHint: { color: '#D9CDEE', fontSize: 9, fontWeight: '700', letterSpacing: 1.2, marginTop: 3 },
   navList: { gap: 5 },
   navButton: { flexDirection: 'row', gap: 10, borderRadius: 12, paddingHorizontal: 14, minHeight: 47, alignItems: 'center' },
-  navActive: { backgroundColor: '#EDE9FE' },
+  navActive: { backgroundColor: '#CBF28A' },
   navIcon: { color: '#A78BFA', fontSize: 20, fontWeight: '800', minWidth: 24, textAlign: 'center' },
   navIconActive: { color: '#6D28D9' },
-  navText: { color: '#E2E8F0', fontSize: 13, fontWeight: '700', flexShrink: 1 },
-  navTextActive: { color: '#5B21B6' },
-  navTextMobile: { color: '#374151', fontSize: 10, textAlign: 'center', flexShrink: 1, lineHeight: 13 },
+  navText: { color: '#EAE5F5', fontSize: 13, fontWeight: '700', flexShrink: 1 },
+  navTextActive: { color: '#21143C' },
+  navTextMobile: { color: '#4B5563', fontSize: 10, textAlign: 'center', flexShrink: 1, lineHeight: 13 },
+  navTextMobileDarkActive: { color: '#21143C' },
   navCompact: { flex: 1, flexDirection: 'column', gap: 1, paddingHorizontal: 1, minHeight: 56, justifyContent: 'center' },
   main: { flex: 1, minWidth: 0 },
   scroll: { flex: 1, minWidth: 0 },
   content: { width: '100%', alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 24, paddingBottom: 92, gap: 20 },
   contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 28, gap: 14 },
-  mobileTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, minHeight: 66, backgroundColor: '#27104D', borderRadius: 17, paddingHorizontal: 12, paddingVertical: 9 },
+  mobileTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, minHeight: 66, backgroundColor: '#21143C', borderRadius: 20, paddingHorizontal: 13, paddingVertical: 9 },
   mobileBrandWrap: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: 7 },
   mobileLogo: { fontSize: 23, fontWeight: '900', color: '#C4B5FD' },
-  mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 19, fontWeight: '900' },
+  mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 21, fontWeight: '900', letterSpacing: -0.6 },
   mobileActions: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0 },
-  mobileAvatarButton: { width: 45, height: 45, borderRadius: 23, borderColor: '#DDD6FE', borderWidth: 2, backgroundColor: '#7C3AED', justifyContent: 'center', alignItems: 'center' },
+  mobileAvatarButton: { width: 44, height: 44, borderRadius: 14, borderColor: '#CBF28A', borderWidth: 1.5, backgroundColor: '#42305F', justifyContent: 'center', alignItems: 'center' },
   mobileAvatarText: { fontSize: 17, fontWeight: '900', color: '#FFFFFF' },
   header: { flexDirection: 'row', gap: 10, justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
   headerMobile: { flexWrap: 'nowrap', gap: 5 },
   headerCopy: { gap: 3, flexShrink: 1 },
   headerCopyMobile: { flex: 1, minWidth: 0 },
   headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  overline: { color: '#6D28D9', fontWeight: '800', fontSize: 10, letterSpacing: 1 },
-  appName: { color: '#111827', fontWeight: '900', fontSize: 25 },
+  overline: { color: '#6D28D9', fontWeight: '900', fontSize: 10, letterSpacing: 1.5 },
+  appName: { color: '#111827', fontWeight: '900', fontSize: 27, letterSpacing: -0.6 },
   appNameMobile: { fontSize: 20 },
   mobileHeading: { gap: 2 },
   section: { gap: 16 },
@@ -449,21 +513,21 @@ const base = StyleSheet.create({
   forecastItem: { flexDirection: 'row', gap: 8, justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#ECE8F1', paddingTop: 9 },
   forecastDone: { color: '#15803D', fontWeight: '800', fontSize: 12 },
   forecastPending: { color: '#7C3AED', fontWeight: '800', fontSize: 12 },
-  title: { color: '#111827', fontWeight: '800', fontSize: 19 },
-  heading: { color: '#111827', fontWeight: '900', fontSize: 25 },
+  title: { color: '#111827', fontWeight: '900', fontSize: 19, letterSpacing: -0.3 },
+  heading: { color: '#111827', fontWeight: '900', fontSize: 28, letterSpacing: -0.7 },
   muted: { color: '#6B7280', fontSize: 12, lineHeight: 18 },
   metricRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   heroRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  heroCard: { flexGrow: 1, flexBasis: 260, minWidth: 0, backgroundColor: '#6D28D9', borderRadius: 19, padding: 20, gap: 8, justifyContent: 'center' },
-  heroLabel: { color: '#FFFFFF', opacity: 0.92, fontSize: 13, fontWeight: '700' },
-  heroValue: { color: '#FFFFFF', fontSize: 29, fontWeight: '900' },
-  heroSub: { color: '#FFFFFF', opacity: 0.84, fontSize: 11 },
+  heroCard: { flexGrow: 1, flexBasis: 260, minWidth: 0, backgroundColor: '#21143C', borderRadius: 24, padding: 22, gap: 10, justifyContent: 'center', overflow: 'hidden', minHeight: 205 },
+  heroLabel: { color: '#E7DCF9', fontSize: 13, fontWeight: '700' },
+  heroValue: { color: '#FFFFFF', fontSize: 33, fontWeight: '900', letterSpacing: -0.6 },
+  heroSub: { color: '#D9CDEE', fontSize: 11 },
   heroMetrics: { flexGrow: 2, flexBasis: 280, flexDirection: 'row', flexWrap: 'wrap', gap: 10, minWidth: 0 },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  quickCard: { flexGrow: 1, flexBasis: 210, gap: 7, backgroundColor: '#FFFFFF', borderRadius: 18, borderColor: '#ECE8F1', borderWidth: 1, padding: 17 },
-  quickCardMobile: { flexBasis: 138, minWidth: 0, padding: 13 },
+  quickCard: { flexGrow: 1, flexBasis: 210, gap: 7, backgroundColor: '#FFFFFF', borderRadius: 21, borderColor: '#E6E0EC', borderWidth: 1, padding: 17, minHeight: 156 },
+  quickCardMobile: { flexBasis: 138, minWidth: 0, padding: 13, minHeight: 148 },
   quickIcon: { fontSize: 24, fontWeight: '800', color: '#7C3AED' },
-  quickTitle: { color: '#111827', fontSize: 15, fontWeight: '800' },
+  quickTitle: { color: '#111827', fontSize: 15, fontWeight: '900' },
   list: { gap: 10 },
   link: { minHeight: 43, justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 12 },
   linkText: { color: '#6D28D9', fontWeight: '800', fontSize: 13 },
@@ -472,8 +536,8 @@ const base = StyleSheet.create({
   error: { color: '#B91C1C', fontSize: 13 },
   success: { backgroundColor: '#ECFDF5', borderRadius: 14, padding: 14 },
   successText: { color: '#047857', fontWeight: '700', fontSize: 13 },
-  bottom: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#ECE8F1', paddingHorizontal: 5, paddingBottom: 8, paddingTop: 6, alignItems: 'center' },
+  bottom: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E6E0EC', paddingHorizontal: 6, paddingBottom: 9, paddingTop: 7, alignItems: 'center' },
   moreButton: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 56 },
   moreText: { fontSize: 11, color: '#6B7280', fontWeight: '700' },
-  moreMenu: { position: 'absolute', bottom: 76, right: 8, width: 260, maxWidth: '90%', backgroundColor: '#27104D', borderRadius: 18, padding: 10, gap: 5, shadowColor: '#111827', shadowOpacity: .25, shadowRadius: 14, elevation: 9 },
+  moreMenu: { position: 'absolute', bottom: 76, right: 8, width: 270, maxWidth: '90%', backgroundColor: '#21143C', borderRadius: 20, padding: 13, gap: 5, shadowColor: '#111827', shadowOpacity: .25, shadowRadius: 14, elevation: 9 },
 });
