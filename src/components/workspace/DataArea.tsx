@@ -65,7 +65,7 @@ export function DataArea({ lancamentos, periodo }: { lancamentos: Lancamento[]; 
   }
   const chip = (label: string, ativo: boolean, onPress: () => void) =>
     <Pressable key={label} accessibilityRole="button" accessibilityState={{ selected: ativo }}
-      onPress={() => { onPress(); setPagina(1); }} style={[s.chip, ativo && s.chipActive]}>
+      onPress={onPress} style={[s.chip, ativo && s.chipActive]}>
       <Text style={[s.chipText, ativo && s.chipTextActive]}>{label}</Text>
     </Pressable>;
 
@@ -91,12 +91,12 @@ export function DataArea({ lancamentos, periodo }: { lancamentos: Lancamento[]; 
           style={s.input} placeholder="Buscar descrição, categoria ou data..." accessibilityLabel="Pesquisar transações"
           placeholderTextColor={isDark ? '#CBD5E1' : '#6B7280'} />
         <View style={s.row}>
-          {chip('Todos', tipo === 'todos', () => setTipo('todos'))}
-          {chip('Receitas', tipo === 'receita', () => setTipo('receita'))}
-          {chip('Despesas', tipo === 'despesa', () => setTipo('despesa'))}
+          {chip('Todos', tipo === 'todos', () => { setTipo('todos'); setPagina(1); })}
+          {chip('Receitas', tipo === 'receita', () => { setTipo('receita'); setPagina(1); })}
+          {chip('Despesas', tipo === 'despesa', () => { setTipo('despesa'); setPagina(1); })}
         </View>
         <Text style={s.subtle}>Categorias</Text>
-        <View style={s.row}>{categorias.map(item => chip(item, categoria === item, () => setCategoria(item)))}</View>
+        <View style={s.row}>{categorias.map(item => chip(item, categoria === item, () => { setCategoria(item); setPagina(1); }))}</View>
         {filtrados.length === 0 ? <Text style={s.empty}>Nenhum lançamento encontrado neste período com os filtros selecionados.</Text> : (
           <View style={s.table}>
             {width >= 780 && <View style={[s.dataRow, s.headerRow]}>
