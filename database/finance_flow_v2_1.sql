@@ -1,5 +1,5 @@
 -- Early confirmation books a transaction today, rather than recording a future-dated cash movement.
-create function public.finance_confirm_recurring(p_rule uuid,p_month date)
+create or replace function public.finance_confirm_recurring(p_rule uuid,p_month date)
 returns boolean
 language plpgsql security invoker set search_path = ''
 as $$
