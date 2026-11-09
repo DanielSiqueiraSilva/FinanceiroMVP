@@ -225,6 +225,8 @@ export function FinanceWorkspace() {
     const categoria = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
     return { maior, categoria };
   }, [lista]);
+  const accountValue = plannerSnapshot?.accountOverview.reduce((a,b) => a + Number(b.estimated_balance),0);
+  const cardPending = plannerSnapshot?.cardOverview.reduce((a,b) => a + Number(b.unpaid_total),0);
   const forecasts = useMemo(() => plannerSnapshot?.rules.filter(r => r.active &&
     r.start_month <= String(ano)+'-'+String(mes).padStart(2,'0')+'-01' &&
     (!r.end_month || r.end_month >= String(ano)+'-'+String(mes).padStart(2,'0')+'-01')
@@ -286,7 +288,7 @@ export function FinanceWorkspace() {
         <Text style={s.muted}>Uma visão rápida das suas finanças no mês e atalhos para as áreas do app.</Text>
         <View style={s.heroRow}>
           <View style={s.heroCard} accessible accessibilityLabel={'Resultado do mês: ' + moeda(resumo?.saldo ?? 0)}>
-            <Text style={s.heroLabel}>Saldo do mês</Text>
+            <Text style={s.heroLabel}>Resultado do mês</Text>
             <Text style={s.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
               {moeda(resumo?.saldo ?? 0)}
             </Text>
@@ -297,6 +299,16 @@ export function FinanceWorkspace() {
             <Metric titulo="Despesas do mês" valor={moeda(resumo?.totalDespesas ?? 0)} />
           </View>
         </View>
+        {plannerSnapshot && (plannerSnapshot.accounts.length > 0 || plannerSnapshot.cards.length > 0) && (
+          <View style={s.metricRow}>
+            {plannerSnapshot.accounts.length > 0 && <Metric
+              titulo="Nas contas (estimativa)" valor={moeda(accountValue || 0)}
+              detalhe="Saldo inicial + histórico vinculado + transferências − faturas pagas" />}
+            {plannerSnapshot.cards.length > 0 && <Metric
+              titulo="Cartões: compras pendentes" valor={moeda(cardPending || 0)}
+              detalhe="Compras lançadas menos pagamentos registrados, não é a fatura oficial" />}
+          </View>
+        )}
         {forecastNotice()}
         <Text style={s.title}>Acesse rapidamente</Text>
         <View style={s.quickGrid}>
