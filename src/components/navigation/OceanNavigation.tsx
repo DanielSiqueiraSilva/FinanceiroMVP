@@ -53,7 +53,7 @@ function NavigationItem({ page, selected, compact, onNavigate, darkSurface = fal
         styles.item, compact && styles.itemCompact, pressed && styles.pressed,
       ]}>
       <Animated.View pointerEvents="none" style={[
-        StyleSheet.absoluteFillObject, styles.itemHighlight,
+        StyleSheet.absoluteFill, styles.itemHighlight,
         { opacity: highlight, backgroundColor: darkSurface ? theme.accent : theme.selected },
       ]} />
       <WorkspaceIcon name={page.id} size={compact ? 23 : 19} color={textColor} />
