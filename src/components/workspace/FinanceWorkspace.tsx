@@ -56,7 +56,7 @@ function NavButton({ pagina, ativa, onClick, compacto = false }: {
       accessibilityLabel={'Abrir ' + pagina.titulo}
       style={[s.navButton, ativa && s.navActive, compacto && s.navCompact]}>
       <WorkspaceIcon name={pagina.id} size={compacto ? 22 : 19}
-        color={ativa ? (compacto && isDark ? BRAND.lime : BRAND.ink) : compacto ? (isDark ? '#CBD5E1' : '#645777') : '#D9CDEE'}/>
+        color={ativa ? BRAND.ink : compacto ? (isDark ? '#CBD5E1' : '#645777') : '#D9CDEE'}/>
       <Text numberOfLines={compacto ? 2 : 2}
         style={[s.navText, compacto && s.navTextMobile, ativa && s.navTextActive, compacto && ativa && isDark && s.navTextMobileDarkActive]}>{pagina.titulo}</Text>
     </Pressable>
@@ -486,7 +486,7 @@ const base = StyleSheet.create({
   navText: { color: '#EAE5F5', fontSize: 13, fontWeight: '700', flexShrink: 1 },
   navTextActive: { color: '#21143C' },
   navTextMobile: { color: '#4B5563', fontSize: 10, textAlign: 'center', flexShrink: 1, lineHeight: 13 },
-  navTextMobileDarkActive: { color: '#CBF28A' },
+  navTextMobileDarkActive: { color: '#21143C' },
   navCompact: { flex: 1, flexDirection: 'column', gap: 1, paddingHorizontal: 1, minHeight: 56, justifyContent: 'center' },
   main: { flex: 1, minWidth: 0 },
   scroll: { flex: 1, minWidth: 0 },
