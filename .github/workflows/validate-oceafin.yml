@@ -23,11 +23,13 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit
       - name: Lint Oceafin design foundation
-        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx
+        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx src/components/dashboard/OceanDashboard.tsx src/components/dashboard/dashboard-data.ts
       - name: Legacy full-repository lint audit (non-blocking)
         continue-on-error: true
         run: npm run lint
       - name: Backend unit tests
         run: node --test backend/tests/*.test.mjs
+      - name: Dashboard selector tests
+        run: node --experimental-strip-types --test tools/tests/oceafin-dashboard.test.mjs
       - name: Expo Web build
         run: npm run build:web

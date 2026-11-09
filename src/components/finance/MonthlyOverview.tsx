@@ -58,7 +58,7 @@ export function MonthlyOverview({ totalDespesas, limite, salvando, onSalvarLimit
           <Text style={styles.miniValor}>{limite > 0 ? moeda(limite) : 'Não definido'}</Text>
         </View>
         <View style={[styles.resumoItem, styles.alinharDireita]}>
-          <Text style={styles.miniRotulo}>Fatura atual</Text>
+          <Text style={styles.miniRotulo}>Despesas do mês</Text>
           <Text style={[styles.miniValor, estourou && styles.alerta]}>{moeda(totalDespesas)}</Text>
         </View>
       </View>
