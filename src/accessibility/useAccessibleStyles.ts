@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StyleSheet, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 import { useAccessibility } from './AccessibilityContext';
 import { migrateLegacyColor } from '../design/tokens';
 
@@ -90,6 +90,13 @@ export function useAccessibleStyles<T extends Record<string, ViewStyle | TextSty
   return useMemo(() => {
     const entries = Object.entries(base).map(([name, style]) => {
       const next: Record<string, unknown> = { ...(StyleSheet.flatten(style) ?? {}) };
+      // Extend the new typography across legacy financial modules without
+      // rewriting their business logic or native font resources.
+      if (Platform.OS === 'web' && !next.fontFamily &&
+          (typeof next.fontSize === 'number' || typeof next.fontWeight === 'string')) {
+        next.fontFamily = /heading|title|hero|brand|appname|titulo/i.test(name)
+          ? 'Manrope' : 'Inter';
+      }
       for (const [key, value] of Object.entries(next)) {
         if (typeof value === 'number' && (key === 'fontSize' || key === 'lineHeight')) {
           next[key] = Math.round(value * fontScale);
