@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
-import { OCEAFIN } from '../../design/tokens';
 import { moeda } from '../workspace/FinanceVisuals';
 
 function HeroOceanArt() {

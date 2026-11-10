@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet,
-  Text, View, useWindowDimensions,
+  Text, View, useWindowDimensions, Platform,
 } from 'react-native';
 import type { Lancamento, LancamentoInput, ResumoFinanceiro } from '../../types/finance';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useNotifications } from '../../notifications/NotificationsContext';
 import { ProfileCard } from '../auth/ProfileCard';
 import { useProfileSession } from '../auth/ProtectedFinance';
@@ -25,7 +26,7 @@ import { PlannerCenter } from './PlannerCenter';
 import { BrandMark } from '../../design/brand';
 import { OceanDashboard } from '../dashboard/OceanDashboard';
 import { OceanBottomNavigation, OceanSidebar, type QuickAction } from '../navigation/OceanNavigation';
-import { OCEAFIN } from '../../design/tokens';
+import { OCEAFIN, getOceafinTheme } from '../../design/tokens';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
 import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
 
@@ -47,6 +48,8 @@ const mesAno = (mes: number, ano: number) => String(mes).padStart(2, '0') + '/' 
 
 export function FinanceWorkspace() {
   const s = useAccessibleStyles(base);
+  const { isDark } = useAccessibility();
+  const theme = getOceafinTheme(isDark);
   const notifications = useNotifications();
   const account = useProfileSession();
   const accountName = account?.session.user.user_metadata?.full_name;
@@ -292,7 +295,7 @@ export function FinanceWorkspace() {
     { titulo: 'PREFERÊNCIAS', ids: ['configuracoes'] },
   ];
   return (
-    <View style={s.root}>
+    <View style={[s.root, { backgroundColor: theme.page }]}>
       {desktop && <OceanSidebar pages={PAGINAS} groups={grupos}
         active={aba} onNavigate={irPara} />}
       <View style={s.main}>
@@ -349,12 +352,12 @@ export function FinanceWorkspace() {
 }
 
 const base = StyleSheet.create({
-  root: { flex: 1, flexDirection: 'row', backgroundColor: '#F2F9FC' },
+  root: { flex: 1, flexDirection: 'row', backgroundColor: '#F7F5FA' },
   main: { flex: 1, minWidth: 0 },
   scroll: { flex: 1, minWidth: 0 },
   content: { width: '100%', alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 24,
-    paddingBottom: 92, gap: 20 },
-  contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 120, gap: 18 },
+    paddingBottom: 110, gap: 20 },
+  contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 135, gap: 18 },
   mobileTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     gap: 8, minHeight: 66, backgroundColor: '#0B1F4B', borderRadius: 20,
     paddingHorizontal: 13, paddingVertical: 9 },

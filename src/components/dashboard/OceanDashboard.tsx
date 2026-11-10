@@ -5,7 +5,7 @@ import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { WorkspaceIcon, type WorkspaceIconName } from '../../design/brand';
 import { OceanHero } from './OceanHero';
 import { OceanFlowChart } from './OceanFlowChart';
-import { getOceafinTheme, OCEAFIN } from '../../design/tokens';
+import { getOceafinTheme } from '../../design/tokens';
 import type { Lancamento, ResumoFinanceiro } from '../../types/finance';
 import type { PlannerData, RecurringRule } from '../../services/finance-planner';
 import { MonthlyOverview } from '../finance/MonthlyOverview';

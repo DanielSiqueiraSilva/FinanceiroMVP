@@ -8,7 +8,7 @@ import { moeda } from '../workspace/FinanceVisuals';
 
 export function weeklyFlow(items: readonly Lancamento[]) {
   const weeks = Array.from({ length: 5 }, (_, index) => ({
-    label: String(index * 7 + 1).padStart(2, '0') + '–' + String(Math.min(31, (index + 1) * 7)).padStart(2, '0'),
+    label: 'Sem. ' + (index + 1),
     income: 0, expense: 0,
   }));
   for (const item of items) {
@@ -58,8 +58,9 @@ export function OceanFlowChart({ items, period, onDetails, hidden }: {
       <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#0077C8' }]}/>
         <Text style={[styles.legendText, { color: t.muted }]}>Despesas</Text></View>
     </View>
-    {hasData ? <View accessible accessibilityLabel={
-      'Gráfico semanal de ' + period + '. ' +
+    {hasData ? <View accessible accessibilityLabel={hidden
+      ? 'Gráfico de receitas e despesas do período, com valores ocultos.'
+      : 'Gráfico semanal de ' + period + '. ' +
       weeks.map(w => w.label + ' receitas ' + moeda(w.income) +
       ' despesas ' + moeda(w.expense)).join('. ')
     }>

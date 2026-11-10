@@ -31,7 +31,7 @@ export function PlannerCenter({ section, month, year, onUpdated }: {
   }, [month, year]);
   useEffect(() => { setLoading(true); void refresh(); }, [refresh]);
 
-  if (loading && !data) return <View style={s.loading}><ActivityIndicator color="#7C3AED"/><Text style={s.muted}>Preparando seu planejamento...</Text></View>;
+  if (loading && !data) return <View style={s.loading}><ActivityIndicator color="#0077C8"/><Text style={s.muted}>Preparando seu planejamento...</Text></View>;
   if (!data || error && !data) return <View style={s.card}>
     <Text style={s.error}>{error || 'Dados indisponíveis.'}</Text>
     <Pressable accessibilityRole="button" onPress={() => { setLoading(true); void refresh(); }} style={s.button}>
