@@ -21,3 +21,15 @@ e prancha visual Oceafin de 09/11/2026.
   fonte do sistema até inclusão de assets de fonte com licença e testes.
 - O CSS de glass é progressivo: navegadores sem backdrop-filter usam fundo
   semitransparente com contraste e borda, não refração obrigatória.
+
+## Preparação para publicação na main
+
+- QA visual automatizado em Chromium concluído com sucesso antes da remoção da
+  rota temporária: 320, 360, 390, 768, 1024, 1440 px, em claro e escuro.
+  Evidências e capturas: GitHub Actions execução 42733505541.
+- A rota pública temporária `src/app/design-preview.tsx` e seu script de teste
+  foram retirados do pacote de publicação. O CI bloqueia nova exposição.
+- Atenção: uma aprovação de testes automatizados não substitui revisão
+  autenticada de contas, cartões e operações com dados fictícios, nem
+  comparação visual exata com a prancha e testes nativos.
+- Sem alteração de modelos de banco, RLS, APIs ou registros financeiros.
