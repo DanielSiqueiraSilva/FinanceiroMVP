@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useAccessibility } from '../accessibility/AccessibilityContext';
 import { useAccessibleStyles } from '../accessibility/useAccessibleStyles';
@@ -36,7 +36,11 @@ export default function OceafinVisualPreview() {
   const { isDark } = useAccessibility();
   const t = getOceafinTheme(isDark);
   const { width } = useWindowDimensions();
-  const desktop = width >= 900;
+  // Keep server HTML and first client render identical during hydration.
+  // Once mounted, switch to the real desktop sidebar using viewport size.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const desktop = mounted && width >= 900;
   const [active, setActive] = useState<OceanPage['id']>('painel');
   const [hidden, setHidden] = useState(false);
   const [month, setMonth] = useState(11);
