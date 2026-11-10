@@ -22,8 +22,11 @@ export default function RootHtml({ children }: PropsWithChildren) {
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
         <title>Oceafin | Seu dinheiro em equilíbrio</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet" />
         <meta name="color-scheme" content="light dark" />
-        <meta name="theme-color" content="#071727" />
+        <meta name="theme-color" content="#07182C" />
         <meta name="description" content="Oceafin: seu dinheiro em equilíbrio. Organize contas, cartões, lançamentos e planejamento." />
         <ScrollViewStyleReset />
         {/* Executado antes da hidratação: evita que o tema padrão sobrescreva
@@ -48,22 +51,22 @@ export default function RootHtml({ children }: PropsWithChildren) {
                 root.setAttribute('data-finance-keyboard', String(Boolean(value && value.keyboardNavigation)));
                 root.setAttribute('data-finance-text-spacing', String(Boolean(value && value.textSpacing)));
                 root.style.colorScheme = resolved;
-                root.style.backgroundColor = resolved === 'dark' ? '#071727' : '#EFF6F8';
+                root.style.backgroundColor = resolved === 'dark' ? '#07182C' : '#F2F9FC';
               } catch (_) {
                 var fallback = window.matchMedia &&
                   window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 document.documentElement.setAttribute('data-finance-theme', fallback);
                 document.documentElement.style.colorScheme = fallback;
                 document.documentElement.style.backgroundColor =
-                  fallback === 'dark' ? '#071727' : '#EFF6F8';
+                  fallback === 'dark' ? '#07182C' : '#F2F9FC';
               }
             })();`
           }}
         />
         <style>{`
-          :root { --finance-page-bg: #EFF6F8; color-scheme: light; }
+          :root { --finance-page-bg: #F2F9FC; color-scheme: light; }
           :root[data-finance-theme="dark"] {
-            --finance-page-bg: #071727; color-scheme: dark;
+            --finance-page-bg: #07182C; color-scheme: dark;
           }
           html, body { background-color: var(--finance-page-bg); }
           :root[data-finance-theme-ready="true"] body,

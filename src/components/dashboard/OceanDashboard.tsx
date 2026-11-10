@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
-import { WorkspaceIcon, HeroSignature, type WorkspaceIconName } from '../../design/brand';
-import { getOceafinTheme, OCEAFIN } from '../../design/tokens';
+import { WorkspaceIcon, type WorkspaceIconName } from '../../design/brand';
+import { OceanHero } from './OceanHero';
+import { OceanFlowChart } from './OceanFlowChart';
+import { getOceafinTheme } from '../../design/tokens';
 import type { Lancamento, ResumoFinanceiro } from '../../types/finance';
 import type { PlannerData, RecurringRule } from '../../services/finance-planner';
 import { MonthlyOverview } from '../finance/MonthlyOverview';
@@ -52,8 +54,8 @@ function SectionHeading({ overline, title, subtitle }: {
   );
 }
 
-function AmountCard({ title, value, hint, tone }: {
-  title: string; value: number; hint: string; tone: 'income' | 'expense';
+function AmountCard({ title, value, hint, tone, hidden = false }: {
+  title: string; value: number; hint: string; tone: 'income' | 'expense'; hidden?: boolean;
 }) {
   const s = useAccessibleStyles(styles);
   const { isDark } = useAccessibility();
@@ -63,26 +65,26 @@ function AmountCard({ title, value, hint, tone }: {
     : isDark ? '#FFC1B7' : '#AB493C';
   return (
     <View style={[s.amountCard, { backgroundColor: t.surface, borderColor: t.border }]}
-      accessible accessibilityLabel={title + ': ' + moeda(value) + '. ' + hint}>
+      accessible accessibilityLabel={title + ': ' + (hidden ? 'Valor oculto' : moeda(value)) + '. ' + hint}>
       <View style={[s.amountAccent, { backgroundColor: amountColor }]} />
       <Text style={[s.amountLabel, { color: t.muted }]}>{title}</Text>
       <Text style={[s.amountValue, { color: amountColor }]} adjustsFontSizeToFit
-        minimumFontScale={0.75} numberOfLines={2}>{moeda(value)}</Text>
+        minimumFontScale={0.75} numberOfLines={2}>{hidden ? 'R$ •••••' : moeda(value)}</Text>
       <Text style={[s.caption, { color: t.muted }]}>{hint}</Text>
     </View>
   );
 }
 
-function LinkedAccountCard({ title, value, hint, onPress, icon }: {
+function LinkedAccountCard({ title, value, hint, onPress, icon, hidden = false }: {
   title: string; value: number | null; hint: string;
-  onPress: () => void; icon: 'contas' | 'automacao';
+  onPress: () => void; icon: 'contas' | 'automacao'; hidden?: boolean;
 }) {
   const s = useAccessibleStyles(styles);
   const { isDark } = useAccessibility();
   const t = getOceafinTheme(isDark);
   return (
     <Pressable onPress={onPress} accessibilityRole="button"
-      accessibilityLabel={title + ': ' + (value === null ? 'Estimativa indisponível' : moeda(value)) + '. Abrir detalhes'}
+      accessibilityLabel={title + ': ' + (value === null ? 'Estimativa indisponível' : hidden ? 'Valor oculto' : moeda(value)) + '. Abrir detalhes'}
       style={({ pressed }) => [s.linkedCard, {
         backgroundColor: t.surface, borderColor: t.border,
       }, pressed && s.pressed]}>
@@ -92,7 +94,7 @@ function LinkedAccountCard({ title, value, hint, onPress, icon }: {
       </View>
       <Text style={[s.linkedAmount, { color: t.text }]} numberOfLines={2}
         adjustsFontSizeToFit minimumFontScale={0.75}>
-        {value === null ? 'Sem estimativa' : moeda(value)}
+        {value === null ? 'Sem estimativa' : hidden ? 'R$ •••••' : moeda(value)}
       </Text>
       <Text style={[s.caption, { color: t.muted }]}>{hint}</Text>
       <Text style={[s.cardLink, { color: t.link }]}>Ver detalhes  ›</Text>
@@ -106,6 +108,7 @@ export function OceanDashboard({
 }: Props) {
   const s = useAccessibleStyles(styles);
   const { isDark } = useAccessibility();
+  const [hideValues, setHideValues] = useState(false);
   const { width } = useWindowDimensions();
   const t = getOceafinTheme(isDark);
   const period = String(mes).padStart(2, '0') + '/' + ano;
@@ -125,10 +128,10 @@ export function OceanDashboard({
         <View style={s.introCopy}>
           <Text style={[s.kicker, { color: t.link }]}>OCEAFIN  /  {period}</Text>
           <Text style={[s.heading, { color: t.text }]} accessibilityRole="header">
-            Seu dinheiro, em perspectiva.
+            Visão geral
           </Text>
           <Text style={[s.subtitle, { color: t.muted }]}>
-            Veja o que entrou, o que saiu e o que precisa de atenção.
+            Suas finanças, mais simples. Tudo o que importa em um só lugar.
           </Text>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Criar novo lançamento"
@@ -138,41 +141,33 @@ export function OceanDashboard({
         </Pressable>
       </View>
 
-      <View style={s.summaryRow}>
-        <View style={s.hero} accessible accessibilityLabel={
-          resumo ? 'Resultado do mês: ' + moeda(resumo.saldo) : 'Resultado do mês indisponível'
-        }>
-          <View pointerEvents="none" style={s.heroArt}><HeroSignature /></View>
-          <Text style={s.heroKicker}>RESULTADO DE {period}</Text>
-          <Text style={s.heroLabel}>Receitas menos despesas</Text>
-          <Text style={s.heroNumber} numberOfLines={2} adjustsFontSizeToFit
-            minimumFontScale={0.65}>
-            {resumo ? moeda(resumo.saldo) : 'Indisponível'}
-          </Text>
-          <Text style={s.heroFoot}>Resultado deste período — não é seu saldo bancário.</Text>
-          <View style={s.heroLine} />
-          <Text style={s.heroMicro}>Clareza hoje. Mais controle amanhã.</Text>
-        </View>
+      <View style={s.heroSection}>
+        <OceanHero balance={balances.accountTotal}
+          monthResult={resumo?.saldo ?? null} period={period}
+          hidden={hideValues} onToggle={() => setHideValues(v => !v)}
+          onAccounts={() => onNavigate('contas')} />
         <View style={s.amountColumn}>
-          <AmountCard title="Receitas do mês" value={resumo?.totalReceitas ?? 0}
-            hint="Entradas registradas no período" tone="income" />
-          <AmountCard title="Despesas do mês" value={resumo?.totalDespesas ?? 0}
-            hint="Saídas registradas no período" tone="expense" />
+          <AmountCard title="Receitas" value={resumo?.totalReceitas ?? 0}
+            hint="Entradas registradas no mês" tone="income" hidden={hideValues} />
+          <AmountCard title="Despesas" value={resumo?.totalDespesas ?? 0}
+            hint="Saídas registradas no mês" tone="expense" hidden={hideValues} />
         </View>
       </View>
+      <OceanFlowChart items={lancamentos} period={period}
+        hidden={hideValues} onDetails={() => onNavigate('graficos')} />
 
       <SectionHeading overline="POSIÇÃO FINANCEIRA" title="Contas e cartões"
         subtitle="Valores derivados dos lançamentos vinculados, não de uma conexão bancária." />
       <View style={s.linkedRow}>
         {balances.hasAccounts && (
           <LinkedAccountCard title="Saldo estimado nas contas" icon="contas"
-            value={balances.accountTotal}
+            value={balances.accountTotal} hidden={hideValues}
             hint="Saldo inicial + movimentações vinculadas e transferências, menos faturas pagas."
             onPress={() => onNavigate('contas')} />
         )}
         {balances.hasCards && (
           <LinkedAccountCard title="Compras pendentes nos cartões" icon="contas"
-            value={balances.cardPending}
+            value={balances.cardPending} hidden={hideValues}
             hint="Compras registradas menos pagamentos informados. Não é a fatura do banco."
             onPress={() => onNavigate('contas')} />
         )}
@@ -193,7 +188,7 @@ export function OceanDashboard({
         )}
       </View>
 
-      <SectionHeading overline="AÇÕES RÁPIDAS" title="Seu próximo passo"
+      <SectionHeading overline="ATALHOS" title="Seu próximo passo"
         subtitle="As ferramentas importantes estão sempre por perto." />
       <View style={s.shortcuts}>
         {SHORTCUTS.map(item => (
@@ -284,10 +279,11 @@ export function OceanDashboard({
                 <Text style={[s.rowTitle, { color: t.text }]} numberOfLines={2}>
                   {item.categoria}
                 </Text>
-                <Text style={[s.barAmount, { color: t.text }]}>{moeda(item.valor)}</Text>
+                <Text style={[s.barAmount, { color: t.text }]}>{hideValues ? 'R$ •••••' : moeda(item.valor)}</Text>
               </View>
               <View accessible accessibilityLabel={item.categoria + ', ' +
-                moeda(item.valor) + ', ' + Math.round(item.percentual) + '% das despesas'}
+                (hideValues ? 'valor oculto' : moeda(item.valor)) + ', ' +
+                (hideValues ? 'proporção oculta' : Math.round(item.percentual) + '% das despesas')}
                 style={[s.barTrack, { backgroundColor: t.selected }]}>
                 <View style={[s.barFill, { width: Math.min(100, Math.max(0, item.percentual)) + '%',
                   backgroundColor: index === 0 ? t.primary : t.accent }]} />
@@ -300,7 +296,7 @@ export function OceanDashboard({
           <View style={[s.breakdownFooter, { borderColor: t.border }]}>
             <Text style={[s.caption, { color: t.muted }]}>Maior despesa</Text>
             <Text style={[s.rowTitle, { color: t.text }]}>
-              {topExpense ? topExpense.descricao + ' · ' + moeda(topExpense.valor) : 'Nenhuma'}
+              {topExpense ? topExpense.descricao + ' · ' + (hideValues ? 'R$ •••••' : moeda(topExpense.valor)) : 'Nenhuma'}
             </Text>
             <Text style={[s.caption, { color: t.muted }]}>Categoria principal</Text>
             <Text style={[s.rowTitle, { color: t.text }]}>
@@ -338,7 +334,7 @@ export function OceanDashboard({
                 color: tx.tipo === 'receita' ? isDark ? '#88E8CE' : '#116F5A'
                   : isDark ? '#FFC1B7' : '#AB493C',
               }]}>
-                {tx.tipo === 'receita' ? '+' : '−'} {moeda(tx.valor)}
+                {tx.tipo === 'receita' ? '+' : '−'} {hideValues ? 'R$ •••••' : moeda(tx.valor)}
               </Text>
             </View>
           ))}
@@ -369,6 +365,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center' },
   primaryActionText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
   pressed: { opacity: 0.82 },
+  heroSection: { gap: 13 },
   summaryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   hero: { flex: 1, flexGrow: 1, flexBasis: 330, minWidth: 0, borderRadius: 24,
     padding: 24, gap: 9, overflow: 'hidden', backgroundColor: '#0C293D', minHeight: 242 },
@@ -380,9 +377,8 @@ const styles = StyleSheet.create({
   heroFoot: { fontSize: 11, lineHeight: 17, color: '#D0E6EF' },
   heroLine: { width: 44, height: 3, backgroundColor: '#67DCCE', borderRadius: 4, marginTop: 9 },
   heroMicro: { fontSize: 12, fontWeight: '700', color: '#67DCCE' },
-  amountColumn: { flexGrow: 1, flexBasis: 320, minWidth: 0,
-    flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  amountCard: { flexGrow: 1, flexBasis: 148, minWidth: 0, borderWidth: 1,
+  amountColumn: { flexDirection: 'row', flexWrap: 'wrap', gap: 13 },
+  amountCard: { flexGrow: 1, flexBasis: 190, minWidth: 0, borderWidth: 1,
     borderRadius: 20, padding: 17, gap: 10, overflow: 'hidden' },
   amountAccent: { height: 4, width: 34, borderRadius: 4 },
   amountLabel: { fontSize: 12, fontWeight: '700' },

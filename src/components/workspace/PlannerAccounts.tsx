@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
@@ -13,7 +13,8 @@ import {
   validateTransfer,
 } from './finance-flow-validation';
 
-type Props = { data: PlannerData; refresh: () => Promise<void> };
+type Props = { data: PlannerData; refresh: () => Promise<void>;
+  initialOperation?: 'transfer' | 'payment' | 'link' | null; };
 function Field({ label, value, change, hint, numeric = false }: {
   label: string; value: string; change: (s: string) => void; hint?: string; numeric?: boolean;
 }) {
@@ -36,10 +37,13 @@ function Chip({ label, selected, onPress }: {
   </Pressable>;
 }
 
-export function PlannerAccounts({ data, refresh }: Props) {
+export function PlannerAccounts({ data, refresh, initialOperation = null }: Props) {
   const s = useAccessibleStyles(base);
   const [type, setType] = useState<'accounts'|'cards'>('accounts');
-  const [operation, setOperation] = useState<'transfer' | 'payment' | 'link' | null>(null);
+  const [operation, setOperation] = useState<'transfer' | 'payment' | 'link' | null>(initialOperation);
+  useEffect(() => {
+    if (initialOperation) setOperation(initialOperation);
+  }, [initialOperation]);
   const busyRef = useRef(false);
   const [name, setName] = useState('');
   const [kind, setKind] = useState<FinanceAccount['kind']>('bank');

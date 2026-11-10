@@ -28,6 +28,7 @@ type TransactionFormProps = {
   onCancelarEdicao: () => void;
   accounts?: FinanceAccount[];
   cards?: FinanceCard[];
+  initialType?: TipoLancamento;
 };
 
 function dataPadraoPeriodo(mes: number, ano: number) {
@@ -44,11 +45,11 @@ export function TransactionForm({
   lancamentoEmEdicao,
   salvando,
   onSalvar,
-  onCancelarEdicao, accounts = [], cards = [],
+  onCancelarEdicao, accounts = [], cards = [], initialType = 'despesa',
 }: TransactionFormProps) {
   const styles = useAccessibleStyles(baseStyles);
   const { isDark } = useAccessibility();
-  const [tipo, setTipo] = useState<TipoLancamento>('despesa');
+  const [tipo, setTipo] = useState<TipoLancamento>(initialType);
   const [descricao, setDescricao] = useState('');
   const [categoria, setCategoria] = useState<string>('Outros');
   const [valor, setValor] = useState('');

@@ -1,7 +1,7 @@
-name: Validate Oceafin foundation
+name: Validate Oceafin UI
 on:
   push:
-    branches: [feature/oceafin-foundation]
+    branches: [main, feature/oceafin-design-v2]
   pull_request:
     branches: [main]
 permissions:
@@ -23,7 +23,7 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit
       - name: Lint Oceafin design foundation
-        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx src/components/dashboard/OceanDashboard.tsx src/components/dashboard/dashboard-data.ts src/components/workspace/finance-flow-validation.ts
+        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx src/components/dashboard/OceanDashboard.tsx src/components/dashboard/dashboard-data.ts src/components/workspace/finance-flow-validation.ts src/design/OceanGlass.tsx src/components/dashboard/OceanHero.tsx src/components/dashboard/OceanFlowChart.tsx
       - name: Legacy full-repository lint audit (non-blocking)
         continue-on-error: true
         run: npm run lint
@@ -35,3 +35,8 @@ jobs:
         run: node --experimental-strip-types --test tools/tests/oceafin-finance-flow.test.mjs
       - name: Expo Web build
         run: npm run build:web
+      - name: Ensure no public demo-only route ships
+        run: |
+          test ! -e src/app/design-preview.tsx
+          test ! -e dist/design-preview.html
+          test ! -e dist/design-preview/index.html

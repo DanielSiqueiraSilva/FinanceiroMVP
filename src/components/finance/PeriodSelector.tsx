@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
+import { OceanGlass } from '../../design/OceanGlass';
 
 const MESES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -90,7 +91,7 @@ export function PeriodSelector({ mes, ano, onSelecionar }: PeriodSelectorProps) 
             accessibilityRole="button"
             accessibilityLabel="Fechar seleção de período"
           />
-          <View style={[s.popup, { width: Math.min(width - 24, 430), maxHeight: Math.max(280, height - 32) }]}>
+          <OceanGlass material="floating" radius={22} style={[s.popup, { width: Math.min(width - 24, 430), maxHeight: Math.max(280, height - 32) }]}>
             <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.popupContent}>
               <View style={s.topo}>
                 <View style={s.topoTexto}>
@@ -154,7 +155,7 @@ export function PeriodSelector({ mes, ano, onSelecionar }: PeriodSelectorProps) 
                 </Pressable>
               </View>
             </ScrollView>
-          </View>
+          </OceanGlass>
         </View>
       </Modal>
     </>
@@ -163,7 +164,7 @@ export function PeriodSelector({ mes, ano, onSelecionar }: PeriodSelectorProps) 
 
 const base = StyleSheet.create({
   periodo: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64,
-    borderRadius: 16, borderWidth: 1, borderColor: '#DDD6E6', backgroundColor: '#FFFFFF', paddingHorizontal: 15, paddingVertical: 11 },
+    borderRadius: 18, borderWidth: 1, borderColor: '#DDD6E6', backgroundColor: '#FFFFFF', paddingHorizontal: 15, paddingVertical: 11 },
   calendario: { fontSize: 25, color: '#7C3AED' },
   periodoTexto: { flex: 1, minWidth: 0 },
   label: { fontSize: 11, color: '#6B7280', fontWeight: '700' },
@@ -171,7 +172,7 @@ const base = StyleSheet.create({
   abrirIcone: { color: '#6D28D9', fontSize: 12, fontWeight: '800' },
   overlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 12 },
   backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.55)' },
-  popup: { borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 22, backgroundColor: '#FFFFFF', overflow: 'hidden' },
+  popup: { borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 22, overflow: 'hidden' },
   popupContent: { padding: 18, gap: 16 },
   topo: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' },
   topoTexto: { flex: 1, gap: 5 },

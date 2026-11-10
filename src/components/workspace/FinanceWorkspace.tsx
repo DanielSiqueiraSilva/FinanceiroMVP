@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet,
-  Text, View, useWindowDimensions,
+  Text, View, useWindowDimensions, Platform,
 } from 'react-native';
 import type { Lancamento, LancamentoInput, ResumoFinanceiro } from '../../types/finance';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useNotifications } from '../../notifications/NotificationsContext';
 import { ProfileCard } from '../auth/ProfileCard';
 import { useProfileSession } from '../auth/ProtectedFinance';
@@ -24,8 +25,8 @@ import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
 import { BrandMark } from '../../design/brand';
 import { OceanDashboard } from '../dashboard/OceanDashboard';
-import { OceanBottomNavigation, OceanSidebar } from '../navigation/OceanNavigation';
-import { OCEAFIN } from '../../design/tokens';
+import { OceanBottomNavigation, OceanSidebar, type QuickAction } from '../navigation/OceanNavigation';
+import { OCEAFIN, getOceafinTheme } from '../../design/tokens';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
 import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
 
@@ -47,6 +48,8 @@ const mesAno = (mes: number, ano: number) => String(mes).padStart(2, '0') + '/' 
 
 export function FinanceWorkspace() {
   const s = useAccessibleStyles(base);
+  const { isDark } = useAccessibility();
+  const theme = getOceafinTheme(isDark);
   const notifications = useNotifications();
   const account = useProfileSession();
   const accountName = account?.session.user.user_metadata?.full_name;
@@ -68,6 +71,8 @@ export function FinanceWorkspace() {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
   const [editando, setEditando] = useState<Lancamento | null>(null);
+  const [quickIntent, setQuickIntent] = useState<'receita' | 'despesa' | null>(null);
+  const [quickTransfer, setQuickTransfer] = useState(false);
   const [historico, setHistorico] = useState<MesAnalise[]>([]);
   const [accountOptions,setAccountOptions] = useState<FinanceAccount[]>([]);
   const [cardOptions,setCardOptions] = useState<FinanceCard[]>([]);
@@ -158,6 +163,20 @@ export function FinanceWorkspace() {
     notifications?.click();
     setAba(id);
   };
+  function acaoRapida(action: QuickAction) {
+    setEditando(null);
+    if (action === 'transferencia') {
+      setQuickTransfer(true);
+      irPara('contas');
+      return;
+    }
+    // A card purchase is an expense linked to a card, NOT a payment.
+    // It must start in the transaction form so card choices remain available.
+    setQuickTransfer(false);
+    setQuickIntent(action === 'receita' ? 'receita' : 'despesa');
+    irPara('lancamentos');
+  }
+
   function selecionarPeriodo(mesNovo: number, anoNovo: number) {
     if (mesNovo === mes && anoNovo === ano) return;
     setMes(mesNovo);
@@ -234,7 +253,9 @@ export function FinanceWorkspace() {
     if (aba === 'carteiras') return <SharedWallets />;
     if (aba === 'planos') return <FuturePlans />;
     if (aba === 'automacao') return <PlannerCenter section="automation" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
-    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
+    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano}
+      initialOperation={quickTransfer ? 'transfer' : null}
+      onUpdated={() => void carregar(true)} />;
     if (aba === 'metas') return <PlannerCenter section="goals" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
     if (loading) return <View style={s.loading}><ActivityIndicator size="large" color="#7C3AED" /><Text style={s.muted}>Carregando seus dados...</Text></View>;
     if (aba === 'graficos') return histLoading ? <View style={s.loading}><ActivityIndicator color="#7C3AED" /><Text style={s.muted}>Carregando histórico...</Text></View> :
@@ -245,7 +266,8 @@ export function FinanceWorkspace() {
         <Text style={s.heading}>Lançamentos</Text>
         <Text style={s.muted}>Cadastre, edite e organize suas receitas e despesas em {mesAno(mes, ano)}. Vincule cada movimentação à conta ou cartão escolhido.</Text>
         {forecastNotice()}
-        <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo')} mes={mes} ano={ano}
+        <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo') + '-' + (quickIntent || '')}
+          initialType={quickIntent || undefined} mes={mes} ano={ano}
           lancamentoEmEdicao={editando} salvando={saving} onSalvar={salvar}
           accounts={accountOptions} cards={cardOptions}
           onCancelarEdicao={() => setEditando(null)} />
@@ -273,13 +295,12 @@ export function FinanceWorkspace() {
   };
 
   const grupos = [
-    { titulo: 'PRINCIPAL', ids: ['painel','lancamentos','graficos','dados'] },
-    { titulo: 'ORGANIZAR', ids: ['contas','automacao','carteiras'] },
-    { titulo: 'PLANEJAR', ids: ['metas','planos'] },
+    { titulo: 'PRINCIPAL', ids: ['painel','lancamentos','contas','metas','automacao','graficos'] },
+    { titulo: 'OUTRAS ÁREAS', ids: ['planos','dados','carteiras'] },
     { titulo: 'PREFERÊNCIAS', ids: ['configuracoes'] },
   ];
   return (
-    <View style={s.root}>
+    <View style={[s.root, { backgroundColor: theme.page }]}>
       {desktop && <OceanSidebar pages={PAGINAS} groups={grupos}
         active={aba} onNavigate={irPara} />}
       <View style={s.main}>
@@ -329,7 +350,7 @@ export function FinanceWorkspace() {
           {conteudo()}
         </ScrollView>
         {!desktop && <OceanBottomNavigation pages={PAGINAS}
-          active={aba} onNavigate={irPara} />}
+          active={aba} onNavigate={irPara} onQuickAction={acaoRapida} />}
       </View>
     </View>
   );
@@ -340,10 +361,10 @@ const base = StyleSheet.create({
   main: { flex: 1, minWidth: 0 },
   scroll: { flex: 1, minWidth: 0 },
   content: { width: '100%', alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 24,
-    paddingBottom: 92, gap: 20 },
-  contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 28, gap: 14 },
+    paddingBottom: 110, gap: 20 },
+  contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 135, gap: 18 },
   mobileTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    gap: 8, minHeight: 66, backgroundColor: '#21143C', borderRadius: 20,
+    gap: 8, minHeight: 66, backgroundColor: '#0B1F4B', borderRadius: 20,
     paddingHorizontal: 13, paddingVertical: 9 },
   mobileBrandWrap: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: 7 },
   mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 21,

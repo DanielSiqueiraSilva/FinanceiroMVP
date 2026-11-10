@@ -44,7 +44,7 @@ function BarComparison({ meses }: { meses: MesAnalise[] }) {
           </View>
         ))}
       </View>
-      <Text style={s.subtle}>■ Roxo: receitas   ■ Azul: despesas. Valores mensais.</Text>
+      <Text style={s.subtle}>■ Turquesa: receitas   ■ Azul oceânico: despesas. Valores mensais.</Text>
       {meses.map(item => (
         <Text key={'line-' + item.ano + '-' + item.mes} style={s.subtle}>
           {String(item.mes).padStart(2, '0')}/{item.ano}: {moeda(item.resumo.totalReceitas)} recebidos · {moeda(item.resumo.totalDespesas)} gastos
@@ -77,8 +77,8 @@ export function TrendLine({ values, labels, title }: {
       <View accessibilityLabel={title + ': ' + safe.map((v, i) => (labels[i] || i + 1) + ' ' + moeda(v)).join(', ')}>
         <Svg width={chartWidth} height={h} viewBox={'0 0 ' + chartWidth + ' ' + h}>
           {[0, 0.5, 1].map(v => <Line key={v} x1={pad} x2={chartWidth - pad} y1={pad + v * (h - pad * 2)} y2={pad + v * (h - pad * 2)} stroke="#DDD6E6" strokeWidth={1} />)}
-          <Path d={d} fill="none" stroke="#7C3AED" strokeWidth={3.5} strokeLinejoin="round" strokeLinecap="round" />
-          {points.map((p, i) => <Circle key={i} cx={p.x} cy={p.y} r={4} fill="#7C3AED" />)}
+          <Path d={d} fill="none" stroke="#00BDAE" strokeWidth={3.5} strokeLinejoin="round" strokeLinecap="round" />
+          {points.map((p, i) => <Circle key={i} cx={p.x} cy={p.y} r={4} fill="#00BDAE" />)}
         </Svg>
       </View>
       <Text style={s.subtle}>{safe.length ? 'Início: ' + moeda(safe[0]) + ' · Final: ' + moeda(safe[safe.length - 1]) : 'Sem dados'}</Text>
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
   barRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-around', alignItems: 'flex-end', gap: 4, minHeight: 157 },
   barSlot: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
   barGroup: { height: 136, flexDirection: 'row', alignItems: 'flex-end', gap: 3 },
-  barIncome: { backgroundColor: '#7C3AED', borderTopLeftRadius: 4, borderTopRightRadius: 4, width: 10 },
-  barExpense: { backgroundColor: '#3B82F6', borderTopLeftRadius: 4, borderTopRightRadius: 4, width: 10 },
+  barIncome: { backgroundColor: '#00BDAE', borderTopLeftRadius: 4, borderTopRightRadius: 4, width: 10 },
+  barExpense: { backgroundColor: '#0077C8', borderTopLeftRadius: 4, borderTopRightRadius: 4, width: 10 },
   barLabel: { fontSize: 10, color: '#6B7280' },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
 });
