@@ -1,4 +1,4 @@
-import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, Line, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { OCEAFIN } from './tokens';
 
 /** Legacy names retained for component compatibility. */
@@ -15,15 +15,42 @@ export type WorkspaceIconName =
   | 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'automacao'
   | 'contas' | 'metas' | 'planos' | 'carteiras' | 'configuracoes';
 
-export function BrandMark({ size = 38 }: { size?: number }) {
+/**
+ * Oceafin monogram derived from the approved identity board:
+ * a dimensional O integrated with a turquoise forward-facing ocean wave.
+ * Svg scales without stretching; keep original wave/letter silhouette.
+ */
+export function BrandMark({ size = 38, tile = true }: { size?: number; tile?: boolean }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 48 48" accessible={false}>
-      <Rect x="0" y="0" width="48" height="48" rx="14" fill={BRAND.ink} />
-      <Circle cx="24" cy="24" r="15" fill="none" stroke={BRAND.lime} strokeWidth="5" />
-      <Path d="M10 23C16 17 21 17 27 23S37 29 38 23"
-        fill="none" stroke="#EAF7F9" strokeWidth="2.4" strokeLinecap="round" />
-      <Path d="M13 30C18 26 22 26 27 30S34 34 36 30"
-        fill="none" stroke="#2DB6C1" strokeWidth="2.4" strokeLinecap="round" />
+    <Svg width={size} height={size} viewBox="0 0 64 64" accessible={false}>
+      <Defs>
+        <LinearGradient id="oceafin-ring" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#00E5D2" />
+          <Stop offset="0.38" stopColor="#00BAD1" />
+          <Stop offset="0.68" stopColor="#0077C8" />
+          <Stop offset="1" stopColor="#0750A6" />
+        </LinearGradient>
+        <LinearGradient id="oceafin-wave" x1="0" y1="0" x2="0.92" y2="1">
+          <Stop offset="0" stopColor="#6DFFF0" />
+          <Stop offset="0.34" stopColor="#00E5D2" />
+          <Stop offset="0.72" stopColor="#00B7DA" />
+          <Stop offset="1" stopColor="#0064B8" />
+        </LinearGradient>
+        <LinearGradient id="oceafin-shadow" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#06599B" />
+          <Stop offset="1" stopColor="#09245A" />
+        </LinearGradient>
+      </Defs>
+      {tile && <Rect width="64" height="64" rx="18" fill="#0B1F4B" />}
+      <Path d="M32 8C16 8 8.5 20.5 8.5 33S17 57 32 57 55.5 47.5 55.5 32.5 47 8 32 8Zm0 12.5c8 0 12 5.7 12 12.4 0 6.7-4.7 11.8-12 11.8-7.5 0-12-5.1-12-11.8S24.4 20.5 32 20.5Z"
+        fill="url(#oceafin-ring)" fillRule="evenodd" />
+      <Path d="M10 37c4-12 13-15 21-13.2 8 1.7 13 9 21 6.4 3-.9 5.2-3 6.8-6.1-1.5 11.9-9.8 23.4-23.4 24.4-10.8.9-17.6-7-25.4-5.6Z"
+        fill="url(#oceafin-shadow)" opacity={0.72}/>
+      <Path d="M7.8 43.6c5-12.1 14.6-17.7 25.1-14.1 7.2 2.5 11.6 7.7 19.8 4.5 4.3-1.7 7.5-5.8 8.5-9.3-1.1 13.7-9.7 23.5-23.5 24.1-12.1.5-19.4-8.4-29.9-5.2Z"
+        fill="url(#oceafin-wave)"/>
+      <Path d="M11 41c6.5-7 13.4-8.6 21-5.5 9.4 3.8 15.4 10.5 26.5 1.2"
+        fill="none" stroke="#7BFDF0" strokeWidth="1.4" strokeLinecap="round" opacity={0.85}/>
+      <Ellipse cx="23" cy="13" rx="12" ry="3.5" fill="#B6FFFB" opacity={0.05} />
     </Svg>
   );
 }

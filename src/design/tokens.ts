@@ -1,26 +1,28 @@
 /** Oceafin: semantic theme and design tokens for web and native. */
 export const OCEAFIN = {
   name: 'Oceafin',
-  tagline: 'Seu dinheiro em equilíbrio.',
-  colors: { deep: '#071727', navy: '#0C293D', navyRaised: '#14394D',
-    ocean: '#0B7189', link: '#09657A', aqua: '#67DCCE', pearl: '#EAF7F9' },
+  tagline: 'Suas finanças, mais simples.',
+  colors: { deep: '#071E34', navy: '#0B1F4B', navyRaised: '#123D63',
+    ocean: '#0077C8', link: '#006D9A', aqua: '#00E5D2', pearl: '#D6FAFF' },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 },
   radius: { sm: 10, md: 14, lg: 20, xl: 24, pill: 999 },
-  motion: { quick: 140, standard: 220, gentle: 320 },
+  motion: { quick: 150, standard: 230, gentle: 280, liquid: 650, sheet: 300 },
+  glass: { navigationBlur: 16, floatingBlur: 18, softBlur: 8 },
+  typography: { heading: 'Manrope', body: 'Inter', brand: 'Montserrat' },
 } as const;
 
 export const OCEAFIN_THEME = {
-  light: { page: '#EFF6F8', surface: '#FFFFFF', surfaceSubtle: '#F6FAFB',
-    input: '#F8FBFC', border: '#D5E3E9', text: '#102C3D',
-    muted: '#536F7C', primary: '#0B7189', link: '#09657A',
-    accent: '#67DCCE', selected: '#DAF5F2', navigation: '#0C293D',
-    navigationRaised: '#14394D', navigationText: '#D9EDF3',
+  light: { page: '#F2F9FC', surface: '#FFFFFF', surfaceSubtle: '#EAF5F9',
+    input: '#F7FCFD', border: '#CBE2EC', text: '#0B1F4B',
+    muted: '#506E81', primary: '#0077C8', link: '#006B8F',
+    accent: '#00E5D2', selected: '#D6F7F6', navigation: '#0B1F4B',
+    navigationRaised: '#123D63', navigationText: '#E6FAFD',
     successSurface: '#E3F7EC', errorSurface: '#FFF0F0' },
-  dark: { page: '#071727', surface: '#102A3C', surfaceSubtle: '#173649',
-    input: '#183B4F', border: '#35566A', text: '#EDF9FC',
-    muted: '#B2CDD8', primary: '#0B7189', link: '#80E7DB',
-    accent: '#67DCCE', selected: '#194C54', navigation: '#071727',
-    navigationRaised: '#14394D', navigationText: '#DBF1F5',
+  dark: { page: '#07182C', surface: '#112B43', surfaceSubtle: '#183850',
+    input: '#19364D', border: '#355F74', text: '#EFFCFF',
+    muted: '#B4CFDD', primary: '#0077C8', link: '#7AF1E8',
+    accent: '#00E5D2', selected: '#154A59', navigation: '#071E34',
+    navigationRaised: '#123D63', navigationText: '#E6FAFD',
     successSurface: '#163F35', errorSurface: '#402D35' },
 } as const;
 
