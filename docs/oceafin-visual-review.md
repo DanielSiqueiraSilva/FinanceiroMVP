@@ -37,3 +37,11 @@ Correções nesta revisão:
 Esta revisão remove problemas visuais evidentes da área pública, mas
 **não autoriza ainda o merge deste PR para a main**. A validação visual
 e funcional autenticada é pré-requisito para publicação segura.
+
+## Testes visuais após correção
+
+Nova prévia examinada em Chromium nas larguras 360, 390, 768 e 1440 px em modos claro e escuro.
+Confirmados título da aba Oceafin, botão de acessibilidade turquesa, modal acessível dentro da janela,
+sem transbordamento horizontal e sem erros JavaScript no carregamento. Testes da versão anterior
+mostraram alternância de tema persistente após atualização da página.
+O favicon vetorial Oceafin passa a ser publicado pela pasta public.

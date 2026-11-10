@@ -121,6 +121,7 @@ export default function RootHtml({ children }: PropsWithChildren) {
           }
         `}</style>
         {headNodes}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       </head>
       <body {...bodyAttributes}>
         {children}
