@@ -21,9 +21,9 @@ const EXPOSED_MOBILE: readonly string[] = ['painel', 'lancamentos', 'metas'];
 function useLiquidMotion(initial = 0) {
   const { reduceMotion } = useAccessibility();
   const [systemReduced, setSystemReduced] = useState(false);
-  const front = useRef(new Animated.Value(initial)).current;
-  const rear = useRef(new Animated.Value(initial)).current;
-  const elastic = useRef(new Animated.Value(1)).current;
+  const [front] = useState(() => new Animated.Value(initial));
+  const [rear] = useState(() => new Animated.Value(initial));
+  const [elastic] = useState(() => new Animated.Value(1));
   const activated = useRef(false);
   useEffect(() => {
     let live = true;
@@ -115,7 +115,7 @@ export function OceanSidebar({ pages, groups, active, onNavigate }: {
   const sectionTop = useRef<Record<string, number>>({});
   const relativeTop = useRef<Record<string, number>>({});
   const { front, rear, elastic, move, calm } = useLiquidMotion();
-  const width = useRef(new Animated.Value(248)).current;
+  const [width] = useState(() => new Animated.Value(248));
   useEffect(() => {
     let mounted = true;
     void AsyncStorage.getItem(NAV_STORAGE).then(value => {
