@@ -21,6 +21,7 @@ export default function RootHtml({ children }: PropsWithChildren) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
+        <title>Oceafin | Seu dinheiro em equilíbrio</title>
         <meta name="color-scheme" content="light dark" />
         <meta name="theme-color" content="#071727" />
         <meta name="description" content="Oceafin: seu dinheiro em equilíbrio. Organize contas, cartões, lançamentos e planejamento." />
