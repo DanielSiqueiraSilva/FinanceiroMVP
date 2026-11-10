@@ -10,6 +10,8 @@ import type { Session } from '@supabase/supabase-js';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
+import { BrandMark } from '../../design/brand';
+import { OCEAFIN, getOceafinTheme } from '../../design/tokens';
 import { authConfigured, supabaseAuth } from '../../auth/supabaseClient';
 import {
   isNativeQuickUnlock, checkQuickUnlock, getQuickUserId,
@@ -100,12 +102,8 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
     >
       <View style={[ui.panel, loginTheme.panel]}>
         <View style={ui.brand}>
-          <Svg width={21} height={21} viewBox="0 0 24 24" fill="none">
-            <Rect x={3} y={6} width={18} height={15} rx={3} stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={1.7} />
-            <Path d="M6 6V4.5A2.5 2.5 0 0 1 8.5 2H19" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={1.7} strokeLinecap="round" />
-            <Path d="M15.5 12h5.5v4h-5.5a2 2 0 0 1 0-4Z" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={1.7} />
-          </Svg>
-          <Text accessibilityRole="header" style={[ui.brandTitle, loginTheme.brandTitle]}>FinanMVP</Text>
+          <BrandMark size={42} />
+          <Text accessibilityRole="header" style={[ui.brandTitle, loginTheme.brandTitle]}>{OCEAFIN.name}</Text>
         </View>
 
         <Text style={[ui.subtitle, loginTheme.subtitle]}>{cadastro ? 'Crie sua conta com segurança' : 'Entre na sua conta com segurança'}</Text>
@@ -113,10 +111,10 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
         {!cadastro ? (
           <View style={ui.faceArea}>
             <Svg width={52} height={52} viewBox="0 0 48 48" fill="none" accessibilityLabel="Ícone de reconhecimento facial">
-              <Path d="M16 8h-4a4 4 0 0 0-4 4v4M32 8h4a4 4 0 0 1 4 4v4M8 32v4a4 4 0 0 0 4 4h4M40 32v4a4 4 0 0 1-4 4h-4" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={2.8} strokeLinecap="round" />
-              <Circle cx={18} cy={22} r={1.6} fill={isDark ? "#C4B5FD" : "#6D28D9"} />
-              <Circle cx={30} cy={22} r={1.6} fill={isDark ? "#C4B5FD" : "#6D28D9"} />
-              <Path d="M18 31c3.3 3.5 8.7 3.5 12 0" stroke={isDark ? "#C4B5FD" : "#6D28D9"} strokeWidth={2.6} strokeLinecap="round" />
+              <Path d="M16 8h-4a4 4 0 0 0-4 4v4M32 8h4a4 4 0 0 1 4 4v4M8 32v4a4 4 0 0 0 4 4h4M40 32v4a4 4 0 0 1-4 4h-4" stroke={isDark ? "#80E7DB" : "#09657A"} strokeWidth={2.8} strokeLinecap="round" />
+              <Circle cx={18} cy={22} r={1.6} fill={isDark ? "#80E7DB" : "#09657A"} />
+              <Circle cx={30} cy={22} r={1.6} fill={isDark ? "#80E7DB" : "#09657A"} />
+              <Path d="M18 31c3.3 3.5 8.7 3.5 12 0" stroke={isDark ? "#80E7DB" : "#09657A"} strokeWidth={2.6} strokeLinecap="round" />
             </Svg>
           </View>
         ) : null}
@@ -460,7 +458,7 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
 
   if (!session) {
     return (
-      <View style={[styles.flex, { backgroundColor: isDark ? "#0B1220" : "#F7F5FA" }]}>
+      <View style={[styles.flex, { backgroundColor: getOceafinTheme(isDark).page }]}>
         {banner ? <Text style={styles.banner}>{banner}</Text> : null}
         <LoginScreen hasQuickAccount={Boolean(quickUserId)} onQuickLogin={onQuickLogin} onRemoteLogin={onRemoteLogin} onPasskeyLogin={onPasskeyLogin} />
       </View>
@@ -471,32 +469,32 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
     <ProfileSessionContext.Provider value={{
       session, signOut, lock, nativeEnabled, nativeBusy, nativeMessage, activateNative, deactivateNative, runPasskeyOperation,
     }}>
-      <View style={[styles.flex, { backgroundColor: isDark ? "#0B1220" : "#F7F5FA" }]} onTouchStart={activity}>{children}</View>
+      <View style={[styles.flex, { backgroundColor: getOceafinTheme(isDark).page }]} onTouchStart={activity}>{children}</View>
     </ProfileSessionContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1, minHeight: 0, backgroundColor: '#0B1220' },
-  loginBackground: { flex: 1, backgroundColor: '#090F1B' },
+  loginBackground: { flex: 1, backgroundColor: '#071727' },
   loginScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 34, paddingHorizontal: 16 },
   panel: {
     width: '100%', maxWidth: 510, borderRadius: 20, padding: 24, gap: 16,
-    backgroundColor: '#111A2E', borderWidth: 1, borderColor: '#283650',
+    backgroundColor: '#102A3C', borderWidth: 1, borderColor: '#35566A',
   },
   brand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   brandTitle: { color: '#FFFFFF', fontSize: 21, fontWeight: '800' },
   subtitle: { color: '#CBD5E1', fontSize: 14, textAlign: 'center', marginTop: 0 },
   faceArea: { alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
   quickButton: {
-    backgroundColor: '#7C3AED', borderRadius: 13, alignItems: 'center',
+    backgroundColor: '#0B7189', borderRadius: 13, alignItems: 'center',
     justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 16, minHeight: 54,
   },
   primaryText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' },
   emailSection: { gap: 10, paddingTop: 4 },
   emailTitle: { color: '#CBD5E1', textAlign: 'center', fontSize: 13, fontWeight: '600', marginBottom: 4 },
   input: {
-    backgroundColor: '#18263D', color: '#FFFFFF', borderColor: '#44516A',
+    backgroundColor: '#183B4F', color: '#FFFFFF', borderColor: '#426578',
     borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, minHeight: 48, fontSize: 16,
   },
   passwordButton: {
@@ -505,7 +503,7 @@ const styles = StyleSheet.create({
   },
   passwordText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15, textAlign: 'center' },
   secondary: { alignItems: 'center', paddingVertical: 9 },
-  link: { color: '#C4B5FD', fontWeight: '700', fontSize: 14 },
+  link: { color: '#80E7DB', fontWeight: '700', fontSize: 14 },
   hint: { color: '#94A3B8', textAlign: 'center', fontSize: 12, lineHeight: 18 },
   message: { color: '#FCA5A5', textAlign: 'center', fontSize: 13 },
   disabled: { opacity: .55 },
@@ -514,30 +512,30 @@ const styles = StyleSheet.create({
 
 /** Cores explícitas do login escuro, sincronizadas com o isDark global. */
 const darkLoginStyles = StyleSheet.create({
-  loginBackground: { backgroundColor: '#090F1B' },
-  panel: { backgroundColor: '#111A2E', borderColor: '#283650' },
+  loginBackground: { backgroundColor: '#071727' },
+  panel: { backgroundColor: '#102A3C', borderColor: '#35566A' },
   brandTitle: { color: '#FFFFFF' },
   subtitle: { color: '#CBD5E1' },
   emailTitle: { color: '#CBD5E1' },
-  input: { backgroundColor: '#18263D', borderColor: '#44516A', color: '#FFFFFF' },
-  passwordButton: { backgroundColor: '#111A2E', borderColor: '#475569' },
+  input: { backgroundColor: '#183B4F', borderColor: '#426578', color: '#FFFFFF' },
+  passwordButton: { backgroundColor: '#102A3C', borderColor: '#475569' },
   passwordText: { color: '#FFFFFF' },
   hint: { color: '#94A3B8' },
   message: { color: '#FCA5A5' },
-  link: { color: '#C4B5FD' },
+  link: { color: '#80E7DB' },
 });
 
 /** O login claro preserva o layout e tem contraste equivalente. */
 const lightLoginStyles = StyleSheet.create({
-  loginBackground: { backgroundColor: '#F7F5FA' },
+  loginBackground: { backgroundColor: '#EFF6F8' },
   panel: { backgroundColor: '#FFFFFF', borderColor: '#DDD6E6' },
   brandTitle: { color: '#111827' },
   subtitle: { color: '#374151' },
   emailTitle: { color: '#374151' },
   input: { backgroundColor: '#FCFBFD', borderColor: '#D8D2E2', color: '#111827' },
-  passwordButton: { backgroundColor: '#FFFFFF', borderColor: '#8B5CF6' },
-  passwordText: { color: '#5B21B6' },
+  passwordButton: { backgroundColor: '#FFFFFF', borderColor: '#0B7189' },
+  passwordText: { color: '#09657A' },
   hint: { color: '#4B5563' },
   message: { color: '#991B1B' },
-  link: { color: '#6D28D9' },
+  link: { color: '#09657A' },
 });

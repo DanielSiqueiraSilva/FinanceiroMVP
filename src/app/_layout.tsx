@@ -4,6 +4,7 @@ import { Slot } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { AccessibilityProvider, useAccessibility } from '../accessibility/AccessibilityContext';
 import { AccessibilityToolbar } from '../accessibility/AccessibilityToolbar';
+import { getOceafinTheme } from '../design/tokens';
 
 function LayoutInterno() {
   const { isDark, ready, highContrast, reduceMotion, focusHighlight, keyboardNavigation, textSpacing } = useAccessibility();
@@ -12,7 +13,7 @@ function LayoutInterno() {
     // Sincroniza também os controles do navegador (inputs, selects, scrollbar)
     // com a preferência selecionada em Aa ou com o modo do sistema.
     const mode = isDark ? 'dark' : 'light';
-    const background = isDark ? '#0B1220' : '#F7F5FA';
+    const background = getOceafinTheme(isDark).page;
     document.documentElement.style.colorScheme = mode;
     document.documentElement.style.backgroundColor = background;
     document.documentElement.setAttribute('data-finance-theme', mode);
@@ -27,7 +28,7 @@ function LayoutInterno() {
   return (
     <View style={{
       flex: 1,
-      backgroundColor: isDark ? '#0B1220' : '#F7F5FA',
+      backgroundColor: getOceafinTheme(isDark).page,
       // O HTML inicial já pinta o fundo com o tema salvo. Esconde o
       // conteúdo apenas até a restauração terminar, evitando que login,
       // dashboard e janela Aa apareçam com paletas diferentes no refresh.

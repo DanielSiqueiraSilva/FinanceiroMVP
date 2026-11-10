@@ -243,8 +243,8 @@ export function TransactionForm({
       </View>
 
       <View style={styles.campo}>
-        <Text style={styles.rotulo}>De onde vem ou para onde vai o dinheiro?</Text>
-        <Text style={styles.subtitulo}>Selecione uma conta para movimentar o saldo estimado. Compras no cartão ficam pendentes até registrar o pagamento da fatura. Você também pode deixar sem vínculo.</Text>
+        <Text style={styles.rotulo}>Onde registrar esta movimentação?</Text>
+        <Text style={styles.subtitulo}>Conta: ajusta o saldo estimado com este lançamento. Cartão de crédito: registra uma compra pendente, sem retirar dinheiro da conta agora. Para uma receita, selecione uma conta ou deixe sem vínculo.</Text>
         <View style={styles.categorias}>
           <Pressable accessibilityRole="button" accessibilityState={{ selected: source === '' }} onPress={() => setSource('')}
             style={[styles.categoria, !source && styles.categoriaAtiva]}>

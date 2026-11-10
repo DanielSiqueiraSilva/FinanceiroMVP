@@ -21,20 +21,20 @@ const FONTS: { value: FontChoice; title: string }[] = [
   { value: 'extraLarge', title: 'Muito maior' },
 ];
 
-// Mesmas superfícies, bordas e acentos do FinanceiroMVP: sem néon.
+// Superfícies da Oceafin com contraste para controles de acessibilidade.
 const DARK = {
-  panel: '#142033', surface: '#19273D', text: '#F8FAFC', subtle: '#CBD5E1',
-  edge: '#536177', divider: '#39475B', control: '#19273D',
-  selected: '#7C3AED', selectedText: '#FFFFFF',
-  accent: '#C4B5FD', violetCard: '#19273D', cardEdge: '#536177',
+  panel: '#102A3C', surface: '#173649', text: '#F8FAFC', subtle: '#CBD5E1',
+  edge: '#35566A', divider: '#35566A', control: '#173649',
+  selected: '#0B7189', selectedText: '#FFFFFF',
+  accent: '#80E7DB', violetCard: '#173649', cardEdge: '#35566A',
   backdrop: 'rgba(11, 18, 32, 0.72)',
   disabled: '#475569', white: '#FFFFFF',
 };
 const LIGHT = {
-  panel: '#FFFFFF', surface: '#FCFBFD', text: '#111827', subtle: '#4B5563',
-  edge: '#DDD6E6', divider: '#ECE8F1', control: '#F4F1F8',
-  selected: '#7C3AED', selectedText: '#FFFFFF',
-  accent: '#6D28D9', violetCard: '#F4F1F8', cardEdge: '#DDD6E6',
+  panel: '#FFFFFF', surface: '#F8FBFC', text: '#102C3D', subtle: '#536F7C',
+  edge: '#D5E3E9', divider: '#D5E3E9', control: '#F6FAFB',
+  selected: '#0B7189', selectedText: '#FFFFFF',
+  accent: '#09657A', violetCard: '#F6FAFB', cardEdge: '#D5E3E9',
   backdrop: 'rgba(11, 18, 32, 0.48)',
   disabled: '#CBD5E1', white: '#FFFFFF',
 };
@@ -187,7 +187,7 @@ export function AccessibilityToolbar() {
           <Pressable accessibilityRole="button" accessibilityLabel="Fechar painel de acessibilidade"
             onPress={() => setOpen(false)}
             style={[ui.backdrop, { backgroundColor: colors.backdrop }]} />
-          <View accessibilityViewIsModal accessibilityLabel="Janela de acessibilidade do FinanMVP"
+          <View accessibilityViewIsModal accessibilityLabel="Janela de acessibilidade do Oceafin"
             style={[ui.panel, {
               width: Math.min(754, Math.max(0, width - 24)),
               maxHeight: Math.max(160, height - 26),
@@ -197,7 +197,7 @@ export function AccessibilityToolbar() {
             <View style={[ui.header, { borderBottomColor: colors.divider }]}>
               <View style={[ui.headerSymbol, {
                 borderColor: colors.cardEdge,
-                backgroundColor: isDark ? '#243248' : '#EDE9FE',
+                backgroundColor: isDark ? '#243248' : '#DAF5F2',
               }]}>
                 <Svg width={38} height={38} viewBox="0 0 48 48" fill="none"
                   accessibilityLabel="Símbolo de acessibilidade">
@@ -213,7 +213,7 @@ export function AccessibilityToolbar() {
                   Acessibilidade
                 </Text>
                 <Text style={[ui.headerSubtitle, { color: colors.subtle, fontSize: Math.round(13 * fontScale) }]}>
-                  Personalize sua experiência no FinanMVP
+                  Personalize sua experiência no Oceafin
                 </Text>
               </View>
               <Pressable accessibilityRole="button" accessibilityLabel="Fechar opções de acessibilidade"
@@ -289,7 +289,7 @@ export function AccessibilityToolbar() {
               <View style={[ui.vlibrasCard, {
                 backgroundColor: colors.violetCard, borderColor: colors.cardEdge,
               }]}>
-                <View style={[ui.handSymbol, { backgroundColor: isDark ? '#27334A' : '#EDE9FE' }]}>
+                <View style={[ui.handSymbol, { backgroundColor: isDark ? '#27334A' : '#DAF5F2' }]}>
                   <Text style={ui.handEmoji} accessible={false}>🤟</Text>
                 </View>
                 <View style={ui.vlibrasCopy}>
@@ -355,12 +355,12 @@ const ui = StyleSheet.create({
   },
   floatingButton: {
     width: 56, height: 56, borderRadius: 28, alignItems: 'center',
-    justifyContent: 'center', backgroundColor: '#7C3AED',
+    justifyContent: 'center', backgroundColor: '#0B7189',
     borderWidth: 2, borderColor: '#FFFFFF',
     ...Platform.select({
       web: { boxShadow: '0 3px 8px rgba(17,24,39,0.24)' },
       android: { elevation: 5 },
-      ios: { shadowColor: '#111827', shadowOpacity: 0.24, shadowRadius: 8,
+      ios: { shadowColor: '#102C3D', shadowOpacity: 0.24, shadowRadius: 8,
         shadowOffset: { width: 0, height: 3 } },
     }),
   },

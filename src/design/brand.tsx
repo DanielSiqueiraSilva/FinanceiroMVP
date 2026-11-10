@@ -1,35 +1,36 @@
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
+import { OCEAFIN } from './tokens';
 
+/** Legacy names retained for component compatibility. */
 export const BRAND = {
-  ink: '#21143C',
-  violet: '#7C3AED',
-  lime: '#CBF28A',
-  sand: '#EBC7AA',
-  paper: '#F7F5FA',
-  muted: '#D9CDEE',
+  ink: OCEAFIN.colors.navy,
+  violet: OCEAFIN.colors.ocean,
+  lime: OCEAFIN.colors.aqua,
+  sand: OCEAFIN.colors.pearl,
+  paper: OCEAFIN.colors.pearl,
+  muted: '#D9EDF3',
 } as const;
 
-type IconName =
+export type WorkspaceIconName =
   | 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'automacao'
   | 'contas' | 'metas' | 'planos' | 'carteiras' | 'configuracoes';
 
 export function BrandMark({ size = 38 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48" accessible={false}>
-      <Rect x="0" y="0" width="48" height="48" rx="14" fill={BRAND.lime} />
-      <Path
-        d="M11 32V16H23.5M11 24H20M22 32L29 23L34 27L39 14"
-        fill="none" stroke={BRAND.ink} strokeWidth="3.2"
-        strokeLinecap="round" strokeLinejoin="round"
-      />
-      <Circle cx="39" cy="14" r="2.5" fill={BRAND.ink} />
+      <Rect x="0" y="0" width="48" height="48" rx="14" fill={BRAND.ink} />
+      <Circle cx="24" cy="24" r="15" fill="none" stroke={BRAND.lime} strokeWidth="5" />
+      <Path d="M10 23C16 17 21 17 27 23S37 29 38 23"
+        fill="none" stroke="#EAF7F9" strokeWidth="2.4" strokeLinecap="round" />
+      <Path d="M13 30C18 26 22 26 27 30S34 34 36 30"
+        fill="none" stroke="#2DB6C1" strokeWidth="2.4" strokeLinecap="round" />
     </Svg>
   );
 }
 
 export function WorkspaceIcon({
   name, size = 20, color = BRAND.ink,
-}: { name: IconName; size?: number; color?: string }) {
+}: { name: WorkspaceIconName; size?: number; color?: string }) {
   const common = {
     fill: 'none' as const,
     stroke: color,
@@ -96,12 +97,15 @@ export function WorkspaceIcon({
 export function HeroSignature() {
   return (
     <Svg width={178} height={172} viewBox="0 0 178 172" accessible={false}>
-      <Circle cx="153" cy="77" r="80" fill="none" stroke="#CBF28A" strokeOpacity={0.18} strokeWidth={1.5}/>
-      <Circle cx="153" cy="77" r="56" fill="none" stroke="#CBF28A" strokeOpacity={0.24} strokeWidth={1.5}/>
-      <Circle cx="153" cy="77" r="32" fill="none" stroke="#CBF28A" strokeOpacity={0.32} strokeWidth={1.5}/>
-      <Path d="M18 127L57 108L89 116L124 77L161 57" fill="none" stroke="#CBF28A" strokeOpacity={0.65}
+      <Circle cx="153" cy="77" r="80" fill="none" stroke="#67DCCE" strokeOpacity={0.18} strokeWidth={1.5}/>
+      <Circle cx="153" cy="77" r="56" fill="none" stroke="#67DCCE" strokeOpacity={0.24} strokeWidth={1.5}/>
+      <Circle cx="153" cy="77" r="32" fill="none" stroke="#67DCCE" strokeOpacity={0.32} strokeWidth={1.5}/>
+      <Path d="M12 114C40 87 65 87 91 114S143 141 172 114"
+        fill="none" stroke="#67DCCE" strokeOpacity={0.65}
         strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"/>
-      <Circle cx="124" cy="77" r="5" fill="#CBF28A" />
+      <Path d="M24 137C52 110 77 110 103 137S144 154 171 135"
+        fill="none" stroke="#2DB6C1" strokeOpacity={0.68}
+        strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"/>
     </Svg>
   );
 }

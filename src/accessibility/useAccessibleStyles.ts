@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 import { useAccessibility } from './AccessibilityContext';
+import { migrateLegacyColor } from '../design/tokens';
 
 /**
  * Aplica tema e escala da fonte às folhas de estilo já existentes.
@@ -103,7 +104,7 @@ export function useAccessibleStyles<T extends Record<string, ViewStyle | TextSty
           // Branco nos botões primários permanece branco. O componente
           // define explicitamente os títulos que precisam escurecer.
           if (key === 'color' && value.toUpperCase() === '#FFFFFF') continue;
-          next[key] = palette[value.toUpperCase()] ?? value;
+          next[key] = migrateLegacyColor(palette[value.toUpperCase()] ?? value, key, isDark);
           // Contraste extra opcional: reforça textos neutros e contornos,
           // sem afetar as cores semânticas de valores, receitas e alertas.
           if (highContrast && key === 'color' &&
