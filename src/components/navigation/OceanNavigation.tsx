@@ -1,67 +1,109 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  AccessibilityInfo, Animated, Pressable, ScrollView, StyleSheet, Text, View,
+  AccessibilityInfo, Animated, Easing, Modal, Platform, Pressable, ScrollView,
+  StyleSheet, Text, View, type LayoutChangeEvent,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { BrandMark, WorkspaceIcon, type WorkspaceIconName } from '../../design/brand';
+import { OceanGlass } from '../../design/OceanGlass';
 import { getOceafinTheme, OCEAFIN } from '../../design/tokens';
 
 export type OceanPage = { id: WorkspaceIconName; titulo: string; detalhe: string };
 export type OceanGroup = { titulo: string; ids: readonly string[] };
+export type QuickAction = 'receita' | 'despesa' | 'transferencia' | 'cartao';
 
-function useCalmMotion() {
+const NAV_STORAGE = '@oceafin:navigation:collapsed:v2';
+const EXPOSED_MOBILE: readonly string[] = ['painel', 'lancamentos', 'metas'];
+
+/** Motion always follows the *current* animated values, including rapid taps. */
+function useLiquidMotion(initial = 0) {
   const { reduceMotion } = useAccessibility();
   const [systemReduced, setSystemReduced] = useState(false);
+  const front = useRef(new Animated.Value(initial)).current;
+  const rear = useRef(new Animated.Value(initial)).current;
+  const elastic = useRef(new Animated.Value(1)).current;
+  const activated = useRef(false);
   useEffect(() => {
-    let mounted = true;
+    let live = true;
     void AccessibilityInfo.isReduceMotionEnabled().then(value => {
-      if (mounted) setSystemReduced(value);
+      if (live) setSystemReduced(value);
     }).catch(() => {});
-    const subscription = AccessibilityInfo.addEventListener(
-      'reduceMotionChanged', value => setSystemReduced(value)
-    );
-    return () => { mounted = false; subscription.remove(); };
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged',
+      value => setSystemReduced(value));
+    return () => { live = false; subscription.remove(); };
   }, []);
-  return reduceMotion || systemReduced;
+  const calm = reduceMotion || systemReduced;
+  const move = (point: number) => {
+    if (!activated.current || calm) {
+      front.setValue(point); rear.setValue(point); elastic.setValue(1);
+      activated.current = true;
+      return;
+    }
+    front.stopAnimation();
+    rear.stopAnimation();
+    elastic.stopAnimation();
+    Animated.parallel([
+      Animated.timing(front, { toValue: point, duration: 510,
+        easing: Easing.bezier(0.21, 0.88, 0.24, 1), useNativeDriver: true }),
+      Animated.timing(rear, { toValue: point, duration: OCEAFIN.motion.liquid,
+        easing: Easing.bezier(0.28, 0.72, 0.24, 1), useNativeDriver: true }),
+      Animated.sequence([
+        Animated.timing(elastic, { toValue: 1.22, duration: 190,
+          easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.spring(elastic, { toValue: 1, stiffness: 145, damping: 16,
+          mass: 0.9, useNativeDriver: true }),
+      ]),
+    ]).start();
+  };
+  return { front, rear, elastic, move, calm };
 }
 
-function NavigationItem({ page, selected, compact, onNavigate, darkSurface = false }: {
-  page: OceanPage; selected: boolean; compact: boolean;
-  onNavigate: () => void; darkSurface?: boolean;
+function LiquidCapsule({ front, rear, elastic, axis, itemSize, tint, inset = 3 }: {
+  front: Animated.Value; rear: Animated.Value; elastic: Animated.Value;
+  axis: 'horizontal' | 'vertical'; itemSize: number; tint: string; inset?: number;
 }) {
-  const { isDark } = useAccessibility();
-  const reduced = useCalmMotion();
-  const theme = getOceafinTheme(isDark);
-  const [highlight] = useState(() => new Animated.Value(selected ? 1 : 0));
-  useEffect(() => {
-    const animation = Animated.timing(highlight, {
-      toValue: selected ? 1 : 0, duration: reduced ? 0 : OCEAFIN.motion.standard,
-      useNativeDriver: true,
-    });
-    animation.start();
-    return () => animation.stop();
-  }, [highlight, selected, reduced]);
-  const textColor = darkSurface
-    ? (selected ? OCEAFIN.colors.deep : theme.navigationText)
-    : selected ? theme.text : theme.muted;
-  return (
-    <Pressable onPress={onNavigate} accessibilityRole="button"
-      accessibilityLabel={page.titulo}
-      accessibilityState={{ selected }}
-      style={({ pressed }) => [
-        styles.item, compact && styles.itemCompact, pressed && styles.pressed,
-      ]}>
-      <Animated.View pointerEvents="none" style={[
-        StyleSheet.absoluteFill, styles.itemHighlight,
-        { opacity: highlight, backgroundColor: darkSurface ? theme.accent : theme.selected },
-      ]} />
-      <WorkspaceIcon name={page.id} size={compact ? 23 : 19} color={textColor} />
-      {!compact && <Text style={[styles.itemLabel, { color: textColor }]} numberOfLines={2}>
-        {page.titulo}
-      </Text>}
-    </Pressable>
-  );
+  const vertical = axis === 'vertical';
+  const shared = {
+    position: 'absolute' as const, borderRadius: 18,
+    backgroundColor: tint, borderWidth: 1,
+    borderColor: 'rgba(210,255,255,0.64)',
+    shadowColor: '#00E5D2', shadowOpacity: 0.26, shadowRadius: 12,
+    elevation: 1,
+  };
+  return <>
+    <Animated.View pointerEvents="none" style={[shared,
+      vertical ? { top: 0, left: inset, right: inset, height: itemSize - 3,
+        opacity: 0.25, transform: [{ translateY: rear }, { scaleY: elastic }] }
+        : { left: 0, top: inset, bottom: inset, width: itemSize - 6,
+          opacity: 0.28, transform: [{ translateX: rear }, { scaleX: elastic }] },
+    ]} />
+    <Animated.View pointerEvents="none" style={[shared,
+      vertical ? { top: 0, left: inset, right: inset, height: itemSize - 3,
+        transform: [{ translateY: front }, { scaleY: elastic }] }
+        : { left: 0, top: inset, bottom: inset, width: itemSize - 6,
+          transform: [{ translateX: front }, { scaleX: elastic }] },
+    ]}>
+      <View style={styles.liquidReflection} />
+    </Animated.View>
+  </>;
+}
+
+function SidebarLink({ page, active, collapsed, onPress, onLayout }: {
+  page: OceanPage; active: boolean; collapsed: boolean;
+  onPress: () => void; onLayout: (event: LayoutChangeEvent) => void;
+}) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={page.titulo}
+    accessibilityHint={collapsed ? page.detalhe : undefined}
+    accessibilityState={{ selected: active }} onPress={onPress} onLayout={onLayout}
+    style={({ pressed }) => [styles.sidebarLink, collapsed && styles.sidebarLinkCompact,
+      pressed && styles.pressState]}>
+    <WorkspaceIcon name={page.id} size={collapsed ? 23 : 20}
+      color={active ? '#041C35' : '#E4F7FC'} />
+    {!collapsed && <Text numberOfLines={1} style={[styles.sidebarText,
+      active && styles.sidebarTextActive]}>{page.titulo}</Text>}
+  </Pressable>;
 }
 
 export function OceanSidebar({ pages, groups, active, onNavigate }: {
@@ -69,154 +111,271 @@ export function OceanSidebar({ pages, groups, active, onNavigate }: {
   active: string; onNavigate: (id: OceanPage['id']) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const reduced = useCalmMotion();
-  const [width] = useState(() => new Animated.Value(244));
+  const [positions, setPositions] = useState<Record<string, number>>({});
+  const sectionTop = useRef<Record<string, number>>({});
+  const relativeTop = useRef<Record<string, number>>({});
+  const { front, rear, elastic, move, calm } = useLiquidMotion();
+  const width = useRef(new Animated.Value(248)).current;
   useEffect(() => {
-    const animation = Animated.timing(width, {
-      toValue: collapsed ? 78 : 244,
-      duration: reduced ? 0 : OCEAFIN.motion.gentle,
-      useNativeDriver: false,
+    let mounted = true;
+    void AsyncStorage.getItem(NAV_STORAGE).then(value => {
+      if (mounted && value != null) setCollapsed(value === 'true');
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+  useEffect(() => {
+    const animation = Animated.timing(width, { toValue: collapsed ? 72 : 248,
+      duration: calm ? 0 : 280, easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: false });
+    animation.start(); return () => animation.stop();
+  }, [width, collapsed, calm]);
+  useEffect(() => {
+    if (Number.isFinite(positions[active])) move(positions[active]);
+  }, [active, positions, calm]);
+  const updateSection = (group: string, top: number) => {
+    sectionTop.current[group] = top;
+    setPositions(previous => {
+      const next = { ...previous };
+      for (const [id, value] of Object.entries(relativeTop.current)) {
+        if (!id.startsWith(group + ':')) continue;
+        next[id.slice(group.length + 1)] = top + value;
+      }
+      return next;
     });
-    animation.start();
-    return () => animation.stop();
-  }, [width, collapsed, reduced]);
-  return (
-    <Animated.View style={[styles.sidebar, { width }]}>
+  };
+  const updateLink = (group: string, id: string, top: number) => {
+    relativeTop.current[group + ':' + id] = top;
+    const absolute = (sectionTop.current[group] ?? 0) + top;
+    setPositions(previous => previous[id] === absolute ? previous :
+      { ...previous, [id]: absolute });
+  };
+  const collapse = () => {
+    const next = !collapsed;
+    setCollapsed(next); void AsyncStorage.setItem(NAV_STORAGE, String(next)).catch(() => {});
+  };
+  return <Animated.View style={[styles.sidebarHost, { width }]}>
+    <OceanGlass material="navigation" dark radius={24} style={styles.sidebarGlass}>
       <View style={[styles.brandRow, collapsed && styles.brandRowCompact]}>
-        <BrandMark size={collapsed ? 38 : 42} />
-        {!collapsed && <View style={styles.brandText}>
-          <Text style={styles.brandName}>{OCEAFIN.name.toLowerCase()}</Text>
-          <Text style={styles.brandTagline}>SEU DINHEIRO EM EQUILÍBRIO</Text>
+        <BrandMark size={collapsed ? 40 : 46} />
+        {!collapsed && <View style={styles.brandCopy}>
+          <Text style={styles.brandName}>Oceafin</Text>
+          <Text style={styles.brandTagline}>SUAS FINANÇAS, MAIS SIMPLES.</Text>
         </View>}
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel={
-        collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'
-      } accessibilityState={{ expanded: !collapsed }}
-        onPress={() => setCollapsed(v => !v)}
-        style={[styles.collapseButton, collapsed && styles.collapseButtonCompact]}>
-        <Text style={styles.collapseLabel}>{collapsed ? '›' : '‹  Recolher menu'}</Text>
+      <Pressable onPress={collapse} accessibilityRole="button"
+        accessibilityLabel={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+        accessibilityState={{ expanded: !collapsed }}
+        style={[styles.collapseButton, collapsed && styles.collapseCompact]}>
+        <Text style={styles.collapseLabel}>{collapsed ? '›' : '‹   Recolher'}</Text>
       </Pressable>
-      <ScrollView style={styles.sidebarScroll} contentContainerStyle={styles.sections}
-        showsVerticalScrollIndicator={false}>
-        {groups.map(group => (
-          <View key={group.titulo} style={styles.group}>
+      <ScrollView style={styles.sidebarScroll} showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
+        <View style={styles.sidebarSections}>
+          {Number.isFinite(positions[active]) && <LiquidCapsule
+            front={front} rear={rear} elastic={elastic} axis="vertical"
+            itemSize={46} tint="#52EBD9" inset={2} />}
+          {groups.map(group => <View key={group.titulo}
+            onLayout={event => updateSection(group.titulo, event.nativeEvent.layout.y)}
+            style={styles.sidebarGroup}>
             {!collapsed ? <Text style={styles.groupLabel}>{group.titulo}</Text> :
-              <View style={styles.groupDivider} />}
-            {pages.filter(page => group.ids.includes(page.id)).map(page => (
-              <NavigationItem key={page.id} page={page}
-                selected={active === page.id} compact={collapsed}
-                darkSurface onNavigate={() => onNavigate(page.id)} />
-            ))}
-          </View>
-        ))}
+              <View style={styles.groupLine}/>}
+            {pages.filter(p => group.ids.includes(p.id)).map(page =>
+              <SidebarLink key={page.id} page={page} active={page.id === active}
+                collapsed={collapsed}
+                onPress={() => onNavigate(page.id)}
+                onLayout={event => updateLink(group.titulo, page.id, event.nativeEvent.layout.y)} />)}
+          </View>)}
+        </View>
       </ScrollView>
-      {!collapsed && <Text style={styles.footer}>Menos complicação. Mais clareza no seu dia.</Text>}
-    </Animated.View>
-  );
+      {!collapsed && <Text style={styles.sidebarFoot}>Oceafin · Sua vida financeira em equilíbrio</Text>}
+    </OceanGlass>
+  </Animated.View>;
 }
 
-export function OceanBottomNavigation({ pages, active, onNavigate }: {
+function SheetAction({ title, description, icon, onPress, dark }: {
+  title: string; description: string; icon: WorkspaceIconName;
+  onPress: () => void; dark: boolean;
+}) {
+  const t = getOceafinTheme(dark);
+  return <Pressable accessibilityRole="button" accessibilityLabel={title}
+    onPress={onPress} style={({ pressed }) => [styles.sheetAction,
+      { backgroundColor: t.surfaceSubtle }, pressed && styles.pressState]}>
+    <View style={[styles.sheetIcon, { backgroundColor: t.selected }]}>
+      <WorkspaceIcon name={icon} size={22} color={t.link}/>
+    </View>
+    <View style={styles.sheetActionBody}>
+      <Text style={[styles.sheetActionTitle, { color: t.text }]}>{title}</Text>
+      <Text style={[styles.sheetActionHint, { color: t.muted }]}>{description}</Text>
+    </View>
+    <Text style={[styles.sheetArrow, { color: t.muted }]}>›</Text>
+  </Pressable>;
+}
+
+export function OceanBottomNavigation({ pages, active, onNavigate, onQuickAction }: {
   pages: readonly OceanPage[]; active: string;
   onNavigate: (id: OceanPage['id']) => void;
+  onQuickAction?: (action: QuickAction) => void;
 }) {
-  const [moreOpen, setMoreOpen] = useState(false);
-  const insets = useSafeAreaInsets();
   const { isDark } = useAccessibility();
-  const theme = getOceafinTheme(isDark);
-  const primaryIds = ['painel', 'lancamentos', 'graficos'];
-  const primary = pages.filter(p => primaryIds.includes(p.id));
-  const others = pages.filter(p => !primaryIds.includes(p.id));
-  const moreSelected = moreOpen || others.some(p => p.id === active);
-  return (
-    <View style={styles.dockHost}>
-      {moreOpen && <View style={[styles.popover, {
-        backgroundColor: theme.surface, borderColor: theme.border,
-      }]}>
-        <View style={styles.popoverTop}>
-          <Text style={[styles.popoverHeading, { color: theme.text }]}>Outras áreas</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Fechar outras áreas"
-            onPress={() => setMoreOpen(false)} style={styles.closeButton}>
-            <Text style={[styles.closeText, { color: theme.text }]}>Fechar ×</Text>
-          </Pressable>
+  const t = getOceafinTheme(isDark);
+  const insets = useSafeAreaInsets();
+  const [sheet, setSheet] = useState<'more' | 'add' | null>(null);
+  const [dockWidth, setDockWidth] = useState(340);
+  const { front, rear, elastic, move, calm } = useLiquidMotion();
+  const tabWidth = dockWidth / 5;
+  const mobileIndex = active === 'painel' ? 0 : active === 'lancamentos' ? 1 :
+    active === 'metas' || active === 'planos' ? 3 : 4;
+  useEffect(() => { move(mobileIndex * tabWidth + 3); }, [mobileIndex, tabWidth, calm]);
+  const pick = (id: WorkspaceIconName) => { setSheet(null); onNavigate(id); };
+  const quick = (action: QuickAction) => {
+    setSheet(null);
+    if (onQuickAction) onQuickAction(action);
+    else onNavigate(action === 'receita' || action === 'despesa' ? 'lancamentos' : 'contas');
+  };
+  const tabs: { title: string; icon: WorkspaceIconName; at: number; id?: WorkspaceIconName }[] = [
+    { title: 'Início', icon: 'painel', id: 'painel', at: 0 },
+    { title: 'Lançamentos', icon: 'lancamentos', id: 'lancamentos', at: 1 },
+    { title: '+', icon: 'lancamentos', at: 2 },
+    { title: 'Planejar', icon: 'metas', id: 'metas', at: 3 },
+    { title: 'Mais', icon: 'configuracoes', at: 4 },
+  ];
+  return <>
+    <View pointerEvents="box-none" style={[styles.dockHost, { bottom: Math.max(8, insets.bottom) }]}>
+      <OceanGlass material="navigation" radius={28} dark={isDark} style={styles.dockGlass}>
+        <View onLayout={e => setDockWidth(e.nativeEvent.layout.width)}
+          style={styles.dockInner}>
+          <LiquidCapsule front={front} rear={rear} elastic={elastic}
+            axis="horizontal" itemSize={tabWidth} tint={isDark ? '#3CBEBB' : '#BDF8F1'} />
+          {tabs.map(tab => {
+            const selected = tab.at === mobileIndex;
+            const isPlus = tab.at === 2;
+            return <Pressable key={tab.at}
+              accessibilityRole="button"
+              accessibilityLabel={isPlus ? 'Adicionar movimentação' : tab.title}
+              accessibilityState={{ selected: !isPlus && selected,
+                expanded: isPlus ? sheet === 'add' : tab.at === 4 ? sheet === 'more' : undefined }}
+              onPress={() => isPlus ? setSheet('add') :
+                tab.at === 4 ? setSheet('more') : tab.id && pick(tab.id)}
+              style={({ pressed }) => [styles.dockTab, pressed && styles.pressState]}>
+              {isPlus ? <View style={styles.plusCircle}>
+                <Text style={styles.plusText}>+</Text>
+              </View> : <WorkspaceIcon name={tab.icon} size={22}
+                color={selected ? (isDark ? '#FFFFFF' : '#0B1F4B') : t.muted} />}
+              {!isPlus && <Text numberOfLines={1}
+                style={[styles.dockText, { color: selected ? t.text : t.muted }]}>
+                {tab.title}</Text>}
+            </Pressable>;
+          })}
         </View>
-        <ScrollView style={styles.popoverScroll}>
-          {others.map(p => (
-            <Pressable key={p.id} accessibilityRole="button"
-              accessibilityState={{ selected: active === p.id }}
-              onPress={() => { setMoreOpen(false); onNavigate(p.id); }}
-              style={[styles.moreItem, active === p.id && { backgroundColor: theme.selected }]}>
-              <WorkspaceIcon name={p.id} size={20} color={theme.text} />
-              <Text style={[styles.moreLabel, { color: theme.text }]}>{p.titulo}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>}
-      <View style={[styles.dock, {
-        backgroundColor: theme.surface,
-        borderColor: theme.border,
-        paddingBottom: Math.max(8, insets.bottom),
-      }]}>
-        {primary.map(p => (
-          <View key={p.id} style={styles.dockSlot}>
-            <NavigationItem page={p} compact selected={active === p.id}
-              onNavigate={() => { setMoreOpen(false); onNavigate(p.id); }} />
-            <Text numberOfLines={1} style={[styles.dockLabel, {
-              color: active === p.id ? theme.text : theme.muted,
-            }]}>{p.titulo}</Text>
-          </View>
-        ))}
-        <Pressable style={[styles.dockSlot, styles.moreAction]}
-          accessibilityRole="button" accessibilityLabel={moreOpen ? 'Fechar menu' : 'Abrir outras áreas'}
-          accessibilityState={{ expanded: moreOpen, selected: moreSelected }}
-          onPress={() => setMoreOpen(v => !v)}>
-          <Text style={[styles.dots, { color: moreSelected ? theme.link : theme.muted }]}>•••</Text>
-          <Text style={[styles.dockLabel, { color: moreSelected ? theme.text : theme.muted }]}>Mais</Text>
-        </Pressable>
-      </View>
+      </OceanGlass>
     </View>
-  );
+    <Modal visible={sheet !== null} transparent animationType="fade"
+      onRequestClose={() => setSheet(null)}>
+      <View style={styles.sheetOverlay}>
+        <Pressable onPress={() => setSheet(null)} accessibilityRole="button"
+          accessibilityLabel="Fechar menu" style={styles.sheetScrim} />
+        <OceanGlass material="floating" radius={26}
+          style={[styles.sheetPanel, { marginBottom: Math.max(14, insets.bottom + 4) }]}>
+          <View style={styles.sheetHandle} />
+          <View style={styles.sheetHeader}>
+            <View style={styles.sheetHeaderText}>
+              <Text accessibilityRole="header" style={[styles.sheetTitle, { color: t.text }]}>
+                {sheet === 'add' ? 'Adicionar movimentação' : 'Explorar Oceafin'}
+              </Text>
+              <Text style={[styles.sheetSubtitle, { color: t.muted }]}>
+                {sheet === 'add' ? 'O que você deseja registrar?' : 'Outras áreas das suas finanças'}
+              </Text>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Fechar menu"
+              onPress={() => setSheet(null)} style={styles.sheetClose}>
+              <Text style={[styles.sheetCloseText, { color: t.text }]}>×</Text>
+            </Pressable>
+          </View>
+          <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetItems}>
+            {sheet === 'add' ? <>
+              <SheetAction title="Receita" description="Dinheiro que entrou" icon="lancamentos"
+                onPress={() => quick('receita')} dark={isDark} />
+              <SheetAction title="Despesa" description="Pagamento ou compra à vista" icon="lancamentos"
+                onPress={() => quick('despesa')} dark={isDark} />
+              <SheetAction title="Transferência" description="Entre suas próprias contas" icon="contas"
+                onPress={() => quick('transferencia')} dark={isDark} />
+              <SheetAction title="Compra no cartão" description="Registre no cartão sem debitar a conta" icon="contas"
+                onPress={() => quick('cartao')} dark={isDark} />
+            </> : pages.filter(page => !EXPOSED_MOBILE.includes(page.id)).map(page =>
+              <SheetAction key={page.id} title={page.titulo} description={page.detalhe}
+                icon={page.id} dark={isDark} onPress={() => pick(page.id)} />)}
+          </ScrollView>
+        </OceanGlass>
+      </View>
+    </Modal>
+  </>;
 }
 
 const styles = StyleSheet.create({
-  sidebar: { backgroundColor: '#0C293D', paddingHorizontal: 10, paddingTop: 20, overflow: 'hidden' },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 6, marginBottom: 16 },
+  sidebarHost: { paddingHorizontal: 9, paddingVertical: 10, overflow: 'hidden' },
+  sidebarGlass: { flex: 1, paddingTop: 16, paddingHorizontal: 8,
+    shadowColor: '#081F34', shadowOpacity: 0.16, shadowRadius: 26 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 8, marginBottom: 19 },
   brandRowCompact: { justifyContent: 'center', paddingHorizontal: 0 },
-  brandText: { flex: 1, minWidth: 0 },
-  brandName: { fontSize: 23, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.7 },
-  brandTagline: { color: '#B2CDD8', fontSize: 9, fontWeight: '700', marginTop: 3 },
-  collapseButton: { borderWidth: 1, borderColor: '#35566A', borderRadius: 12,
-    minHeight: 42, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
-  collapseButtonCompact: { marginHorizontal: 1 },
-  collapseLabel: { fontSize: 12, fontWeight: '700', color: '#D9EDF3' },
+  brandCopy: { minWidth: 0, flex: 1, gap: 2 },
+  brandName: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.7,
+    fontFamily: Platform.OS === 'web' ? 'Montserrat' : undefined },
+  brandTagline: { fontSize: 8.5, letterSpacing: 1, color: '#BFE8F0', fontWeight: '700' },
+  collapseButton: { height: 44, borderRadius: 14, borderWidth: 1,
+    borderColor: 'rgba(198,246,255,0.22)', justifyContent: 'center',
+    alignItems: 'center', marginBottom: 10 },
+  collapseCompact: { paddingHorizontal: 0 },
+  collapseLabel: { fontSize: 13, color: '#E1F9FD', fontWeight: '700' },
   sidebarScroll: { flex: 1 },
-  sections: { gap: 15, paddingBottom: 20 },
-  group: { gap: 4 },
-  groupLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1,
-    color: '#B2CDD8', paddingLeft: 12, marginBottom: 5 },
-  groupDivider: { height: 1, backgroundColor: '#35566A', marginHorizontal: 12, marginVertical: 7 },
-  item: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 14,
-    minHeight: 46, borderRadius: 14, overflow: 'hidden' },
-  itemCompact: { flexDirection: 'column', justifyContent: 'center', minHeight: 46, paddingHorizontal: 4 },
-  itemHighlight: { borderRadius: 14 },
-  itemLabel: { fontSize: 13, fontWeight: '700', flexShrink: 1 },
-  pressed: { opacity: 0.8 },
-  footer: { color: '#B2CDD8', fontSize: 11, lineHeight: 16, padding: 12 },
-  dockHost: { position: 'relative', zIndex: 10 },
-  dock: { flexDirection: 'row', borderTopWidth: 1, paddingTop: 8, paddingHorizontal: 7 },
-  dockSlot: { flex: 1, alignItems: 'center', justifyContent: 'center', minWidth: 0, gap: 2 },
-  dockLabel: { fontSize: 11, fontWeight: '700', textAlign: 'center', marginBottom: 2 },
-  moreAction: { minHeight: 53 },
-  dots: { fontSize: 19, fontWeight: '900' },
-  popover: { position: 'absolute', bottom: '100%', left: 10, right: 10,
-    borderWidth: 1, borderRadius: 20, padding: 12, maxHeight: 355, zIndex: 30,
-    shadowColor: '#000000', shadowOpacity: 0.2, shadowRadius: 16, elevation: 12 },
-  popoverTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 7, marginBottom: 8 },
-  popoverHeading: { fontSize: 15, fontWeight: '800' },
-  closeButton: { padding: 9, minHeight: 40, justifyContent: 'center' },
-  closeText: { fontWeight: '700', fontSize: 12 },
-  popoverScroll: { maxHeight: 284 },
-  moreItem: { flexDirection: 'row', alignItems: 'center', gap: 13, borderRadius: 12,
-    paddingHorizontal: 12, minHeight: 47 },
-  moreLabel: { fontSize: 14, fontWeight: '700', flexShrink: 1 },
+  scrollContent: { paddingBottom: 24 },
+  sidebarSections: { position: 'relative', gap: 12 },
+  sidebarGroup: { gap: 4 },
+  groupLabel: { fontSize: 10, fontWeight: '800', color: '#ADD8E4',
+    letterSpacing: 1.25, marginBottom: 7, paddingHorizontal: 12, marginTop: 6 },
+  groupLine: { height: 1, marginHorizontal: 14, marginVertical: 8,
+    backgroundColor: 'rgba(210,255,255,0.25)' },
+  sidebarLink: { minHeight: 46, borderRadius: 17, flexDirection: 'row',
+    alignItems: 'center', paddingHorizontal: 14, gap: 12, zIndex: 1 },
+  sidebarLinkCompact: { justifyContent: 'center', paddingHorizontal: 1 },
+  sidebarText: { fontSize: 13, color: '#E4F7FC', flexShrink: 1, fontWeight: '650' },
+  sidebarTextActive: { color: '#041C35', fontWeight: '900' },
+  sidebarFoot: { fontSize: 10.5, color: '#BFE8F0', lineHeight: 16,
+    paddingHorizontal: 9, paddingBottom: 20 },
+  liquidReflection: { position: 'absolute', left: 10, top: 2, right: 10, height: 2,
+    backgroundColor: 'rgba(255,255,255,0.78)', borderRadius: 10 },
+  pressState: { opacity: 0.79, transform: [{ scale: 0.98 }] },
+  dockHost: { position: 'absolute', left: 12, right: 12, zIndex: 30, elevation: 12 },
+  dockGlass: { shadowColor: '#003C68', shadowOpacity: 0.22, shadowRadius: 24,
+    elevation: 12, borderColor: 'rgba(255,255,255,0.62)' },
+  dockInner: { flexDirection: 'row', alignItems: 'center', minHeight: 68,
+    position: 'relative', paddingHorizontal: 0 },
+  dockTab: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center',
+    minHeight: 64, gap: 3, zIndex: 1 },
+  dockText: { fontSize: 10, fontWeight: '800', textAlign: 'center' },
+  plusCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#0077C8',
+    borderWidth: 2, borderColor: '#96FFF7', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#00E5D2', shadowOpacity: 0.35, shadowRadius: 10 },
+  plusText: { fontSize: 30, lineHeight: 34, color: '#FFFFFF', fontWeight: '600' },
+  sheetOverlay: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 10 },
+  sheetScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(2,13,26,0.55)' },
+  sheetPanel: { padding: 18, maxHeight: '79%' },
+  sheetHandle: { height: 4, width: 44, borderRadius: 999,
+    backgroundColor: '#9DCBD6', alignSelf: 'center', marginBottom: 13 },
+  sheetHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 14 },
+  sheetHeaderText: { flex: 1, gap: 4 },
+  sheetTitle: { fontSize: 20, fontWeight: '900' },
+  sheetSubtitle: { fontSize: 13 },
+  sheetClose: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  sheetCloseText: { fontSize: 30 },
+  sheetScroll: { flexGrow: 0 },
+  sheetItems: { gap: 8, paddingBottom: 6 },
+  sheetAction: { flexDirection: 'row', gap: 12, borderRadius: 16,
+    alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, minHeight: 68 },
+  sheetIcon: { width: 44, height: 44, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center' },
+  sheetActionBody: { flex: 1, gap: 4 },
+  sheetActionTitle: { fontSize: 14, fontWeight: '800' },
+  sheetActionHint: { fontSize: 12, lineHeight: 18 },
+  sheetArrow: { fontSize: 24, paddingHorizontal: 4 },
 });

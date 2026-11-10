@@ -24,7 +24,7 @@ import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
 import { BrandMark } from '../../design/brand';
 import { OceanDashboard } from '../dashboard/OceanDashboard';
-import { OceanBottomNavigation, OceanSidebar } from '../navigation/OceanNavigation';
+import { OceanBottomNavigation, OceanSidebar, type QuickAction } from '../navigation/OceanNavigation';
 import { OCEAFIN } from '../../design/tokens';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
 import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
@@ -68,6 +68,7 @@ export function FinanceWorkspace() {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
   const [editando, setEditando] = useState<Lancamento | null>(null);
+  const [quickIntent, setQuickIntent] = useState<'receita' | 'despesa' | null>(null);
   const [historico, setHistorico] = useState<MesAnalise[]>([]);
   const [accountOptions,setAccountOptions] = useState<FinanceAccount[]>([]);
   const [cardOptions,setCardOptions] = useState<FinanceCard[]>([]);
@@ -158,6 +159,18 @@ export function FinanceWorkspace() {
     notifications?.click();
     setAba(id);
   };
+  function acaoRapida(action: QuickAction) {
+    setEditando(null);
+    if (action === 'receita' || action === 'despesa') {
+      setQuickIntent(action);
+      irPara('lancamentos');
+      return;
+    }
+    // Transfers and credit-card purchases are initiated from the
+    // connected accounts/cards area, without creating a duplicate expense.
+    irPara('contas');
+  }
+
   function selecionarPeriodo(mesNovo: number, anoNovo: number) {
     if (mesNovo === mes && anoNovo === ano) return;
     setMes(mesNovo);
@@ -245,7 +258,8 @@ export function FinanceWorkspace() {
         <Text style={s.heading}>Lançamentos</Text>
         <Text style={s.muted}>Cadastre, edite e organize suas receitas e despesas em {mesAno(mes, ano)}. Vincule cada movimentação à conta ou cartão escolhido.</Text>
         {forecastNotice()}
-        <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo')} mes={mes} ano={ano}
+        <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo') + '-' + (quickIntent || '')}
+          initialType={quickIntent || undefined} mes={mes} ano={ano}
           lancamentoEmEdicao={editando} salvando={saving} onSalvar={salvar}
           accounts={accountOptions} cards={cardOptions}
           onCancelarEdicao={() => setEditando(null)} />
@@ -273,9 +287,8 @@ export function FinanceWorkspace() {
   };
 
   const grupos = [
-    { titulo: 'PRINCIPAL', ids: ['painel','lancamentos','graficos','dados'] },
-    { titulo: 'ORGANIZAR', ids: ['contas','automacao','carteiras'] },
-    { titulo: 'PLANEJAR', ids: ['metas','planos'] },
+    { titulo: 'PRINCIPAL', ids: ['painel','lancamentos','contas','metas','automacao','graficos'] },
+    { titulo: 'OUTRAS ÁREAS', ids: ['planos','dados','carteiras'] },
     { titulo: 'PREFERÊNCIAS', ids: ['configuracoes'] },
   ];
   return (
@@ -329,21 +342,21 @@ export function FinanceWorkspace() {
           {conteudo()}
         </ScrollView>
         {!desktop && <OceanBottomNavigation pages={PAGINAS}
-          active={aba} onNavigate={irPara} />}
+          active={aba} onNavigate={irPara} onQuickAction={acaoRapida} />}
       </View>
     </View>
   );
 }
 
 const base = StyleSheet.create({
-  root: { flex: 1, flexDirection: 'row', backgroundColor: '#F7F5FA' },
+  root: { flex: 1, flexDirection: 'row', backgroundColor: '#F2F9FC' },
   main: { flex: 1, minWidth: 0 },
   scroll: { flex: 1, minWidth: 0 },
   content: { width: '100%', alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 24,
     paddingBottom: 92, gap: 20 },
-  contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 28, gap: 14 },
+  contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 120, gap: 18 },
   mobileTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    gap: 8, minHeight: 66, backgroundColor: '#21143C', borderRadius: 20,
+    gap: 8, minHeight: 66, backgroundColor: '#0B1F4B', borderRadius: 20,
     paddingHorizontal: 13, paddingVertical: 9 },
   mobileBrandWrap: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: 7 },
   mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 21,
