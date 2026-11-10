@@ -7,8 +7,9 @@ import { PlannerAutomation } from './PlannerAutomation';
 import { PlannerGoals } from './PlannerGoals';
 
 type Section = 'accounts' | 'automation' | 'goals';
-export function PlannerCenter({ section, month, year, onUpdated }: {
+export function PlannerCenter({ section, month, year, onUpdated, initialOperation }: {
   section: Section; month: number; year: number; onUpdated?: () => void;
+  initialOperation?: 'transfer' | 'payment' | 'link' | null;
 }) {
   const s = useAccessibleStyles(styles);
   const [data, setData] = useState<PlannerData | null>(null);
@@ -40,7 +41,7 @@ export function PlannerCenter({ section, month, year, onUpdated }: {
   </View>;
   return <View style={s.content}>
     {error ? <Text style={s.error} accessibilityLiveRegion="polite">{error}</Text> : null}
-    {section === 'accounts' && <PlannerAccounts data={data} refresh={refresh}/>}
+    {section === 'accounts' && <PlannerAccounts data={data} refresh={refresh} initialOperation={initialOperation}/>}
     {section === 'automation' && <PlannerAutomation data={data} month={month} year={year} refresh={refresh}/>}
     {section === 'goals' && <PlannerGoals data={data} month={month} year={year} refresh={refresh}/>}
   </View>;

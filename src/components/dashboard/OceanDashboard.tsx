@@ -65,7 +65,7 @@ function AmountCard({ title, value, hint, tone, hidden = false }: {
     : isDark ? '#FFC1B7' : '#AB493C';
   return (
     <View style={[s.amountCard, { backgroundColor: t.surface, borderColor: t.border }]}
-      accessible accessibilityLabel={title + ': ' + moeda(value) + '. ' + hint}>
+      accessible accessibilityLabel={title + ': ' + (hidden ? 'Valor oculto' : moeda(value)) + '. ' + hint}>
       <View style={[s.amountAccent, { backgroundColor: amountColor }]} />
       <Text style={[s.amountLabel, { color: t.muted }]}>{title}</Text>
       <Text style={[s.amountValue, { color: amountColor }]} adjustsFontSizeToFit
@@ -84,7 +84,7 @@ function LinkedAccountCard({ title, value, hint, onPress, icon, hidden = false }
   const t = getOceafinTheme(isDark);
   return (
     <Pressable onPress={onPress} accessibilityRole="button"
-      accessibilityLabel={title + ': ' + (value === null ? 'Estimativa indisponível' : moeda(value)) + '. Abrir detalhes'}
+      accessibilityLabel={title + ': ' + (value === null ? 'Estimativa indisponível' : hidden ? 'Valor oculto' : moeda(value)) + '. Abrir detalhes'}
       style={({ pressed }) => [s.linkedCard, {
         backgroundColor: t.surface, borderColor: t.border,
       }, pressed && s.pressed]}>
@@ -282,7 +282,8 @@ export function OceanDashboard({
                 <Text style={[s.barAmount, { color: t.text }]}>{hideValues ? 'R$ •••••' : moeda(item.valor)}</Text>
               </View>
               <View accessible accessibilityLabel={item.categoria + ', ' +
-                moeda(item.valor) + ', ' + Math.round(item.percentual) + '% das despesas'}
+                (hideValues ? 'valor oculto' : moeda(item.valor)) + ', ' +
+                (hideValues ? 'proporção oculta' : Math.round(item.percentual) + '% das despesas')}
                 style={[s.barTrack, { backgroundColor: t.selected }]}>
                 <View style={[s.barFill, { width: Math.min(100, Math.max(0, item.percentual)) + '%',
                   backgroundColor: index === 0 ? t.primary : t.accent }]} />

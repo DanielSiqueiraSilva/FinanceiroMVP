@@ -72,6 +72,7 @@ export function FinanceWorkspace() {
   const [sucesso, setSucesso] = useState('');
   const [editando, setEditando] = useState<Lancamento | null>(null);
   const [quickIntent, setQuickIntent] = useState<'receita' | 'despesa' | null>(null);
+  const [quickTransfer, setQuickTransfer] = useState(false);
   const [historico, setHistorico] = useState<MesAnalise[]>([]);
   const [accountOptions,setAccountOptions] = useState<FinanceAccount[]>([]);
   const [cardOptions,setCardOptions] = useState<FinanceCard[]>([]);
@@ -164,14 +165,16 @@ export function FinanceWorkspace() {
   };
   function acaoRapida(action: QuickAction) {
     setEditando(null);
-    if (action === 'receita' || action === 'despesa') {
-      setQuickIntent(action);
-      irPara('lancamentos');
+    if (action === 'transferencia') {
+      setQuickTransfer(true);
+      irPara('contas');
       return;
     }
-    // Transfers and credit-card purchases are initiated from the
-    // connected accounts/cards area, without creating a duplicate expense.
-    irPara('contas');
+    // A card purchase is an expense linked to a card, NOT a payment.
+    // It must start in the transaction form so card choices remain available.
+    setQuickTransfer(false);
+    setQuickIntent(action === 'receita' ? 'receita' : 'despesa');
+    irPara('lancamentos');
   }
 
   function selecionarPeriodo(mesNovo: number, anoNovo: number) {
@@ -250,7 +253,9 @@ export function FinanceWorkspace() {
     if (aba === 'carteiras') return <SharedWallets />;
     if (aba === 'planos') return <FuturePlans />;
     if (aba === 'automacao') return <PlannerCenter section="automation" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
-    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
+    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano}
+      initialOperation={quickTransfer ? 'transfer' : null}
+      onUpdated={() => void carregar(true)} />;
     if (aba === 'metas') return <PlannerCenter section="goals" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
     if (loading) return <View style={s.loading}><ActivityIndicator size="large" color="#7C3AED" /><Text style={s.muted}>Carregando seus dados...</Text></View>;
     if (aba === 'graficos') return histLoading ? <View style={s.loading}><ActivityIndicator color="#7C3AED" /><Text style={s.muted}>Carregando histórico...</Text></View> :
