@@ -7,7 +7,8 @@ import { PaymentReminders } from '../finance/PaymentReminders';
 import { moeda } from '../workspace/FinanceVisuals';
 import { goalProgress, type PlannerData, type RecurringRule } from '../../services/finance-planner';
 import type { Lancamento, ResumoFinanceiro } from '../../types/finance';
-import { categorySpending, latestTransactions, plannerBalances } from './dashboard-data';
+import { categorySpending, latestTransactions, plannerBalances, fourWeekFlow } from './dashboard-data';
+import { OceanButton } from '../../design/OceanControls';
 
 type Destination = 'lancamentos' | 'contas' | 'automacao' | 'metas' | 'graficos' | 'planos';
 type Forecast = { rule: RecurringRule; posted: boolean };
@@ -23,21 +24,6 @@ type Props = {
   onSalvarLimite: (valor: number) => Promise<void>;
   onNavigate: (target: Destination) => void;
 };
-
-/** The HTML prototype's four visual weeks, using *recorded* transactions only. */
-export function fourWeekFlow(items: readonly Lancamento[]) {
-  const weeks = Array.from({ length: 4 }, (_, i) => ({ index: i, income: 0, expense: 0 }));
-  for (const tx of items) {
-    const day = Number(tx.data.slice(8, 10));
-    const value = Number(tx.valor);
-    if (!Number.isFinite(day) || day < 1 || day > 31 ||
-        !Number.isFinite(value) || value < 0) continue;
-    const bucket = Math.min(3, Math.floor((day - 1) / 8));
-    if (tx.tipo === 'receita') weeks[bucket].income += value;
-    else if (tx.tipo === 'despesa') weeks[bucket].expense += value;
-  }
-  return weeks;
-}
 
 const sky = '#BDE9F2';
 const navy = '#082840';
@@ -296,6 +282,10 @@ export function OceanPrototypeDashboard({
         Maior categoria de gastos: {categories[0].categoria} · {moeda(categories[0].valor)}
       </Text>}
     </Panel>
+    <View style={styles.addRow}>
+      <OceanButton variant="primary" label="Novo lançamento" icon="lancamentos"
+        onPress={() => onNavigate('lancamentos')}/>
+    </View>
     <Text style={[styles.disclaimer,{color:dark?sky:'#527486'}]}>
       Dados do período {period}. O saldo de contas é estimado a partir dos registros;
       pagamentos, recorrências previstas e metas não representam transações bancárias.
@@ -304,6 +294,7 @@ export function OceanPrototypeDashboard({
 }
 const styles = StyleSheet.create({
   root: { gap: 15, width: '100%', paddingBottom: 8 },
+  addRow: { alignItems: 'flex-start' },
   firstRow: { flexDirection: 'row', gap: 15, alignItems: 'stretch' },
   heroSpace: { flex: 1.65, minWidth: 0 },
   statStack: { flex: 0.9, minWidth: 0, gap: 12 },

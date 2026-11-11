@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  categorySpending, latestTransactions, plannerBalances,
+  categorySpending, latestTransactions, plannerBalances, fourWeekFlow,
 } from '../../src/components/dashboard/dashboard-data.ts';
 
 const tx = (id, tipo, categoria, valor, data) =>
@@ -42,4 +42,18 @@ test('account and card summaries do not count as monthly result', () => {
   assert.equal(plannerBalances(null).accountTotal, null);
   assert.equal(plannerBalances(null).cardPending, null);
   assert.equal(plannerBalances({...planner, accountOverview:[]}).accountTotal, null);
+});
+
+test('four-week chart uses recorded income/expenses and never changes source', () => {
+  const items = Object.freeze([
+    Object.freeze(tx('a','receita','Salário',500,'2026-11-02')),
+    Object.freeze(tx('b','despesa','Moradia',250,'2026-11-08')),
+    Object.freeze(tx('c','despesa','Casa',50,'2026-11-09')),
+    Object.freeze(tx('d','receita','Outros',300,'2026-11-25')),
+  ]);
+  const result = fourWeekFlow(items);
+  assert.deepEqual(result.map(w => [w.income,w.expense]),
+    [[500,250],[0,50],[0,0],[300,0]]);
+  assert.equal(items.length,4);
+  assert.deepEqual(fourWeekFlow([]).map(w=>w.income),[0,0,0,0]);
 });
