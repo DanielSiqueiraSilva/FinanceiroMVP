@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet,
+  ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet,
   Text, View, useWindowDimensions, Platform,
 } from 'react-native';
 import type { Lancamento, LancamentoInput, ResumoFinanceiro } from '../../types/finance';
@@ -26,6 +26,7 @@ import { PlannerCenter } from './PlannerCenter';
 import { BrandMark } from '../../design/brand';
 import { OceanPrototypeDashboard } from '../dashboard/OceanPrototypeDashboard';
 import { OceanSegmentedControl } from '../../design/OceanControls';
+import { OceanGlass } from '../../design/OceanGlass';
 import { OceanBottomNavigation, OceanSidebar, type QuickAction } from '../navigation/OceanNavigation';
 import { OCEAFIN, getOceafinTheme } from '../../design/tokens';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
@@ -64,7 +65,7 @@ export function FinanceWorkspace() {
   const accountName = account?.session.user.user_metadata?.full_name;
   const displayName = typeof accountName === 'string' && accountName.trim() ? accountName.trim() : (account?.session.user.email?.split('@')[0] || 'Usuário');
   const initialLetter = Array.from(displayName)[0]?.toLocaleUpperCase('pt-BR') || 'U';
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const desktop = width >= 900;
   const initial = useMemo(hoje, []);
   const [aba, setAba] = useState<Aba>('painel');
@@ -80,7 +81,8 @@ export function FinanceWorkspace() {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
   const [editando, setEditando] = useState<Lancamento | null>(null);
-  const [quickIntent, setQuickIntent] = useState<'receita' | 'despesa' | null>(null);
+  const [quickModal, setQuickModal] = useState<'receita' | 'despesa' | null>(null);
+  const [quickCardPurchase, setQuickCardPurchase] = useState(false);
   const [quickTransfer, setQuickTransfer] = useState(false);
   const [transactionFilter, setTransactionFilter] = useState<'todos'|'receita'|'despesa'>('todos');
   const [historico, setHistorico] = useState<MesAnalise[]>([]);
@@ -176,15 +178,20 @@ export function FinanceWorkspace() {
   function acaoRapida(action: QuickAction) {
     setEditando(null);
     if (action === 'transferencia') {
+      setQuickModal(null);
       setQuickTransfer(true);
       irPara('contas');
       return;
     }
-    // A card purchase is an expense linked to a card, NOT a payment.
-    // It must start in the transaction form so card choices remain available.
+    // Keep the existing transaction validator and API: this modal is only a presentation layer.
     setQuickTransfer(false);
-    setQuickIntent(action === 'receita' ? 'receita' : 'despesa');
-    irPara('lancamentos');
+    setQuickCardPurchase(action === 'cartao');
+    setQuickModal(action === 'receita' ? 'receita' : 'despesa');
+  }
+  function abrirNovoLancamento() {
+    setEditando(null);
+    setQuickCardPurchase(false);
+    setQuickModal('despesa');
   }
 
   function selecionarPeriodo(mesNovo: number, anoNovo: number) {
@@ -278,8 +285,8 @@ export function FinanceWorkspace() {
         <Text style={s.heading}>Lançamentos</Text>
         <Text style={s.muted}>Cadastre, edite e organize suas receitas e despesas em {mesAno(mes, ano)}. Vincule cada movimentação à conta ou cartão escolhido.</Text>
         {forecastNotice()}
-        <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo') + '-' + (quickIntent || '')}
-          initialType={quickIntent || undefined} mes={mes} ano={ano}
+        <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo')}
+          mes={mes} ano={ano}
           lancamentoEmEdicao={editando} salvando={saving} onSalvar={salvar}
           accounts={accountOptions} cards={cardOptions}
           onCancelarEdicao={() => setEditando(null)} />
@@ -307,7 +314,7 @@ export function FinanceWorkspace() {
         limite={limite}
         salvandoLimite={savingLimit}
         onSalvarLimite={atualizarLimite}
-        onNavigate={irPara}
+        onNavigate={irPara} onNewTransaction={abrirNovoLancamento}
       />
     );
   };
@@ -319,6 +326,7 @@ export function FinanceWorkspace() {
     { titulo: 'OUTRAS ÁREAS', ids: ['planos','dados','carteiras'] },
   ];
   return (
+    <>
     <View style={[s.root, {
       backgroundColor: isDark ? '#03182B' : '#E5F5FA',
       borderColor: isDark ? '#347E98' : '#A5CFDE',
@@ -398,10 +406,63 @@ export function FinanceWorkspace() {
           active={aba} onNavigate={irPara} onQuickAction={acaoRapida} />}
       </View>
     </View>
+    <Modal visible={quickModal !== null} transparent animationType="fade"
+      onRequestClose={() => { if (!saving) setQuickModal(null); }}>
+      <View style={s.quickOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button"
+          accessibilityLabel="Fechar formulário de lançamento"
+          disabled={saving} onPress={() => setQuickModal(null)} />
+        <OceanGlass material="floating" radius={24} style={[s.quickPanel,
+          { maxHeight: Math.max(300, height - 40) }]}>
+          <View style={s.quickHeader}>
+            <View style={s.quickHeadingCopy}>
+              <Text accessibilityRole="header"
+                style={[s.quickHeading, { color: theme.text }]}>
+                {quickCardPurchase ? 'Compra no cartão' :
+                  quickModal === 'receita' ? 'Nova receita' : 'Nova despesa'}
+              </Text>
+              <Text style={[s.muted,{color:theme.muted}]}>
+                {quickCardPurchase ? 'Selecione um cartão no formulário; não debita sua conta agora.' :
+                  'O lançamento será salvo na sua conta somente após confirmar.'}
+              </Text>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Fechar formulário"
+              disabled={saving} onPress={() => setQuickModal(null)} style={s.quickClose}>
+              <Text style={[s.quickCloseText,{color:theme.text}]}>×</Text>
+            </Pressable>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled"
+            style={[s.quickScroll,{maxHeight:Math.max(200,height*0.72)}]}
+            contentContainerStyle={s.quickFormBody}>
+            {quickModal !== null && <TransactionForm
+              key={'quick-'+mesAno(mes,ano)+'-'+quickModal+'-'+(quickCardPurchase?'card':'')}
+              mes={mes} ano={ano} initialType={quickModal} lancamentoEmEdicao={null}
+              salvando={saving} accounts={accountOptions} cards={cardOptions}
+              onSalvar={async input => {
+                await salvar(input);
+                setQuickModal(null);
+              }}
+              onCancelarEdicao={() => setQuickModal(null)} />}
+            {!!erro && <Text accessibilityLiveRegion="assertive" style={s.error}>{erro}</Text>}
+          </ScrollView>
+        </OceanGlass>
+      </View>
+    </Modal>
+    </>
   );
 }
 
 const base = StyleSheet.create({
+  quickOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center',
+    padding: 12, backgroundColor: 'rgba(1,14,30,0.72)' },
+  quickPanel: { width: '100%', maxWidth: 560, padding: 18, gap: 8 },
+  quickHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  quickHeadingCopy: { flex: 1, minWidth: 0, gap: 5 },
+  quickHeading: { fontSize: 20, fontWeight: '900' },
+  quickClose: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  quickCloseText: { fontSize: 27, fontWeight: '700' },
+  quickScroll: { flexGrow: 0 },
+  quickFormBody: { paddingBottom: 10 },
   root: { flex: 1, flexDirection: 'row', backgroundColor: '#07182C',
     borderWidth: 1, borderRadius: 23, overflow: 'hidden' },
   main: { flex: 1, minWidth: 0 },
