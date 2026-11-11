@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { OceanGlass } from '../../design/OceanGlass';
@@ -44,7 +44,7 @@ const navy = '#082840';
 const aqua = '#08E5D8';
 function Panel({ title, link, onLink, children, dark = true, style }: {
   title: string; link?: string; onLink?: () => void;
-  children: React.ReactNode; dark?: boolean; style?: ViewStyle;
+  children: ReactNode; dark?: boolean; style?: ViewStyle;
 }) {
   return (
     <OceanGlass material="soft" dark={dark} radius={19} style={[styles.panel, style]}>
@@ -232,7 +232,7 @@ export function OceanPrototypeDashboard({
         <FlowBars transactions={lancamentos} hidden={hidden} dark={dark}/>
       </View>
       <View style={styles.column}>
-        <PaymentReminders month={mes} year={ano} compact />
+        <PaymentReminders month={mes} year={ano} compact hidden={hidden} />
       </View>
     </View>
     <View style={[styles.twoColumns, !wide && styles.stack]}>
