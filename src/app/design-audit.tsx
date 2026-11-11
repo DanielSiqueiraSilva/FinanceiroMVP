@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useAccessibility } from '../accessibility/AccessibilityContext';
 import { OceanSidebar, OceanBottomNavigation, type OceanPage, type QuickAction }
@@ -51,7 +51,9 @@ const summary = { saldo:8710, totalReceitas:16010,totalDespesas:7300 } as Resumo
 /** Temporary QA route only. No server data and no live account access. */
 export default function DesignAudit() {
   const {width} = useWindowDimensions();
-  const desktop = width >= 900;
+  const [mounted,setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const desktop = mounted && width >= 900;
   const { isDark, setTheme } = useAccessibility();
   const t = getOceafinTheme(isDark);
   const [active,setActive] = useState<OceanPage['id']>('painel');
