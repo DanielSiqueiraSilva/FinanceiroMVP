@@ -47,6 +47,8 @@ const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] =
 ];
 const hoje = () => { const data = new Date(); return { mes: data.getMonth() + 1, ano: data.getFullYear() }; };
 const mesAno = (mes: number, ano: number) => String(mes).padStart(2, '0') + '/' + ano;
+const MONTH_NAMES = ['janeiro','fevereiro','março','abril','maio','junho',
+  'julho','agosto','setembro','outubro','novembro','dezembro'];
 const TRANSACTION_TABS = [
   { value: 'todos', label: 'Todos' },
   { value: 'receita', label: 'Receitas' },
@@ -330,7 +332,7 @@ export function FinanceWorkspace() {
             <View style={s.header}>
               <View style={s.headerCopy}>
                 <Text style={[s.overline, { color: isDark ? '#64F5E9' : '#0077C8' }]}>
-                  OCEAFIN / {String(mes).padStart(2,'0')}.{ano}
+                  OCEAFIN / {MONTH_NAMES[mes-1].toLocaleUpperCase('pt-BR')} {ano}
                 </Text>
                 <Text style={[s.appName,{ color: theme.text }]}>
                   {aba === 'painel' ? 'Visão geral' : page.titulo}

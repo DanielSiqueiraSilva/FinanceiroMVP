@@ -131,7 +131,7 @@ function GoalPanel({ planner, hidden, dark, onNavigate }: {
       <Text style={[styles.bodyBold, { color: dark ? '#F3FBFF' : '#08314A' }]}>
         {goal.name}</Text>
       <View style={styles.track}><View style={[styles.trackFill,
-        { width: Math.max(0, Math.min(100, progress.percent)) + '%' as `${number}%` }]}/></View>
+        { width: (hidden ? 0 : Math.max(0, Math.min(100, progress.percent))) + '%' as `${number}%` }]}/></View>
       <View style={styles.between}>
         <Text style={[styles.tiny, { color: dark ? sky : '#537486' }]}>
           {hidden ? 'Valor oculto' : moeda(progress.saved) + ' de ' + moeda(progress.target)}
@@ -163,7 +163,7 @@ function BudgetPanel({ spent, limit, planner, onNavigate, hidden, dark }: {
         {hidden ? 'Valores ocultos' : moeda(spent) + ' de ' + moeda(limit)}
       </Text>
       <View style={styles.track}><View style={[styles.budgetFill,
-        { width: Math.max(0, Math.min(100, used ?? 0)) + '%' as `${number}%`,
+        { width: (hidden ? 0 : Math.max(0, Math.min(100, used ?? 0))) + '%' as `${number}%`,
           backgroundColor: spent > limit ? '#E29DAF' : '#09D7CA' }]}/></View>
       <Text style={[styles.tiny, { color: dark ? sky : '#537486' }]}>
         {hidden ? 'Progresso oculto' : used + '% do limite mensal utilizado'}
