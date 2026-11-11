@@ -47,7 +47,6 @@ function Chip({ label, selected, onPress }: {
 export function PlannerAccounts({ data, refresh, initialOperation = null, initialType = 'accounts' }: Props) {
   const s = useAccessibleStyles(base);
   const [type, setType] = useState<'accounts'|'cards'>(initialType);
-  useEffect(() => setType(initialType), [initialType]);
   const [operation, setOperation] = useState<'transfer' | 'payment' | 'link' | null>(initialOperation);
   useEffect(() => {
     if (initialOperation) setOperation(initialOperation);

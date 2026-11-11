@@ -261,7 +261,8 @@ export function FinanceWorkspace() {
     if (aba === 'carteiras') return <SharedWallets />;
     if (aba === 'planos') return <FuturePlans />;
     if (aba === 'automacao') return <PlannerCenter section="automation" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
-    if (aba === 'contas' || aba === 'cartoes') return <PlannerCenter section="accounts" month={mes} year={ano}
+    if (aba === 'contas' || aba === 'cartoes') return <PlannerCenter key={aba}
+      section="accounts" month={mes} year={ano}
       initialType={aba === 'cartoes' ? 'cards' : 'accounts'}
       initialOperation={quickTransfer && aba === 'contas' ? 'transfer' : null}
       onUpdated={() => void carregar(true)} />;

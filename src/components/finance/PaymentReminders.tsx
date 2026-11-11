@@ -261,7 +261,7 @@ export function PaymentReminders({ month, year, compact = false, hidden = false 
           <View key={item.id} style={styles.item}>
             <View style={styles.itemInfo}>
               <Text style={styles.itemTitle}>{item.title}</Text>
-              <Text style={styles.description}>{prettyDate(item.due_date)}{item.amount !== null ? ` · ${money(item.amount)}` : ''}</Text>
+              <Text style={styles.description}>{prettyDate(item.due_date)}{item.amount !== null ? ` · ${hidden ? 'R$ •••••' : money(item.amount)}` : ''}</Text>
               <Text style={styles.itemHint}>{item.is_paid ? 'Pago' : item.due_date < today ? 'Vencido' : 'Pendente'}{item.email_enabled ? ' · Alerta por e-mail ativado' : ''}</Text>
             </View>
             <View style={styles.itemActions}>
