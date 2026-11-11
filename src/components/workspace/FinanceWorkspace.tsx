@@ -25,6 +25,7 @@ import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
 import { BrandMark } from '../../design/brand';
 import { OceanPrototypeDashboard } from '../dashboard/OceanPrototypeDashboard';
+import { OceanSegmentedControl } from '../../design/OceanControls';
 import { OceanBottomNavigation, OceanSidebar, type QuickAction } from '../navigation/OceanNavigation';
 import { OCEAFIN, getOceafinTheme } from '../../design/tokens';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
@@ -46,6 +47,11 @@ const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] =
 ];
 const hoje = () => { const data = new Date(); return { mes: data.getMonth() + 1, ano: data.getFullYear() }; };
 const mesAno = (mes: number, ano: number) => String(mes).padStart(2, '0') + '/' + ano;
+const TRANSACTION_TABS = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'receita', label: 'Receitas' },
+  { value: 'despesa', label: 'Despesas' },
+] as const;
 
 export function FinanceWorkspace() {
   const s = useAccessibleStyles(base);
@@ -74,6 +80,7 @@ export function FinanceWorkspace() {
   const [editando, setEditando] = useState<Lancamento | null>(null);
   const [quickIntent, setQuickIntent] = useState<'receita' | 'despesa' | null>(null);
   const [quickTransfer, setQuickTransfer] = useState(false);
+  const [transactionFilter, setTransactionFilter] = useState<'todos'|'receita'|'despesa'>('todos');
   const [historico, setHistorico] = useState<MesAnalise[]>([]);
   const [accountOptions,setAccountOptions] = useState<FinanceAccount[]>([]);
   const [cardOptions,setCardOptions] = useState<FinanceCard[]>([]);
@@ -273,9 +280,15 @@ export function FinanceWorkspace() {
           lancamentoEmEdicao={editando} salvando={saving} onSalvar={salvar}
           accounts={accountOptions} cards={cardOptions}
           onCancelarEdicao={() => setEditando(null)} />
-        <Text style={s.title}>Movimentações do mês ({lista.length})</Text>
-        {!lista.length ? <Text style={s.muted}>Ainda não há lançamentos nesse mês.</Text> : (
-          <View style={s.list}>{[...lista].sort((a, b) => b.data.localeCompare(a.data)).map(l => (
+        <View style={s.header}>
+          <Text style={[s.title,{color:theme.text}]}>Movimentações do mês ({lista.length})</Text>
+          <OceanSegmentedControl value={transactionFilter}
+            options={TRANSACTION_TABS} onChange={setTransactionFilter}/>
+        </View>
+        {!lista.length ? <Text style={[s.muted,{color:theme.muted}]}>Ainda não há lançamentos nesse mês.</Text> : (
+          <View style={s.list}>{[...lista]
+            .filter(l => transactionFilter === 'todos' || l.tipo === transactionFilter)
+            .sort((a, b) => b.data.localeCompare(a.data)).map(l => (
             <TransactionItem key={l.id} lancamento={l} onEditar={setEditando} onExcluir={remover} />
           ))}</View>
         )}
