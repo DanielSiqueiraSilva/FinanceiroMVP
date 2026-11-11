@@ -122,7 +122,8 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
             strokeWidth="2" fill="none" />
         </Svg>
       </View>
-      <OceanGlass material="floating" radius={24} style={ui.panel}>
+      <OceanGlass material="floating" radius={24} style={ui.panel}
+        testID="oceafin-login-glass">
         <View style={ui.brand}>
           <BrandMark size={42} />
           <Text accessibilityRole="header" style={[ui.brandTitle, loginTheme.brandTitle]}>{OCEAFIN.name}</Text>
