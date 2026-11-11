@@ -4,6 +4,7 @@ import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { OceanGlass } from '../../design/OceanGlass';
 import { OceanHero } from './OceanHero';
 import { PaymentReminders } from '../finance/PaymentReminders';
+import { MonthlyOverview } from '../finance/MonthlyOverview';
 import { moeda } from '../workspace/FinanceVisuals';
 import { goalProgress, type PlannerData, type RecurringRule } from '../../services/finance-planner';
 import type { Lancamento, ResumoFinanceiro } from '../../types/finance';
@@ -148,16 +149,21 @@ function GoalPanel({ planner, hidden, dark, onNavigate }: {
     </Pressable>}
   </Panel>;
 }
-function BudgetPanel({ spent, limit, planner, onNavigate, hidden, dark }: {
+function BudgetPanel({ spent, limit, planner, onNavigate, hidden, dark,
+  salvandoLimite, onSalvarLimite, monthKey }: {
   spent: number; limit: number; planner: PlannerData | null;
   onNavigate: () => void; hidden: boolean; dark: boolean;
+  salvandoLimite: boolean; onSalvarLimite: (value: number) => Promise<void>;
+  monthKey: string;
 }) {
+  const [expanded, setExpanded] = useState(false);
   // The global monthly limit is distinct from category budgets.
   const categories = planner?.budgets.filter(x => x.amount > 0) ?? [];
   const allocated = categories.reduce((s, b) => s + Number(b.amount), 0);
   const used = limit > 0 ? Math.round(spent / limit * 100) : null;
-  return <Panel title="◉ Orçamento do mês" link="Ver detalhes"
-    onLink={onNavigate} dark={dark}>
+  return <Panel title="◉ Orçamento do mês"
+    link={expanded ? 'Fechar detalhes' : 'Ver detalhes'}
+    onLink={() => setExpanded(!expanded)} dark={dark}>
     {limit > 0 ? <>
       <Text style={[styles.tiny, { color: dark ? sky : '#537486' }]}>
         {hidden ? 'Valores ocultos' : moeda(spent) + ' de ' + moeda(limit)}
@@ -176,13 +182,24 @@ function BudgetPanel({ spent, limit, planner, onNavigate, hidden, dark }: {
         Defina um orçamento mensal para acompanhar seus gastos.
       </Text>
     </Pressable>}
+    {expanded && <View style={styles.budgetEditor}>
+      <MonthlyOverview key={monthKey} totalDespesas={spent}
+        limite={limit} salvando={salvandoLimite}
+        onSalvarLimite={onSalvarLimite}/>
+    </View>}
+    <Pressable accessibilityRole="button" onPress={onNavigate}
+      style={styles.budgetCategoriesLink}>
+      <Text style={[styles.tiny,{color:dark?'#72FFF2':'#006A89',fontWeight:'800'}]}>
+        Planejar por categoria  ›
+      </Text>
+    </Pressable>
   </Panel>;
 }
 
 /** Real-data implementation of the supplied HTML visual model. */
 export function OceanPrototypeDashboard({
   resumo, lancamentos, planner, forecasts, mes, ano, limite,
-  onNavigate,
+  salvandoLimite, onSalvarLimite, onNavigate,
 }: Props) {
   const { isDark } = useAccessibility();
   const [hidden, setHidden] = useState(false);
@@ -226,7 +243,9 @@ export function OceanPrototypeDashboard({
         dark={dark} onNavigate={() => onNavigate('metas')}/></View>
       <View style={styles.column}><BudgetPanel
         spent={resumo?.totalDespesas ?? 0} limit={limite} planner={planner}
-        dark={dark} hidden={hidden} onNavigate={() => onNavigate('metas')}/></View>
+        dark={dark} hidden={hidden} monthKey={period}
+        salvandoLimite={salvandoLimite} onSalvarLimite={onSalvarLimite}
+        onNavigate={() => onNavigate('metas')}/></View>
     </View>
     <View style={[styles.twoColumns, !wide && styles.stack]}>
       <View style={styles.column}>
@@ -341,6 +360,8 @@ const styles = StyleSheet.create({
     gap: 9, flexWrap: 'wrap' },
   empty: { fontSize: 12, lineHeight: 19, paddingVertical: 12 },
   emptyGraph: { height: 150, justifyContent: 'center', alignItems: 'center' },
+  budgetEditor: { paddingTop: 8 },
+  budgetCategoriesLink: { minHeight: 40, alignSelf: 'flex-start', justifyContent: 'center' },
   miniRow: { flexDirection: 'row', alignItems: 'center', gap: 12,
     justifyContent: 'space-between', flexWrap: 'wrap' },
   miniValue: { fontSize: 13, fontWeight: '900' },
