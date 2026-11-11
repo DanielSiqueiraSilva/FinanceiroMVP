@@ -7,10 +7,12 @@ import {
   Text, TextInput, View,
 } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { BrandMark } from '../../design/brand';
+import { OceanGlass } from '../../design/OceanGlass';
+import { OceanButton } from '../../design/OceanControls';
 import { OCEAFIN, getOceafinTheme } from '../../design/tokens';
 import { authConfigured, supabaseAuth } from '../../auth/supabaseClient';
 import {
@@ -100,11 +102,34 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
       contentContainerStyle={ui.loginScroll}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={[ui.panel, loginTheme.panel]}>
+      <View pointerEvents="none" style={ui.loginAtmosphere}>
+        <Svg width="100%" height="100%" viewBox="0 0 950 860" preserveAspectRatio="xMidYMid slice">
+          <Defs>
+            <LinearGradient id="login-deep" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={isDark ? '#07182C' : '#F2F9FC'} />
+              <Stop offset="1" stopColor={isDark ? '#0B4663' : '#D6FAFF'} />
+            </LinearGradient>
+            <LinearGradient id="login-wave" x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor="#0077C8" stopOpacity={isDark ? 0.20 : 0.10} />
+              <Stop offset="1" stopColor="#00E5D2" stopOpacity={isDark ? 0.33 : 0.24} />
+            </LinearGradient>
+          </Defs>
+          <Rect width="950" height="860" fill="url(#login-deep)" />
+          <Path d="M-40 650C200 495 390 760 655 621S920 602 1000 520L1000 900H-40Z"
+            fill="url(#login-wave)" />
+          <Path d="M-20 690C228 540 451 799 675 664S925 628 1000 575"
+            stroke="#66F9ED" strokeOpacity={isDark ? 0.23 : 0.34}
+            strokeWidth="2" fill="none" />
+        </Svg>
+      </View>
+      <OceanGlass material="floating" radius={24} style={ui.panel}>
         <View style={ui.brand}>
           <BrandMark size={42} />
           <Text accessibilityRole="header" style={[ui.brandTitle, loginTheme.brandTitle]}>{OCEAFIN.name}</Text>
         </View>
+        <Text style={[ui.tagline, { color: isDark ? '#8EF6EB' : '#006B8F' }]}>
+          SUAS FINANÇAS, MAIS SIMPLES.
+        </Text>
 
         <Text style={[ui.subtitle, loginTheme.subtitle]}>{cadastro ? 'Crie sua conta com segurança' : 'Entre na sua conta com segurança'}</Text>
 
@@ -120,25 +145,13 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
         ) : null}
 
         {!cadastro && Platform.OS === 'web' ? (
-          <Pressable
-            style={[ui.quickButton, busy && ui.disabled]}
-            accessibilityRole="button"
-            accessibilityLabel="Entrar com chave de acesso, Face ID ou impressão digital"
-            disabled={busy}
-            onPress={() => void login(false, true)}
-          >
-            <Text style={ui.primaryText}>◉  {busy ? 'Verificando...' : 'Entrar com biometria'}</Text>
-          </Pressable>
+          <OceanButton variant="glass" label="Entrar com biometria"
+            accessibilityHint="Usa a chave de acesso segura cadastrada neste dispositivo"
+            loading={busy} onPress={() => void login(false, true)} />
         ) : null}
         {!cadastro && isNativeQuickUnlock && hasQuickAccount ? (
-          <Pressable
-            style={[ui.quickButton, busy && ui.disabled]}
-            accessibilityRole="button"
-            disabled={busy}
-            onPress={() => void login(true)}
-          >
-            <Text style={ui.primaryText}>{busy ? 'Verificando...' : 'Entrar com biometria'}</Text>
-          </Pressable>
+          <OceanButton variant="glass" label="Entrar com biometria"
+            loading={busy} onPress={() => void login(true)} />
         ) : null}
 
         <View style={ui.emailSection}>
@@ -176,16 +189,9 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
             secureTextEntry
             autoComplete={cadastro ? 'new-password' : 'current-password'}
           />
-          <Pressable
-            accessibilityRole="button"
-            disabled={busy}
-            style={[ui.passwordButton, loginTheme.passwordButton, busy && ui.disabled]}
-            onPress={() => void login(false)}
-          >
-            <Text style={[ui.passwordText, loginTheme.passwordText]}>
-              {busy ? 'Verificando...' : cadastro ? 'Criar conta' : 'Entrar com e-mail e senha'}
-            </Text>
-          </Pressable>
+          <OceanButton variant="primary" loading={busy}
+            label={cadastro ? 'Criar conta' : 'Entrar com e-mail e senha'}
+            onPress={() => void login(false)} />
         </View>
 
         <Pressable
@@ -201,7 +207,7 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
         {!cadastro ? (
           <Text style={[ui.hint, loginTheme.hint]}>Face ID, impressão digital ou método seguro disponível no dispositivo</Text>
         ) : null}
-      </View>
+      </OceanGlass>
     </ScrollView>
   );
 }
@@ -477,13 +483,17 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
 const styles = StyleSheet.create({
   flex: { flex: 1, minHeight: 0, backgroundColor: '#0B1220' },
   loginBackground: { flex: 1, backgroundColor: '#071727' },
-  loginScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 34, paddingHorizontal: 16 },
+  loginScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center',
+    paddingVertical: 34, paddingHorizontal: 16, position: 'relative' },
+  loginAtmosphere: { position: 'absolute', top: 0, right: 0, left: 0, bottom: 0 },
   panel: {
-    width: '100%', maxWidth: 510, borderRadius: 20, padding: 24, gap: 16,
-    backgroundColor: '#102A3C', borderWidth: 1, borderColor: '#35566A',
+    width: '100%', maxWidth: 510, borderRadius: 24, padding: 26, gap: 16,
+    borderWidth: 1, borderColor: 'rgba(185,244,252,0.42)',
   },
   brand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
-  brandTitle: { color: '#FFFFFF', fontSize: 21, fontWeight: '800' },
+  brandTitle: { color: '#FFFFFF', fontSize: 23, fontWeight: '800',
+    fontFamily: Platform.OS === 'web' ? 'Montserrat' : undefined },
+  tagline: { textAlign: 'center', letterSpacing: 2.2, fontSize: 10, fontWeight: '800' },
   subtitle: { color: '#CBD5E1', fontSize: 14, textAlign: 'center', marginTop: 0 },
   faceArea: { alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
   quickButton: {
@@ -512,7 +522,7 @@ const styles = StyleSheet.create({
 
 /** Cores explícitas do login escuro, sincronizadas com o isDark global. */
 const darkLoginStyles = StyleSheet.create({
-  loginBackground: { backgroundColor: '#071727' },
+  loginBackground: { backgroundColor: '#07182C' },
   panel: { backgroundColor: '#102A3C', borderColor: '#35566A' },
   brandTitle: { color: '#FFFFFF' },
   subtitle: { color: '#CBD5E1' },
@@ -527,7 +537,7 @@ const darkLoginStyles = StyleSheet.create({
 
 /** O login claro preserva o layout e tem contraste equivalente. */
 const lightLoginStyles = StyleSheet.create({
-  loginBackground: { backgroundColor: '#EFF6F8' },
+  loginBackground: { backgroundColor: '#F2F9FC' },
   panel: { backgroundColor: '#FFFFFF', borderColor: '#DDD6E6' },
   brandTitle: { color: '#111827' },
   subtitle: { color: '#374151' },
