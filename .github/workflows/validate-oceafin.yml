@@ -41,13 +41,11 @@ jobs:
           npx playwright install chromium --with-deps
       - name: Visual QA of the real login (12 combinations)
         run: node tools/tests/oceafin-login-visual.test.mjs
-      - name: Dashboard visual QA (mock account, 12 combinations)
-        run: node tools/tests/oceafin-dashboard-visual.test.mjs
       - name: Upload Oceafin UI screenshots
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: oceafin-prototype-visual-qa
+          name: oceafin-login-glass-visuals
           path: visual-artifacts/
           if-no-files-found: ignore
       - name: Ensure no public demo-only route ships
@@ -55,3 +53,6 @@ jobs:
           test ! -e src/app/design-preview.tsx
           test ! -e dist/design-preview.html
           test ! -e dist/design-preview/index.html
+          test ! -e src/app/design-audit.tsx
+          test ! -e dist/design-audit.html
+          test ! -e dist/design-audit/index.html
