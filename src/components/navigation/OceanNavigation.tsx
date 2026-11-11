@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { BrandMark, WorkspaceIcon, type WorkspaceIconName } from '../../design/brand';
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { OceanGlass } from '../../design/OceanGlass';
 import { getOceafinTheme, OCEAFIN } from '../../design/tokens';
 
@@ -166,6 +167,21 @@ export function OceanSidebar({ pages, groups, active, onNavigate }: {
     setCollapsed(next); void AsyncStorage.setItem(NAV_STORAGE, String(next)).catch(() => {});
   };
   return <Animated.View style={[styles.sidebarHost, { width }]}>
+    <Svg pointerEvents="none" width="100%" height="100%" viewBox="0 0 248 900"
+      preserveAspectRatio="xMidYMid slice" style={StyleSheet.absoluteFill}>
+      <Defs>
+        <LinearGradient id="sidebar-ambient" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#081F34"/>
+          <Stop offset="0.6" stopColor="#0A3C60"/>
+          <Stop offset="1" stopColor="#087FA5"/>
+        </LinearGradient>
+      </Defs>
+      <Rect width="248" height="900" fill="url(#sidebar-ambient)" />
+      <Path d="M-30 670C84 540 146 740 279 570V920H-30Z"
+        fill="#33D5D9" opacity={0.25}/>
+      <Path d="M-40 755C90 620 158 824 278 680"
+        fill="none" stroke="#B3FFFA" strokeWidth="3" opacity={0.43}/>
+    </Svg>
     <OceanGlass material="navigation" dark radius={24} style={styles.sidebarGlass}>
       <View style={[styles.brandRow, collapsed && styles.brandRowCompact]}>
         <BrandMark size={collapsed ? 40 : 46} />
