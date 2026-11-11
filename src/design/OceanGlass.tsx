@@ -7,7 +7,7 @@ import {
   GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable,
 } from 'expo-glass-effect';
 import { useAccessibility } from '../accessibility/AccessibilityContext';
-import { getOceafinTheme, OCEAFIN } from './tokens';
+import { OCEAFIN } from './tokens';
 
 export type OceanMaterial = 'navigation' | 'floating' | 'button' | 'soft' | 'hero' | 'solid';
 type Props = PropsWithChildren<{
@@ -28,16 +28,22 @@ function useGlassCapabilities() {
       const supported = typeof CSS !== 'undefined' && typeof CSS.supports === 'function' &&
         (CSS.supports('backdrop-filter', 'blur(8px)') ||
           CSS.supports('-webkit-backdrop-filter', 'blur(8px)'));
-      setWebBlur(supported);
       if (typeof window === 'undefined' || !window.matchMedia) return;
       const media = window.matchMedia('(prefers-reduced-transparency: reduce)');
       const contrast = window.matchMedia('(forced-colors: active)');
-      const check = () => { if (active) setReduceTransparency(media.matches || contrast.matches); };
-      check();
+      const check = () => {
+        if (active) {
+          setWebBlur(supported);
+          setReduceTransparency(media.matches || contrast.matches);
+        }
+      };
+      // Schedule after hydration: render-time DOM differs between SSR and the client.
+      const raf = window.requestAnimationFrame(check);
       media.addEventListener?.('change', check);
       contrast.addEventListener?.('change', check);
       return () => {
         active = false;
+        window.cancelAnimationFrame(raf);
         media.removeEventListener?.('change', check);
         contrast.removeEventListener?.('change', check);
       };
@@ -62,7 +68,6 @@ export function OceanGlass({
   const { isDark, highContrast } = useAccessibility();
   const { webBlur, reduceTransparency } = useGlassCapabilities();
   const darkTheme = dark || isDark;
-  const theme = getOceafinTheme(darkTheme);
   const opaque = highContrast || reduceTransparency || material === 'solid' ||
     material === 'hero';
   const intensity = material === 'navigation' ? OCEAFIN.glass.navigationBlur :
