@@ -49,7 +49,7 @@ const mesAno = (mes: number, ano: number) => String(mes).padStart(2, '0') + '/' 
 
 export function FinanceWorkspace() {
   const s = useAccessibleStyles(base);
-  const { isDark } = useAccessibility();
+  const { isDark, setTheme } = useAccessibility();
   const theme = getOceafinTheme(isDark);
   const notifications = useNotifications();
   const account = useProfileSession();
@@ -308,7 +308,7 @@ export function FinanceWorkspace() {
       borderColor: isDark ? '#347E98' : '#A5CFDE',
     }]}>
       {desktop && <OceanSidebar pages={PAGINAS} groups={grupos}
-        active={aba} onNavigate={irPara} />}
+        active={aba} onNavigate={irPara} profileName={displayName} />}
       <View style={s.main}>
         <ScrollView style={s.scroll} contentContainerStyle={[s.content, { maxWidth: desktop ? 1350 : 740 }, !desktop && s.contentMobile]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void carregar(true)} />}>
@@ -328,6 +328,14 @@ export function FinanceWorkspace() {
               <View style={s.headerActions}>
                 {mostrarFiltroPeriodo &&
                   <PeriodSelector mes={mes} ano={ano} onSelecionar={selecionarPeriodo} />}
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                  onPress={() => setTheme(isDark ? 'light' : 'dark')}
+                  style={[s.themeToggle, { borderColor: theme.border }]}>
+                  <Text style={[s.themeToggleText, { color: theme.text }]}>
+                    {isDark ? '☀ Tema claro' : '☾ Tema escuro'}
+                  </Text>
+                </Pressable>
                 <NotificationCenter />
                 <ProfileCard onOpenSettings={() => irPara('configuracoes')} />
               </View>
@@ -339,6 +347,12 @@ export function FinanceWorkspace() {
                 <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{OCEAFIN.name.toLowerCase()}</Text>
               </View>
               <View style={s.mobileActions}>
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                  onPress={() => setTheme(isDark ? 'light' : 'dark')}
+                  style={s.mobileThemeToggle}>
+                  <Text style={s.mobileThemeText}>{isDark ? '☀' : '☾'}</Text>
+                </Pressable>
                 <NotificationCenter />
                 <Pressable
                   accessibilityRole="button"
@@ -392,7 +406,13 @@ const base = StyleSheet.create({
   header: { flexDirection: 'row', gap: 10, justifyContent: 'space-between',
     alignItems: 'center', flexWrap: 'wrap' },
   headerCopy: { gap: 3, flexShrink: 1 },
-  headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
+  themeToggle: { minHeight: 42, paddingHorizontal: 12,
+    borderWidth: 1, borderRadius: 14, justifyContent: 'center' },
+  themeToggleText: { fontWeight: '800', fontSize: 12 },
+  mobileThemeToggle: { width: 44, height: 44, borderRadius: 14, borderWidth: 1,
+    borderColor: '#4D99B4', alignItems: 'center', justifyContent: 'center' },
+  mobileThemeText: { color: '#C6FDF8', fontSize: 20, fontWeight: '800' },
   overline: { color: '#6D28D9', fontWeight: '900', fontSize: 10, letterSpacing: 1.5 },
   appName: { color: '#111827', fontWeight: '900', fontSize: 27, letterSpacing: -0.6 },
   mobileHeading: { gap: 2 },
