@@ -4,6 +4,7 @@ import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { WorkspaceIcon, type WorkspaceIconName } from '../../design/brand';
 import { OceanHero } from './OceanHero';
+import { OceanButton } from '../../design/OceanControls';
 import { OceanFlowChart } from './OceanFlowChart';
 import { getOceafinTheme } from '../../design/tokens';
 import type { Lancamento, ResumoFinanceiro } from '../../types/finance';
@@ -134,11 +135,8 @@ export function OceanDashboard({
             Suas finanças, mais simples. Tudo o que importa em um só lugar.
           </Text>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Criar novo lançamento"
-          onPress={() => onNavigate('lancamentos')}
-          style={({ pressed }) => [s.primaryAction, pressed && s.pressed]}>
-          <Text style={s.primaryActionText}>＋ Novo lançamento</Text>
-        </Pressable>
+        <OceanButton variant="primary" label="Novo lançamento"
+          icon="lancamentos" onPress={() => onNavigate('lancamentos')} />
       </View>
 
       <View style={s.heroSection}>
