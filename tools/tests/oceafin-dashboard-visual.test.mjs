@@ -61,6 +61,12 @@ try {
           return node?.textContent?.includes('receita');
         }, { timeout: 5000 });
       } else {
+        const lens=page.getByTestId('oceafin-liquid-lens').first();
+        const before=await lens.evaluate(el=>getComputedStyle(el).transform);
+        await page.getByRole('button',{name:'Cartões',exact:true}).click();
+        await page.waitForTimeout(300);
+        const after=await lens.evaluate(el=>getComputedStyle(el).transform);
+        assert.notEqual(before,after,'Liquid lens did not move to selected sidebar page');
         await page.getByRole('button',{name:'Recolher menu lateral'}).click();
         await page.getByRole('button',{name:'Expandir menu lateral'}).waitFor();
       }
