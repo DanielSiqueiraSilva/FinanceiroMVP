@@ -49,13 +49,17 @@ try {
       assert.deepEqual(errors,[],'Javascript errors at '+tag);
       const expenses=page.getByRole('tab',{name:'Despesas'});
       await expenses.click();
-      assert.equal(await expenses.getAttribute('aria-selected'),'true');
+      const selectedColor=await expenses.evaluate(el=>getComputedStyle(el).backgroundColor);
+      assert.equal(selectedColor,'rgb(7, 204, 222)','Chart selection must be visually active');
       await page.getByRole('button',{name:'Ocultar valores financeiros'}).click();
       await page.getByText('R$ •••••').first().waitFor({timeout:5000});
       if(width<900){
         await page.getByRole('button',{name:'Adicionar movimentação'}).click();
         await page.getByRole('button',{name:'Receita',exact:true}).click();
-        await page.getByTestId('audit-nav-state').getByText(/receita/).waitFor();
+        await page.waitForFunction(() => {
+          const node=document.querySelector('[data-testid="audit-nav-state"]');
+          return node?.textContent?.includes('receita');
+        }, { timeout: 5000 });
       } else {
         await page.getByRole('button',{name:'Recolher menu lateral'}).click();
         await page.getByRole('button',{name:'Expandir menu lateral'}).waitFor();
