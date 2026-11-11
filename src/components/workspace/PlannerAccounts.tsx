@@ -8,10 +8,16 @@ import {
 } from '../../services/finance-planner';
 import { moeda } from './FinanceVisuals';
 import { plannerBalances } from '../dashboard/dashboard-data';
+import { OceanButton, OceanSegmentedControl } from '../../design/OceanControls';
 import {
   parseBRLInput, positiveAmount, validateCardPayment, validateLinkChoice,
   validateTransfer,
 } from './finance-flow-validation';
+
+const ACCOUNT_TABS = [
+  { value: 'accounts', label: 'Conta ou carteira' },
+  { value: 'cards', label: 'Cartão de crédito' },
+] as const;
 
 type Props = { data: PlannerData; refresh: () => Promise<void>;
   initialOperation?: 'transfer' | 'payment' | 'link' | null; };
@@ -185,10 +191,8 @@ export function PlannerAccounts({ data, refresh, initialOperation = null }: Prop
     {!!message && <Text style={s.positive} accessibilityLiveRegion="polite">{message}</Text>}
     <View style={s.card}>
       <Text style={s.title}>Adicionar {type === 'accounts' ? 'conta' : 'cartão'}</Text>
-      <View style={s.row}>
-        <Chip label="Conta ou carteira" selected={type === 'accounts'} onPress={() => setType('accounts')} />
-        <Chip label="Cartão de crédito" selected={type === 'cards'} onPress={() => setType('cards')} />
-      </View>
+      <OceanSegmentedControl value={type} options={ACCOUNT_TABS}
+        onChange={setType} disabled={busy} />
       <Field label={type === 'accounts' ? 'Nome da conta' : 'Nome do cartão'} value={name} change={setName}
         hint={type === 'accounts' ? 'Ex.: Carteira, Conta principal' : 'Ex.: Cartão pessoal'} />
       {type === 'accounts' ? <>
@@ -205,9 +209,8 @@ export function PlannerAccounts({ data, refresh, initialOperation = null }: Prop
         <View style={s.fieldWrap}><Field label="Dia do fechamento" value={closeDay} change={setCloseDay} numeric/></View>
         <View style={s.fieldWrap}><Field label="Dia do vencimento" value={dueDay} change={setDueDay} numeric/></View>
       </View>}
-      <Pressable style={s.primary} accessibilityRole="button" disabled={busy} onPress={() => void save()}>
-        <Text style={s.primaryText}>{busy ? 'Salvando...' : 'Cadastrar'}</Text>
-      </Pressable>
+      <OceanButton variant="primary" label="Cadastrar" loading={busy}
+        onPress={() => void save()} />
     </View>
     <View style={s.row}>
       <View style={s.listCard}>

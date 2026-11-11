@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { BrandMark, WorkspaceIcon, type WorkspaceIconName } from '../../design/brand';
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { OceanGlass } from '../../design/OceanGlass';
 import { getOceafinTheme, OCEAFIN } from '../../design/tokens';
 
@@ -50,9 +51,9 @@ function useLiquidMotion(initial = 0) {
       Animated.timing(rear, { toValue: point, duration: OCEAFIN.motion.liquid,
         easing: Easing.bezier(0.28, 0.72, 0.24, 1), useNativeDriver: true }),
       Animated.sequence([
-        Animated.timing(elastic, { toValue: 1.22, duration: 190,
+        Animated.timing(elastic, { toValue: 1.06, duration: 175,
           easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.spring(elastic, { toValue: 1, stiffness: 145, damping: 16,
+        Animated.spring(elastic, { toValue: 1, stiffness: 180, damping: 20,
           mass: 0.9, useNativeDriver: true }),
       ]),
     ]).start();
@@ -60,45 +61,54 @@ function useLiquidMotion(initial = 0) {
   return { front, rear, elastic, move, calm };
 }
 
+/**
+ * One continuous lens instead of two disconnected pills.
+ * Its centre follows the average of the front and trailing edges; their
+ * separation temporarily stretches only the lens, never icons or labels.
+ * React Native Animated tracks current values when rapidly retargeting.
+ */
 function LiquidCapsule({ front, rear, elastic, axis, itemSize, tint, inset = 3 }: {
   front: Animated.Value; rear: Animated.Value; elastic: Animated.Value;
   axis: 'horizontal' | 'vertical'; itemSize: number; tint: string; inset?: number;
 }) {
   const vertical = axis === 'vertical';
-  const shared = {
-    position: 'absolute' as const, borderRadius: 18,
-    backgroundColor: tint, borderWidth: 1,
-    borderColor: 'rgba(210,255,255,0.64)',
-    shadowColor: '#00E5D2', shadowOpacity: 0.26, shadowRadius: 12,
-    elevation: 1,
-  };
-  return <>
-    <Animated.View pointerEvents="none" style={[shared,
-      vertical ? { top: 0, left: inset, right: inset, height: itemSize - 3,
-        opacity: 0.25, transform: [{ translateY: rear }, { scaleY: elastic }] }
-        : { left: 0, top: inset, bottom: inset, width: itemSize - 6,
-          opacity: 0.28, transform: [{ translateX: rear }, { scaleX: elastic }] },
-    ]} />
-    <Animated.View pointerEvents="none" style={[shared,
-      vertical ? { top: 0, left: inset, right: inset, height: itemSize - 3,
-        transform: [{ translateY: front }, { scaleY: elastic }] }
-        : { left: 0, top: inset, bottom: inset, width: itemSize - 6,
-          transform: [{ translateX: front }, { scaleX: elastic }] },
+  const midpoint = Animated.multiply(Animated.add(front, rear), 0.5);
+  const stretch = Animated.subtract(front, rear).interpolate({
+    inputRange: [-250, -55, 0, 55, 250],
+    outputRange: [1.18, 1.13, 1, 1.13, 1.18],
+    extrapolate: 'clamp',
+  });
+  const elasticStretch = Animated.multiply(stretch, elastic);
+  return (
+    <Animated.View pointerEvents="none" testID="oceafin-liquid-lens" style={[
+      styles.liquidLens,
+      { backgroundColor: tint },
+      vertical ?
+        { top: 0, left: inset, right: inset, height: itemSize - 3,
+          transform: [{ translateY: midpoint }, { scaleY: elasticStretch }] } :
+        { left: 0, top: inset, bottom: inset, width: itemSize - 6,
+          transform: [{ translateX: midpoint }, { scaleX: elasticStretch }] },
     ]}>
-      <View style={styles.liquidReflection} />
+      <View pointerEvents="none" style={styles.liquidReflection} />
+      <View pointerEvents="none" style={styles.liquidEdge} />
     </Animated.View>
-  </>;
+  );
 }
 
 function SidebarLink({ page, active, collapsed, onPress, onLayout }: {
   page: OceanPage; active: boolean; collapsed: boolean;
   onPress: () => void; onLayout: (event: LayoutChangeEvent) => void;
 }) {
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   return <Pressable accessibilityRole="button" accessibilityLabel={page.titulo}
     accessibilityHint={collapsed ? page.detalhe : undefined}
     accessibilityState={{ selected: active }} onPress={onPress} onLayout={onLayout}
+    onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
+    onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
     style={({ pressed }) => [styles.sidebarLink, collapsed && styles.sidebarLinkCompact,
-      pressed && styles.pressState]}>
+      (hovered || focused) && styles.sidebarLinkHover,
+      focused && styles.sidebarLinkFocus, pressed && styles.pressState]}>
     <WorkspaceIcon name={page.id} size={collapsed ? 23 : 20}
       color={active ? '#041C35' : '#E4F7FC'} />
     {!collapsed && <Text numberOfLines={1} style={[styles.sidebarText,
@@ -136,11 +146,14 @@ export function OceanSidebar({ pages, groups, active, onNavigate }: {
     sectionTop.current[group] = top;
     setPositions(previous => {
       const next = { ...previous };
+      let changed = false;
       for (const [id, value] of Object.entries(relativeTop.current)) {
         if (!id.startsWith(group + ':')) continue;
-        next[id.slice(group.length + 1)] = top + value;
+        const pageId = id.slice(group.length + 1);
+        if (previous[pageId] !== top + value) changed = true;
+        next[pageId] = top + value;
       }
-      return next;
+      return changed ? next : previous;
     });
   };
   const updateLink = (group: string, id: string, top: number) => {
@@ -154,6 +167,21 @@ export function OceanSidebar({ pages, groups, active, onNavigate }: {
     setCollapsed(next); void AsyncStorage.setItem(NAV_STORAGE, String(next)).catch(() => {});
   };
   return <Animated.View style={[styles.sidebarHost, { width }]}>
+    <Svg pointerEvents="none" width="100%" height="100%" viewBox="0 0 248 900"
+      preserveAspectRatio="xMidYMid slice" style={StyleSheet.absoluteFill}>
+      <Defs>
+        <LinearGradient id="sidebar-ambient" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#081F34"/>
+          <Stop offset="0.6" stopColor="#0A3C60"/>
+          <Stop offset="1" stopColor="#087FA5"/>
+        </LinearGradient>
+      </Defs>
+      <Rect width="248" height="900" fill="url(#sidebar-ambient)" />
+      <Path d="M-30 670C84 540 146 740 279 570V920H-30Z"
+        fill="#33D5D9" opacity={0.25}/>
+      <Path d="M-40 755C90 620 158 824 278 680"
+        fill="none" stroke="#B3FFFA" strokeWidth="3" opacity={0.43}/>
+    </Svg>
     <OceanGlass material="navigation" dark radius={24} style={styles.sidebarGlass}>
       <View style={[styles.brandRow, collapsed && styles.brandRowCompact]}>
         <BrandMark size={collapsed ? 40 : 46} />
@@ -338,12 +366,20 @@ const styles = StyleSheet.create({
   sidebarLink: { minHeight: 46, borderRadius: 17, flexDirection: 'row',
     alignItems: 'center', paddingHorizontal: 14, gap: 12, zIndex: 1 },
   sidebarLinkCompact: { justifyContent: 'center', paddingHorizontal: 1 },
+  sidebarLinkHover: { backgroundColor: 'rgba(205,255,255,0.10)' },
+  sidebarLinkFocus: { borderWidth: 2, borderColor: '#B1FFF7' },
   sidebarText: { fontSize: 13, color: '#E4F7FC', flexShrink: 1, fontWeight: '600' },
   sidebarTextActive: { color: '#041C35', fontWeight: '900' },
   sidebarFoot: { fontSize: 10.5, color: '#BFE8F0', lineHeight: 16,
     paddingHorizontal: 9, paddingBottom: 20 },
-  liquidReflection: { position: 'absolute', left: 10, top: 2, right: 10, height: 2,
+  liquidLens: { position: 'absolute', borderRadius: 18, borderWidth: 1,
+    borderColor: 'rgba(205,255,255,0.66)',
+    shadowColor: '#00A9B6', shadowOpacity: 0.24, shadowRadius: 12,
+    elevation: 1, overflow: 'hidden' },
+  liquidReflection: { position: 'absolute', left: 11, top: 2, right: 11, height: 2,
     backgroundColor: 'rgba(255,255,255,0.78)', borderRadius: 10 },
+  liquidEdge: { position: 'absolute', top: 6, right: 2, bottom: 6, width: 2,
+    backgroundColor: 'rgba(0,119,200,0.20)', borderRadius: 3 },
   pressState: { opacity: 0.79, transform: [{ scale: 0.98 }] },
   dockHost: { position: 'absolute', left: 12, right: 12, zIndex: 30, elevation: 12 },
   dockGlass: { shadowColor: '#003C68', shadowOpacity: 0.22, shadowRadius: 24,

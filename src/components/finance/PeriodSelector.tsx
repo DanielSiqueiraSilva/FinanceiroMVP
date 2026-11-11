@@ -29,6 +29,8 @@ export function PeriodSelector({ mes, ano, onSelecionar }: PeriodSelectorProps) 
   const [anoVisivel, setAnoVisivel] = useState(ano);
   const [anoTexto, setAnoTexto] = useState(String(ano));
   const [erro, setErro] = useState('');
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   function abrir() {
     setAnoVisivel(ano);
@@ -64,8 +66,15 @@ export function PeriodSelector({ mes, ano, onSelecionar }: PeriodSelectorProps) 
 
   return (
     <>
+      <OceanGlass material="button" radius={18} style={[
+        s.periodSurface,
+        { borderColor: focused ? (isDark ? '#8DF7EE' : '#087FA5') :
+          hovered ? 'rgba(51,213,217,.72)' : isDark ? '#355F74' : '#CBE2EC' },
+      ]}>
       <Pressable
-        style={s.periodo}
+        style={[s.periodo, { backgroundColor: 'transparent', borderWidth: 0 }]}
+        onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
+        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
         accessibilityRole="button"
         accessibilityLabel={'Selecionar mês e ano. Atual: ' + MESES[mes - 1] + ' de ' + ano}
         accessibilityHint="Abre calendário para escolher mês e ano sem avançar um mês de cada vez"
@@ -78,6 +87,7 @@ export function PeriodSelector({ mes, ano, onSelecionar }: PeriodSelectorProps) 
         </View>
         <Text style={s.abrirIcone}>Alterar  ▾</Text>
       </Pressable>
+      </OceanGlass>
       <Modal
         visible={aberto}
         transparent
@@ -163,6 +173,7 @@ export function PeriodSelector({ mes, ano, onSelecionar }: PeriodSelectorProps) 
 }
 
 const base = StyleSheet.create({
+  periodSurface: { alignSelf: 'flex-start', maxWidth: '100%' },
   periodo: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64,
     borderRadius: 18, borderWidth: 1, borderColor: '#DDD6E6', backgroundColor: '#FFFFFF', paddingHorizontal: 15, paddingVertical: 11 },
   calendario: { fontSize: 25, color: '#7C3AED' },

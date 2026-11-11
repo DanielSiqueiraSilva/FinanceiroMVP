@@ -23,7 +23,7 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit
       - name: Lint Oceafin design foundation
-        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx src/components/dashboard/OceanDashboard.tsx src/components/dashboard/dashboard-data.ts src/components/workspace/finance-flow-validation.ts src/design/OceanGlass.tsx src/components/dashboard/OceanHero.tsx src/components/dashboard/OceanFlowChart.tsx
+        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx src/components/dashboard/OceanDashboard.tsx src/components/dashboard/dashboard-data.ts src/components/workspace/finance-flow-validation.ts src/design/OceanGlass.tsx src/design/OceanControls.tsx src/components/dashboard/OceanHero.tsx src/components/dashboard/OceanFlowChart.tsx
       - name: Legacy full-repository lint audit (non-blocking)
         continue-on-error: true
         run: npm run lint
@@ -35,6 +35,19 @@ jobs:
         run: node --experimental-strip-types --test tools/tests/oceafin-finance-flow.test.mjs
       - name: Expo Web build
         run: npm run build:web
+      - name: Install browser for Oceafin visual QA
+        run: |
+          npm install --no-save --ignore-scripts --no-package-lock playwright@1.65.0
+          npx playwright install chromium --with-deps
+      - name: Visual QA of the real login (12 combinations)
+        run: node tools/tests/oceafin-login-visual.test.mjs
+      - name: Upload Oceafin UI screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: oceafin-login-glass-visuals
+          path: visual-artifacts/
+          if-no-files-found: ignore
       - name: Ensure no public demo-only route ships
         run: |
           test ! -e src/app/design-preview.tsx
