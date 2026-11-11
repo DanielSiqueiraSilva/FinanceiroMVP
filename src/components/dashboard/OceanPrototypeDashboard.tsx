@@ -217,7 +217,7 @@ export function OceanPrototypeDashboard({
     <View style={[styles.firstRow, !wide && styles.stack]}>
       <View style={styles.heroSpace}>
         <OceanHero balance={balances.accountTotal} monthResult={resumo?.saldo ?? null}
-          period={period} hidden={hidden} onToggle={() => setHidden(!hidden)}
+          prototype period={period} hidden={hidden} onToggle={() => setHidden(!hidden)}
           onAccounts={() => onNavigate('contas')}/>
       </View>
       <View style={[styles.statStack, !wide && styles.statsHorizontal]}>
