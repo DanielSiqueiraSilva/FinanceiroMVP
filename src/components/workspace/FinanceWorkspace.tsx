@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet,
+  ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet,
   Text, View, useWindowDimensions, Platform,
 } from 'react-native';
 import type { Lancamento, LancamentoInput, ResumoFinanceiro } from '../../types/finance';
@@ -24,38 +24,48 @@ import { DataArea } from './DataArea';
 import { FuturePlans } from './FuturePlans';
 import { PlannerCenter } from './PlannerCenter';
 import { BrandMark } from '../../design/brand';
-import { OceanDashboard } from '../dashboard/OceanDashboard';
+import { OceanPrototypeDashboard } from '../dashboard/OceanPrototypeDashboard';
+import { OceanSegmentedControl } from '../../design/OceanControls';
+import { OceanGlass } from '../../design/OceanGlass';
 import { OceanBottomNavigation, OceanSidebar, type QuickAction } from '../navigation/OceanNavigation';
 import { OCEAFIN, getOceafinTheme } from '../../design/tokens';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
 import type { FinanceAccount, FinanceCard, PlannerData } from '../../services/finance-planner';
 
-type Aba = 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'planos' | 'carteiras' | 'configuracoes' | 'automacao' | 'contas' | 'metas';
+type Aba = 'cartoes' | 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'planos' | 'carteiras' | 'configuracoes' | 'automacao' | 'contas' | 'metas';
 const PAGINAS: { id: Aba; titulo: string; simbolo: string; detalhe: string }[] = [
-  { id: 'painel', titulo: 'Painel', simbolo: '⌂', detalhe: 'Seu ponto de partida' },
+  { id: 'painel', titulo: 'Início', simbolo: '⌂', detalhe: 'Seu ponto de partida' },
   { id: 'lancamentos', titulo: 'Lançamentos', simbolo: '+', detalhe: 'Receitas e despesas' },
-  { id: 'graficos', titulo: 'Gráficos', simbolo: '▥', detalhe: 'Evolução financeira' },
+  { id: 'graficos', titulo: 'Análises', simbolo: '▥', detalhe: 'Evolução financeira' },
   { id: 'dados', titulo: 'Dados', simbolo: '▤', detalhe: 'Filtros e exportação' },
-  { id: 'automacao', titulo: 'Automação e calendário', simbolo: '▦', detalhe: 'Recorrências e vencimentos' },
-  { id: 'contas', titulo: 'Contas e cartões', simbolo: '▣', detalhe: 'Organize suas contas' },
-  { id: 'metas', titulo: 'Metas e orçamento', simbolo: '◎', detalhe: 'Objetivos e análises' },
+  { id: 'automacao', titulo: 'Automações', simbolo: '▦', detalhe: 'Recorrências e vencimentos' },
+  { id: 'contas', titulo: 'Contas', simbolo: '▣', detalhe: 'Saldos e transferências' },
+  { id: 'cartoes', titulo: 'Cartões', simbolo: '▥', detalhe: 'Compras e pagamentos' },
+  { id: 'metas', titulo: 'Planejamento', simbolo: '◎', detalhe: 'Objetivos e análises' },
   { id: 'planos', titulo: 'Planos Futuros', simbolo: '◎', detalhe: 'Simule suas metas' },
   { id: 'carteiras', titulo: 'Carteiras Compartilhadas', simbolo: '♧', detalhe: 'Finanças em conjunto' },
   { id: 'configuracoes', titulo: 'Configurações', simbolo: '⚙', detalhe: 'Sua conta e preferências' },
 ];
 const hoje = () => { const data = new Date(); return { mes: data.getMonth() + 1, ano: data.getFullYear() }; };
 const mesAno = (mes: number, ano: number) => String(mes).padStart(2, '0') + '/' + ano;
+const MONTH_NAMES = ['janeiro','fevereiro','março','abril','maio','junho',
+  'julho','agosto','setembro','outubro','novembro','dezembro'];
+const TRANSACTION_TABS = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'receita', label: 'Receitas' },
+  { value: 'despesa', label: 'Despesas' },
+] as const;
 
 export function FinanceWorkspace() {
   const s = useAccessibleStyles(base);
-  const { isDark } = useAccessibility();
+  const { isDark, setTheme } = useAccessibility();
   const theme = getOceafinTheme(isDark);
   const notifications = useNotifications();
   const account = useProfileSession();
   const accountName = account?.session.user.user_metadata?.full_name;
   const displayName = typeof accountName === 'string' && accountName.trim() ? accountName.trim() : (account?.session.user.email?.split('@')[0] || 'Usuário');
   const initialLetter = Array.from(displayName)[0]?.toLocaleUpperCase('pt-BR') || 'U';
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const desktop = width >= 900;
   const initial = useMemo(hoje, []);
   const [aba, setAba] = useState<Aba>('painel');
@@ -71,8 +81,10 @@ export function FinanceWorkspace() {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
   const [editando, setEditando] = useState<Lancamento | null>(null);
-  const [quickIntent, setQuickIntent] = useState<'receita' | 'despesa' | null>(null);
+  const [quickModal, setQuickModal] = useState<'receita' | 'despesa' | null>(null);
+  const [quickCardPurchase, setQuickCardPurchase] = useState(false);
   const [quickTransfer, setQuickTransfer] = useState(false);
+  const [transactionFilter, setTransactionFilter] = useState<'todos'|'receita'|'despesa'>('todos');
   const [historico, setHistorico] = useState<MesAnalise[]>([]);
   const [accountOptions,setAccountOptions] = useState<FinanceAccount[]>([]);
   const [cardOptions,setCardOptions] = useState<FinanceCard[]>([]);
@@ -166,15 +178,20 @@ export function FinanceWorkspace() {
   function acaoRapida(action: QuickAction) {
     setEditando(null);
     if (action === 'transferencia') {
+      setQuickModal(null);
       setQuickTransfer(true);
       irPara('contas');
       return;
     }
-    // A card purchase is an expense linked to a card, NOT a payment.
-    // It must start in the transaction form so card choices remain available.
+    // Keep the existing transaction validator and API: this modal is only a presentation layer.
     setQuickTransfer(false);
-    setQuickIntent(action === 'receita' ? 'receita' : 'despesa');
-    irPara('lancamentos');
+    setQuickCardPurchase(action === 'cartao');
+    setQuickModal(action === 'receita' ? 'receita' : 'despesa');
+  }
+  function abrirNovoLancamento() {
+    setEditando(null);
+    setQuickCardPurchase(false);
+    setQuickModal('despesa');
   }
 
   function selecionarPeriodo(mesNovo: number, anoNovo: number) {
@@ -253,12 +270,14 @@ export function FinanceWorkspace() {
     if (aba === 'carteiras') return <SharedWallets />;
     if (aba === 'planos') return <FuturePlans />;
     if (aba === 'automacao') return <PlannerCenter section="automation" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
-    if (aba === 'contas') return <PlannerCenter section="accounts" month={mes} year={ano}
-      initialOperation={quickTransfer ? 'transfer' : null}
+    if (aba === 'contas' || aba === 'cartoes') return <PlannerCenter key={aba}
+      section="accounts" month={mes} year={ano}
+      initialType={aba === 'cartoes' ? 'cards' : 'accounts'}
+      initialOperation={quickTransfer && aba === 'contas' ? 'transfer' : null}
       onUpdated={() => void carregar(true)} />;
     if (aba === 'metas') return <PlannerCenter section="goals" month={mes} year={ano} onUpdated={() => void carregar(true)} />;
-    if (loading) return <View style={s.loading}><ActivityIndicator size="large" color="#7C3AED" /><Text style={s.muted}>Carregando seus dados...</Text></View>;
-    if (aba === 'graficos') return histLoading ? <View style={s.loading}><ActivityIndicator color="#7C3AED" /><Text style={s.muted}>Carregando histórico...</Text></View> :
+    if (loading) return <View style={s.loading}><ActivityIndicator size="large" color="#00CDD0" /><Text style={s.muted}>Carregando seus dados...</Text></View>;
+    if (aba === 'graficos') return histLoading ? <View style={s.loading}><ActivityIndicator color="#00CDD0" /><Text style={s.muted}>Carregando histórico...</Text></View> :
       histError ? <Text style={s.error}>{histError}</Text> : <ChartsArea meses={historico} lancamentos={lista} />;
     if (aba === 'dados') return <DataArea lancamentos={lista} periodo={mesAno(mes, ano)} />;
     if (aba === 'lancamentos') return (
@@ -266,21 +285,27 @@ export function FinanceWorkspace() {
         <Text style={s.heading}>Lançamentos</Text>
         <Text style={s.muted}>Cadastre, edite e organize suas receitas e despesas em {mesAno(mes, ano)}. Vincule cada movimentação à conta ou cartão escolhido.</Text>
         {forecastNotice()}
-        <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo') + '-' + (quickIntent || '')}
-          initialType={quickIntent || undefined} mes={mes} ano={ano}
+        <TransactionForm key={mesAno(mes, ano) + '-' + (editando?.id || 'novo')}
+          mes={mes} ano={ano}
           lancamentoEmEdicao={editando} salvando={saving} onSalvar={salvar}
           accounts={accountOptions} cards={cardOptions}
           onCancelarEdicao={() => setEditando(null)} />
-        <Text style={s.title}>Movimentações do mês ({lista.length})</Text>
-        {!lista.length ? <Text style={s.muted}>Ainda não há lançamentos nesse mês.</Text> : (
-          <View style={s.list}>{[...lista].sort((a, b) => b.data.localeCompare(a.data)).map(l => (
+        <View style={s.header}>
+          <Text style={[s.title,{color:theme.text}]}>Movimentações do mês ({lista.length})</Text>
+          <OceanSegmentedControl value={transactionFilter}
+            options={TRANSACTION_TABS} onChange={setTransactionFilter}/>
+        </View>
+        {!lista.length ? <Text style={[s.muted,{color:theme.muted}]}>Ainda não há lançamentos nesse mês.</Text> : (
+          <View style={s.list}>{[...lista]
+            .filter(l => transactionFilter === 'todos' || l.tipo === transactionFilter)
+            .sort((a, b) => b.data.localeCompare(a.data)).map(l => (
             <TransactionItem key={l.id} lancamento={l} onEditar={setEditando} onExcluir={remover} />
           ))}</View>
         )}
       </View>
     );
     return (
-      <OceanDashboard
+      <OceanPrototypeDashboard
         resumo={resumo}
         lancamentos={lista}
         planner={plannerSnapshot}
@@ -289,30 +314,52 @@ export function FinanceWorkspace() {
         limite={limite}
         salvandoLimite={savingLimit}
         onSalvarLimite={atualizarLimite}
-        onNavigate={irPara}
+        onNavigate={irPara} onNewTransaction={abrirNovoLancamento}
       />
     );
   };
 
   const grupos = [
-    { titulo: 'PRINCIPAL', ids: ['painel','lancamentos','contas','metas','automacao','graficos'] },
-    { titulo: 'OUTRAS ÁREAS', ids: ['planos','dados','carteiras'] },
+    { titulo: 'VISÃO GERAL', ids: ['painel','lancamentos','contas','cartoes'] },
+    { titulo: 'ORGANIZAÇÃO', ids: ['automacao','metas','graficos'] },
     { titulo: 'PREFERÊNCIAS', ids: ['configuracoes'] },
+    { titulo: 'OUTRAS ÁREAS', ids: ['planos','dados','carteiras'] },
   ];
   return (
-    <View style={[s.root, { backgroundColor: theme.page }]}>
+    <>
+    <View style={[s.root, {
+      backgroundColor: isDark ? '#03182B' : '#E5F5FA',
+      borderColor: isDark ? '#347E98' : '#A5CFDE',
+    }]}>
       {desktop && <OceanSidebar pages={PAGINAS} groups={grupos}
-        active={aba} onNavigate={irPara} />}
+        active={aba} onNavigate={irPara} profileName={displayName} />}
       <View style={s.main}>
-        <ScrollView style={s.scroll} contentContainerStyle={[s.content, { maxWidth: desktop ? 1180 : 740 }, !desktop && s.contentMobile]}
+        <ScrollView style={s.scroll} contentContainerStyle={[s.content, { maxWidth: desktop ? 1350 : 740 }, !desktop && s.contentMobile]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void carregar(true)} />}>
           {desktop ? (
             <View style={s.header}>
               <View style={s.headerCopy}>
-                <Text style={s.overline}>OCEAFIN · SEU ESPAÇO FINANCEIRO</Text>
-                <Text style={s.appName}>{page.titulo === 'Painel' ? 'Visão geral' : page.titulo}</Text>
+                <Text style={[s.overline, { color: isDark ? '#64F5E9' : '#0077C8' }]}>
+                  OCEAFIN / {MONTH_NAMES[mes-1].toLocaleUpperCase('pt-BR')} {ano}
+                </Text>
+                <Text style={[s.appName,{ color: theme.text }]}>
+                  {aba === 'painel' ? 'Visão geral' : page.titulo}
+                </Text>
+                <Text style={[s.muted, { color: theme.muted }]}>
+                  Suas finanças em equilíbrio, com tudo em um só lugar.
+                </Text>
               </View>
               <View style={s.headerActions}>
+                {mostrarFiltroPeriodo &&
+                  <PeriodSelector mes={mes} ano={ano} onSelecionar={selecionarPeriodo} />}
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                  onPress={() => setTheme(isDark ? 'light' : 'dark')}
+                  style={[s.themeToggle, { borderColor: theme.border }]}>
+                  <Text style={[s.themeToggleText, { color: theme.text }]}>
+                    {isDark ? '☀ Tema claro' : '☾ Tema escuro'}
+                  </Text>
+                </Pressable>
                 <NotificationCenter />
                 <ProfileCard onOpenSettings={() => irPara('configuracoes')} />
               </View>
@@ -324,6 +371,12 @@ export function FinanceWorkspace() {
                 <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{OCEAFIN.name.toLowerCase()}</Text>
               </View>
               <View style={s.mobileActions}>
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                  onPress={() => setTheme(isDark ? 'light' : 'dark')}
+                  style={s.mobileThemeToggle}>
+                  <Text style={s.mobileThemeText}>{isDark ? '☀' : '☾'}</Text>
+                </Pressable>
                 <NotificationCenter />
                 <Pressable
                   accessibilityRole="button"
@@ -342,7 +395,7 @@ export function FinanceWorkspace() {
               <Text style={s.muted}>{page.detalhe}</Text>
             </View>
           )}
-          {mostrarFiltroPeriodo && <PeriodSelector mes={mes} ano={ano} onSelecionar={selecionarPeriodo} />}
+          {!desktop && mostrarFiltroPeriodo && <PeriodSelector mes={mes} ano={ano} onSelecionar={selecionarPeriodo} />}
           {erro ? <View style={s.notice}><Text style={s.error} accessibilityLiveRegion="assertive">{erro}</Text>
             <Pressable onPress={() => void carregar()} style={s.link}><Text style={s.linkText}>Tentar novamente</Text></Pressable></View> : null}
           {sucesso ? <Pressable onPress={() => setSucesso('')} style={s.success} accessibilityRole="button" accessibilityLabel="Fechar mensagem de sucesso">
@@ -353,14 +406,68 @@ export function FinanceWorkspace() {
           active={aba} onNavigate={irPara} onQuickAction={acaoRapida} />}
       </View>
     </View>
+    <Modal visible={quickModal !== null} transparent animationType="fade"
+      onRequestClose={() => { if (!saving) setQuickModal(null); }}>
+      <View style={s.quickOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button"
+          accessibilityLabel="Fechar formulário de lançamento"
+          disabled={saving} onPress={() => setQuickModal(null)} />
+        <OceanGlass material="floating" radius={24} style={[s.quickPanel,
+          { maxHeight: Math.max(300, height - 40) }]}>
+          <View style={s.quickHeader}>
+            <View style={s.quickHeadingCopy}>
+              <Text accessibilityRole="header"
+                style={[s.quickHeading, { color: theme.text }]}>
+                {quickCardPurchase ? 'Compra no cartão' :
+                  quickModal === 'receita' ? 'Nova receita' : 'Nova despesa'}
+              </Text>
+              <Text style={[s.muted,{color:theme.muted}]}>
+                {quickCardPurchase ? 'Selecione um cartão no formulário; não debita sua conta agora.' :
+                  'O lançamento será salvo na sua conta somente após confirmar.'}
+              </Text>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Fechar formulário"
+              disabled={saving} onPress={() => setQuickModal(null)} style={s.quickClose}>
+              <Text style={[s.quickCloseText,{color:theme.text}]}>×</Text>
+            </Pressable>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled"
+            style={[s.quickScroll,{maxHeight:Math.max(200,height*0.72)}]}
+            contentContainerStyle={s.quickFormBody}>
+            {quickModal !== null && <TransactionForm
+              key={'quick-'+mesAno(mes,ano)+'-'+quickModal+'-'+(quickCardPurchase?'card':'')}
+              mes={mes} ano={ano} initialType={quickModal} lancamentoEmEdicao={null}
+              salvando={saving} accounts={accountOptions} cards={cardOptions}
+              onSalvar={async input => {
+                await salvar(input);
+                setQuickModal(null);
+              }}
+              onCancelarEdicao={() => setQuickModal(null)} />}
+            {!!erro && <Text accessibilityLiveRegion="assertive" style={s.error}>{erro}</Text>}
+          </ScrollView>
+        </OceanGlass>
+      </View>
+    </Modal>
+    </>
   );
 }
 
 const base = StyleSheet.create({
-  root: { flex: 1, flexDirection: 'row', backgroundColor: '#F7F5FA' },
+  quickOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center',
+    padding: 12, backgroundColor: 'rgba(1,14,30,0.72)' },
+  quickPanel: { width: '100%', maxWidth: 560, padding: 18, gap: 8 },
+  quickHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  quickHeadingCopy: { flex: 1, minWidth: 0, gap: 5 },
+  quickHeading: { fontSize: 20, fontWeight: '900' },
+  quickClose: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  quickCloseText: { fontSize: 27, fontWeight: '700' },
+  quickScroll: { flexGrow: 0 },
+  quickFormBody: { paddingBottom: 10 },
+  root: { flex: 1, flexDirection: 'row', backgroundColor: '#07182C',
+    borderWidth: 1, borderRadius: 23, overflow: 'hidden' },
   main: { flex: 1, minWidth: 0 },
   scroll: { flex: 1, minWidth: 0 },
-  content: { width: '100%', alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 24,
+  content: { width: '100%', alignSelf: 'center', paddingHorizontal: 24, paddingVertical: 23,
     paddingBottom: 110, gap: 20 },
   contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 135, gap: 18 },
   mobileTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -370,13 +477,19 @@ const base = StyleSheet.create({
   mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 21,
     fontWeight: '900', letterSpacing: -0.6 },
   mobileActions: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0 },
-  mobileAvatarButton: { width: 44, height: 44, borderRadius: 14, borderColor: '#CBF28A',
-    borderWidth: 1.5, backgroundColor: '#42305F', justifyContent: 'center', alignItems: 'center' },
+  mobileAvatarButton: { width: 44, height: 44, borderRadius: 14, borderColor: '#89FAF0',
+    borderWidth: 1, backgroundColor: '#0B5470', justifyContent: 'center', alignItems: 'center' },
   mobileAvatarText: { fontSize: 17, fontWeight: '900', color: '#FFFFFF' },
   header: { flexDirection: 'row', gap: 10, justifyContent: 'space-between',
     alignItems: 'center', flexWrap: 'wrap' },
   headerCopy: { gap: 3, flexShrink: 1 },
-  headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
+  themeToggle: { minHeight: 42, paddingHorizontal: 12,
+    borderWidth: 1, borderRadius: 14, justifyContent: 'center' },
+  themeToggleText: { fontWeight: '800', fontSize: 12 },
+  mobileThemeToggle: { width: 44, height: 44, borderRadius: 14, borderWidth: 1,
+    borderColor: '#4D99B4', alignItems: 'center', justifyContent: 'center' },
+  mobileThemeText: { color: '#C6FDF8', fontSize: 20, fontWeight: '800' },
   overline: { color: '#6D28D9', fontWeight: '900', fontSize: 10, letterSpacing: 1.5 },
   appName: { color: '#111827', fontWeight: '900', fontSize: 27, letterSpacing: -0.6 },
   mobileHeading: { gap: 2 },

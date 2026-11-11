@@ -20,7 +20,8 @@ const ACCOUNT_TABS = [
 ] as const;
 
 type Props = { data: PlannerData; refresh: () => Promise<void>;
-  initialOperation?: 'transfer' | 'payment' | 'link' | null; };
+  initialOperation?: 'transfer' | 'payment' | 'link' | null;
+  initialType?: 'accounts' | 'cards'; };
 function Field({ label, value, change, hint, numeric = false }: {
   label: string; value: string; change: (s: string) => void; hint?: string; numeric?: boolean;
 }) {
@@ -43,9 +44,9 @@ function Chip({ label, selected, onPress }: {
   </Pressable>;
 }
 
-export function PlannerAccounts({ data, refresh, initialOperation = null }: Props) {
+export function PlannerAccounts({ data, refresh, initialOperation = null, initialType = 'accounts' }: Props) {
   const s = useAccessibleStyles(base);
-  const [type, setType] = useState<'accounts'|'cards'>('accounts');
+  const [type, setType] = useState<'accounts'|'cards'>(initialType);
   const [operation, setOperation] = useState<'transfer' | 'payment' | 'link' | null>(initialOperation);
   useEffect(() => {
     if (initialOperation) setOperation(initialOperation);

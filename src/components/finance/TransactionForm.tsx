@@ -75,10 +75,10 @@ export function TransactionForm({
     }
 
     limparFormulario();
-  }, [lancamentoEmEdicao, mes, ano]);
+  }, [lancamentoEmEdicao, mes, ano, initialType]);
 
   function limparFormulario() {
-    setTipo('despesa');
+    setTipo(initialType);
     setDescricao('');
     setCategoria('Outros');
     setValor('');

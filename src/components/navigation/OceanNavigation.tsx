@@ -16,7 +16,7 @@ export type OceanGroup = { titulo: string; ids: readonly string[] };
 export type QuickAction = 'receita' | 'despesa' | 'transferencia' | 'cartao';
 
 const NAV_STORAGE = '@oceafin:navigation:collapsed:v2';
-const EXPOSED_MOBILE: readonly string[] = ['painel', 'lancamentos', 'metas'];
+const EXPOSED_MOBILE: readonly string[] = ['painel', 'graficos', 'metas'];
 
 /** Motion always follows the *current* animated values, including rapid taps. */
 function useLiquidMotion(initial = 0) {
@@ -116,9 +116,10 @@ function SidebarLink({ page, active, collapsed, onPress, onLayout }: {
   </Pressable>;
 }
 
-export function OceanSidebar({ pages, groups, active, onNavigate }: {
+export function OceanSidebar({ pages, groups, active, onNavigate, profileName }: {
   pages: readonly OceanPage[]; groups: readonly OceanGroup[];
   active: string; onNavigate: (id: OceanPage['id']) => void;
+  profileName?: string;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [positions, setPositions] = useState<Record<string, number>>({});
@@ -182,12 +183,12 @@ export function OceanSidebar({ pages, groups, active, onNavigate }: {
       <Path d="M-40 755C90 620 158 824 278 680"
         fill="none" stroke="#B3FFFA" strokeWidth="3" opacity={0.43}/>
     </Svg>
-    <OceanGlass material="navigation" dark radius={24} style={styles.sidebarGlass}>
+    <OceanGlass material="navigation" dark radius={0} style={styles.sidebarGlass}>
       <View style={[styles.brandRow, collapsed && styles.brandRowCompact]}>
         <BrandMark size={collapsed ? 40 : 46} />
         {!collapsed && <View style={styles.brandCopy}>
           <Text style={styles.brandName}>Oceafin</Text>
-          <Text style={styles.brandTagline}>SUAS FINANÇAS, MAIS SIMPLES.</Text>
+          <Text style={styles.brandTagline}>OCEAN GLASS</Text>
         </View>}
       </View>
       <Pressable onPress={collapse} accessibilityRole="button"
@@ -215,7 +216,15 @@ export function OceanSidebar({ pages, groups, active, onNavigate }: {
           </View>)}
         </View>
       </ScrollView>
-      {!collapsed && <Text style={styles.sidebarFoot}>Oceafin · Sua vida financeira em equilíbrio</Text>}
+      {!collapsed && <View style={styles.sidebarProfile}>
+        <View style={styles.sidebarAvatar}><Text style={styles.sidebarAvatarText}>
+          {profileName?.slice(0,1).toUpperCase() || 'O'}</Text></View>
+        <View style={styles.sidebarProfileCopy}>
+          <Text style={styles.sidebarProfileName} numberOfLines={1}>
+            {profileName || 'Oceafin'}</Text>
+          <Text style={styles.sidebarProfileCaption}>Minha conta</Text>
+        </View>
+      </View>}
     </OceanGlass>
   </Animated.View>;
 }
@@ -251,7 +260,7 @@ export function OceanBottomNavigation({ pages, active, onNavigate, onQuickAction
   const [dockWidth, setDockWidth] = useState(340);
   const { front, rear, elastic, move, calm } = useLiquidMotion();
   const tabWidth = dockWidth / 5;
-  const mobileIndex = active === 'painel' ? 0 : active === 'lancamentos' ? 1 :
+  const mobileIndex = active === 'painel' ? 0 : active === 'graficos' ? 1 :
     active === 'metas' || active === 'planos' ? 3 : 4;
   useEffect(() => { move(mobileIndex * tabWidth + 3); }, [mobileIndex, tabWidth, calm]);
   const pick = (id: WorkspaceIconName) => { setSheet(null); onNavigate(id); };
@@ -262,10 +271,10 @@ export function OceanBottomNavigation({ pages, active, onNavigate, onQuickAction
   };
   const tabs: { title: string; icon: WorkspaceIconName; at: number; id?: WorkspaceIconName }[] = [
     { title: 'Início', icon: 'painel', id: 'painel', at: 0 },
-    { title: 'Lançamentos', icon: 'lancamentos', id: 'lancamentos', at: 1 },
+    { title: 'Análises', icon: 'graficos', id: 'graficos', at: 1 },
     { title: '+', icon: 'lancamentos', at: 2 },
     { title: 'Planejar', icon: 'metas', id: 'metas', at: 3 },
-    { title: 'Mais', icon: 'configuracoes', at: 4 },
+    { title: 'Perfil', icon: 'configuracoes', at: 4 },
   ];
   return <>
     <View pointerEvents="box-none" style={[styles.dockHost, { bottom: Math.max(8, insets.bottom) }]}>
@@ -340,9 +349,10 @@ export function OceanBottomNavigation({ pages, active, onNavigate, onQuickAction
 }
 
 const styles = StyleSheet.create({
-  sidebarHost: { paddingHorizontal: 9, paddingVertical: 10, overflow: 'hidden' },
-  sidebarGlass: { flex: 1, paddingTop: 16, paddingHorizontal: 8,
-    shadowColor: '#081F34', shadowOpacity: 0.16, shadowRadius: 26 },
+  sidebarHost: { paddingHorizontal: 0, paddingVertical: 0, overflow: 'hidden' },
+  sidebarGlass: { flex: 1, paddingTop: 18, paddingHorizontal: 8,
+    borderRightWidth: 1, borderRightColor: 'rgba(145,229,247,.28)',
+    shadowColor: '#081F34', shadowOpacity: 0.13, shadowRadius: 18 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 8, marginBottom: 19 },
   brandRowCompact: { justifyContent: 'center', paddingHorizontal: 0 },
@@ -372,6 +382,16 @@ const styles = StyleSheet.create({
   sidebarTextActive: { color: '#041C35', fontWeight: '900' },
   sidebarFoot: { fontSize: 10.5, color: '#BFE8F0', lineHeight: 16,
     paddingHorizontal: 9, paddingBottom: 20 },
+  sidebarProfile: { marginHorizontal: 5, marginBottom: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 9,
+    minHeight: 56, padding: 10, borderRadius: 15,
+    backgroundColor: 'rgba(0,107,141,.20)' },
+  sidebarAvatar: { width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#07BACA', alignItems: 'center', justifyContent: 'center' },
+  sidebarAvatarText: { color: '#FFFFFF', fontWeight: '900', fontSize: 12 },
+  sidebarProfileCopy: { flex: 1, minWidth: 0, gap: 3 },
+  sidebarProfileName: { color: '#ECFFFF', fontSize: 11, fontWeight: '800' },
+  sidebarProfileCaption: { color: '#A9D7E2', fontSize: 10 },
   liquidLens: { position: 'absolute', borderRadius: 18, borderWidth: 1,
     borderColor: 'rgba(205,255,255,0.66)',
     shadowColor: '#00A9B6', shadowOpacity: 0.24, shadowRadius: 12,
@@ -389,7 +409,7 @@ const styles = StyleSheet.create({
   dockTab: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center',
     minHeight: 64, gap: 3, zIndex: 1 },
   dockText: { fontSize: 10, fontWeight: '800', textAlign: 'center' },
-  plusCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#0077C8',
+  plusCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#05BCD4',
     borderWidth: 2, borderColor: '#96FFF7', alignItems: 'center', justifyContent: 'center',
     shadowColor: '#00E5D2', shadowOpacity: 0.35, shadowRadius: 10 },
   plusText: { fontSize: 30, lineHeight: 34, color: '#FFFFFF', fontWeight: '600' },

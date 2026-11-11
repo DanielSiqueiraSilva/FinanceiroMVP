@@ -13,7 +13,7 @@ export const BRAND = {
 
 export type WorkspaceIconName =
   | 'painel' | 'lancamentos' | 'graficos' | 'dados' | 'automacao'
-  | 'contas' | 'metas' | 'planos' | 'carteiras' | 'configuracoes';
+  | 'contas' | 'cartoes' | 'metas' | 'planos' | 'carteiras' | 'configuracoes';
 
 /**
  * Oceafin monogram derived from the approved identity board:
@@ -89,6 +89,11 @@ export function WorkspaceIcon({
       {name === 'automacao' && <>
         <Path d="M19 9a7 7 0 1 0 1 6M19 4v5h-5" {...common}/>
         <Path d="M12 8v4l3 2" {...common}/>
+      </>}
+      {name === 'cartoes' && <>
+        <Rect x="3" y="5" width="18" height="14" rx="3" {...common}/>
+        <Line x1="3" y1="10" x2="21" y2="10" {...common}/>
+        <Line x1="6" y1="16" x2="11" y2="16" {...common}/>
       </>}
       {name === 'contas' && <>
         <Rect x="3" y="6" width="18" height="14" rx="3" {...common}/>

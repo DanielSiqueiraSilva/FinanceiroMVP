@@ -1,7 +1,7 @@
 name: Validate Oceafin UI
 on:
   push:
-    branches: [main, feature/oceafin-design-v2]
+    branches: [main, feature/oceafin-html-prototype]
   pull_request:
     branches: [main]
 permissions:
@@ -23,7 +23,7 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit
       - name: Lint Oceafin design foundation
-        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx src/components/dashboard/OceanDashboard.tsx src/components/dashboard/dashboard-data.ts src/components/workspace/finance-flow-validation.ts src/design/OceanGlass.tsx src/design/OceanControls.tsx src/components/dashboard/OceanHero.tsx src/components/dashboard/OceanFlowChart.tsx
+        run: npx eslint src/design/tokens.ts src/design/brand.tsx src/accessibility/useAccessibleStyles.ts src/app/_layout.tsx src/app/+html.tsx src/components/navigation/OceanNavigation.tsx src/components/dashboard/OceanDashboard.tsx src/components/dashboard/OceanPrototypeDashboard.tsx src/components/dashboard/dashboard-data.ts src/components/workspace/finance-flow-validation.ts src/design/OceanGlass.tsx src/design/OceanControls.tsx src/components/dashboard/OceanHero.tsx src/components/dashboard/OceanFlowChart.tsx
       - name: Legacy full-repository lint audit (non-blocking)
         continue-on-error: true
         run: npm run lint
@@ -53,3 +53,6 @@ jobs:
           test ! -e src/app/design-preview.tsx
           test ! -e dist/design-preview.html
           test ! -e dist/design-preview/index.html
+          test ! -e src/app/design-audit.tsx
+          test ! -e dist/design-audit.html
+          test ! -e dist/design-audit/index.html

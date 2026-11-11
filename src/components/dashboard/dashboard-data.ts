@@ -38,3 +38,19 @@ export function plannerBalances(planner: PlannerData | null) {
     hasAccounts, hasCards,
   };
 }
+
+/** The HTML prototype's four visual weeks, using *recorded* transactions only. */
+export function fourWeekFlow(items: readonly Lancamento[]) {
+  const weeks = Array.from({ length: 4 }, (_, i) => ({ index: i, income: 0, expense: 0 }));
+  for (const tx of items) {
+    const day = Number(tx.data.slice(8, 10));
+    const value = Number(tx.valor);
+    if (!Number.isFinite(day) || day < 1 || day > 31 ||
+        !Number.isFinite(value) || value < 0) continue;
+    const bucket = Math.min(3, Math.floor((day - 1) / 8));
+    if (tx.tipo === 'receita') weeks[bucket].income += value;
+    else if (tx.tipo === 'despesa') weeks[bucket].expense += value;
+  }
+  return weeks;
+}
+
