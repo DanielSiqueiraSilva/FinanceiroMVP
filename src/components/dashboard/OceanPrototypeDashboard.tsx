@@ -24,6 +24,7 @@ type Props = {
   salvandoLimite: boolean;
   onSalvarLimite: (valor: number) => Promise<void>;
   onNavigate: (target: Destination) => void;
+  onNewTransaction?: () => void;
 };
 
 const sky = '#BDE9F2';
@@ -199,7 +200,7 @@ function BudgetPanel({ spent, limit, planner, onNavigate, hidden, dark,
 /** Real-data implementation of the supplied HTML visual model. */
 export function OceanPrototypeDashboard({
   resumo, lancamentos, planner, forecasts, mes, ano, limite,
-  salvandoLimite, onSalvarLimite, onNavigate,
+  salvandoLimite, onSalvarLimite, onNavigate, onNewTransaction,
 }: Props) {
   const { isDark } = useAccessibility();
   const [hidden, setHidden] = useState(false);
@@ -303,7 +304,7 @@ export function OceanPrototypeDashboard({
     </Panel>
     <View style={styles.addRow}>
       <OceanButton variant="primary" label="Novo lançamento" icon="lancamentos"
-        onPress={() => onNavigate('lancamentos')}/>
+        onPress={onNewTransaction || (() => onNavigate('lancamentos'))}/>
     </View>
     <Text style={[styles.disclaimer,{color:dark?sky:'#527486'}]}>
       Dados do período {period}. O saldo de contas é estimado a partir dos registros;
