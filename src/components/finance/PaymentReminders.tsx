@@ -3,6 +3,8 @@ import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, TextInput, View
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { supabaseAuth } from '../../auth/supabaseClient';
+import { OceanGlass } from '../../design/OceanGlass';
+import { getOceafinTheme } from '../../design/tokens';
 import { useProfileSession } from '../auth/ProtectedFinance';
 
 type Reminder = {
@@ -30,12 +32,16 @@ const money = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 /** Lembretes são independentes dos lançamentos: não criam uma despesa automaticamente. */
-export function PaymentReminders({ month, year }: { month: number; year: number }) {
+export function PaymentReminders({ month, year, compact = false, hidden = false }: {
+  month: number; year: number; compact?: boolean; hidden?: boolean;
+}) {
   const auth = useProfileSession();
   const userId = auth?.session.user.id;
   const { isDark } = useAccessibility();
+  const theme = getOceafinTheme(isDark);
   const styles = useAccessibleStyles(baseStyles);
   const [items, setItems] = useState<Reminder[]>([]);
+  const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState('');
   const [day, setDay] = useState('28');
   const [monthInput, setMonthInput] = useState(String(month).padStart(2, '0'));
@@ -128,8 +134,71 @@ export function PaymentReminders({ month, year }: { month: number; year: number 
     return `${get('year')}-${get('month')}-${get('day')}`;
   })();
 
+  const selectedMonth = year + '-' + String(month).padStart(2, '0') + '-';
+  const upcoming = items
+    .filter(item => item.due_date.startsWith(selectedMonth) && !item.is_paid)
+    .sort((a, b) => a.due_date.localeCompare(b.due_date))
+    .slice(0, 3);
+  if (compact && !expanded) {
+    return <OceanGlass material="soft" radius={19} style={compactStyles.panel}>
+      <View style={compactStyles.heading}>
+        <Text style={[compactStyles.headingText, { color: theme.text }]}
+          accessibilityRole="header">▦ Próximos vencimentos</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Ver todos os lembretes"
+          style={compactStyles.headerButton} onPress={() => setExpanded(true)}>
+          <Text style={[compactStyles.link, { color: theme.link }]}>Ver todos  ›</Text>
+        </Pressable>
+      </View>
+      <Text style={[compactStyles.helper, { color: theme.muted }]}>
+        Lembretes registrados, sem lançamento automático.
+      </Text>
+      {loading && <ActivityIndicator color={theme.link} />}
+      {!!error && <Text style={[compactStyles.helper,{color:isDark?'#FFC1B7':'#9B374A'}]}>
+        {error}</Text>}
+      {!loading && upcoming.length === 0 && <Text style={[
+        compactStyles.helper, { color: theme.muted, paddingVertical: 10 },
+      ]}>Nenhum vencimento pendente neste mês.</Text>}
+      {upcoming.map(item => <View key={item.id}
+        style={[compactStyles.reminder, {
+          backgroundColor: isDark ? 'rgba(12,84,107,.62)' : '#E6F5FA',
+        }]}>
+        <View style={compactStyles.reminderIcon}><Text style={compactStyles.iconText}>▣</Text></View>
+        <View style={compactStyles.reminderText}>
+          <Text numberOfLines={2} style={[compactStyles.name, { color: theme.text }]}>
+            {item.title}</Text>
+          <Text style={[compactStyles.helper, { color: theme.muted }]}>
+            {item.due_date.slice(8,10)}/{item.due_date.slice(5,7)} ·
+            {item.due_date < today ? ' Vencido' : ' Pendente'}
+          </Text>
+        </View>
+        <View style={compactStyles.reminderRight}>
+          <Text numberOfLines={2} style={[compactStyles.amount, { color: theme.text }]}>
+            {item.amount === null ? 'Sem valor' : hidden ? 'R$ •••••' : money(item.amount)}
+          </Text>
+          <Pressable disabled={busy} accessibilityRole="button"
+            accessibilityLabel={'Marcar como pago: ' + item.title}
+            onPress={() => void changeItem(item, { is_paid: true })}
+            style={compactStyles.markPaid}>
+            <Text style={[compactStyles.markText, { color: theme.link }]}>Marcar pago</Text>
+          </Pressable>
+        </View>
+      </View>)}
+      <Pressable accessibilityRole="button"
+        style={compactStyles.addReminder} onPress={() => setExpanded(true)}>
+        <Text style={[compactStyles.link, { color: theme.link }]}>
+          + Cadastrar lembrete</Text>
+      </Pressable>
+    </OceanGlass>;
+  }
+
   return (
     <View style={styles.card}>
+      {compact && <Pressable onPress={() => setExpanded(false)}
+        accessibilityRole="button" style={compactStyles.headerButton}>
+        <Text style={[compactStyles.link, { color: theme.link }]}>
+          ‹ Voltar aos próximos vencimentos
+        </Text>
+      </Pressable>}
       <View style={styles.heading}>
         <Text accessibilityRole="header" style={styles.title}>Lembretes de pagamento</Text>
         <Text style={styles.description}>Cadastre contas que precisa pagar. Os avisos aparecem na central no dia do vencimento, após as 9h (horário de Brasília).</Text>
@@ -249,4 +318,26 @@ const baseStyles = StyleSheet.create({
   secondaryText: { fontSize: 12, color: '#5B21B6', fontWeight: '700' },
   delete: { padding: 9, borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 8 },
   deleteText: { color: '#B91C1C', fontSize: 12, fontWeight: '700' },
+});
+
+const compactStyles = StyleSheet.create({
+  panel: { padding: 18, gap: 10, minHeight: 220 },
+  heading: { flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 },
+  headingText: { fontSize: 15, fontWeight: '900' },
+  headerButton: { minHeight: 42, justifyContent: 'center' },
+  link: { fontSize: 11, fontWeight: '800' },
+  helper: { fontSize: 10, lineHeight: 16 },
+  reminder: { flexDirection: 'row', alignItems: 'center', borderRadius: 14,
+    minHeight: 63, padding: 10, gap: 9 },
+  reminderIcon: { width: 32, height: 32, backgroundColor: '#08778B',
+    borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  iconText: { color: '#8DFDF1', fontSize: 16, fontWeight: '900' },
+  reminderText: { flex: 1, minWidth: 0, gap: 3 },
+  name: { fontSize: 11, fontWeight: '800' },
+  reminderRight: { flexShrink: 1, alignItems: 'flex-end', gap: 4 },
+  amount: { fontSize: 11, fontWeight: '800' },
+  markPaid: { minHeight: 30, justifyContent: 'center' },
+  markText: { fontSize: 10, fontWeight: '800' },
+  addReminder: { alignSelf: 'flex-start', justifyContent: 'center', minHeight: 40 },
 });
