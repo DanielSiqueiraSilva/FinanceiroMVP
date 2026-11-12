@@ -66,7 +66,8 @@ export function OceanPressable({
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const needsSolidForLegibility =
-    needsSolidOceanButtonSurface(isDark, directButtonLabelColor(children));
+    needsSolidOceanButtonSurface(isDark,
+      typeof children === 'function' ? null : directButtonLabelColor(children));
   const interactive = accessibilityRole === 'button' ||
     accessibilityRole === 'tab' || accessibilityRole === 'radio' ||
     (typeof rest.onPress === 'function' && needsSolidForLegibility);
