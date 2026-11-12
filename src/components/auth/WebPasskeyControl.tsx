@@ -110,7 +110,7 @@ const lightPasskey = StyleSheet.create({
   container: { borderTopColor: '#DDD6E6' },
   heading: { color: '#111827' },
   help: { color: '#4B5563' },
-  keyName: { color: '#5B21B6' },
+  keyName: { color: '#0A6579' },
   remove: { color: '#B91C1C' },
-  message: { color: '#5B21B6' },
+  message: { color: '#0A6579' },
 });

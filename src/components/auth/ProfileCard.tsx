@@ -64,8 +64,8 @@ const baseStyles = StyleSheet.create({
   nome: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   email: { color: '#B6C2D9', fontSize: 12, marginTop: 3 },
   acoes: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  botaoConfiguracoes: { borderWidth: 1, borderColor: '#8B5CF6', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
-  textoConfiguracoes: { color: '#D8B4FE', fontSize: 12, fontWeight: '700' },
+  botaoConfiguracoes: { borderWidth: 1, borderColor: 'rgba(124,209,213,.38)', borderRadius: 999, paddingHorizontal: 15, paddingVertical: 10, minHeight: 44 },
+  textoConfiguracoes: { color: '#9FE5E7', fontSize: 12, fontWeight: '700' },
   botaoSair: { backgroundColor: '#332238', borderColor: '#804053', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
   textoSair: { color: '#FDA4AF', fontSize: 12, fontWeight: '700' },
 });
@@ -74,8 +74,8 @@ const lightProfile = StyleSheet.create({
   card: { backgroundColor: '#FFFFFF', borderColor: '#DDD6E6' },
   nome: { color: '#111827' },
   email: { color: '#4B5563' },
-  botaoConfiguracoes: { backgroundColor: '#F5F3FF' },
-  textoConfiguracoes: { color: '#5B21B6' },
-  botaoSair: { backgroundColor: '#FFF1F2', borderColor: '#FECDD3' },
+  botaoConfiguracoes: { backgroundColor: 'rgba(218,245,247,.45)' },
+  textoConfiguracoes: { color: '#095D72' },
+  botaoSair: { backgroundColor: 'rgba(255,235,239,.52)', borderColor: '#E2AFB8' },
   textoSair: { color: '#BE123C' },
 });
