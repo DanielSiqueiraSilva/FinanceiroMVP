@@ -72,19 +72,19 @@ export function OceanGlass({
     material === 'hero';
   const intensity = material === 'navigation' ? OCEAFIN.glass.navigationBlur :
     material === 'floating' ? OCEAFIN.glass.floatingBlur :
-      material === 'button' ? 12 : OCEAFIN.glass.softBlur;
+      material === 'button' ? OCEAFIN.glass.buttonBlur : OCEAFIN.glass.softBlur;
   const useWebBackdrop = Platform.OS === 'web' && !opaque && webBlur;
   const backgroundColor = opaque || (Platform.OS === 'web' && !webBlur) ?
     (darkTheme ? '#102E48' : '#F5FAFD') :
     darkTheme ?
       (material === 'navigation' ? 'rgba(8,31,52,0.64)' :
-        material === 'button' ? 'rgba(22,67,93,0.64)' : 'rgba(15,45,68,0.70)') :
+        material === 'button' ? OCEAFIN.button.darkGlass : 'rgba(15,45,68,0.70)') :
       (material === 'navigation' ? 'rgba(247,252,255,0.73)' :
-        material === 'button' ? 'rgba(245,251,255,0.70)' : 'rgba(255,255,255,0.76)');
+        material === 'button' ? OCEAFIN.button.lightGlass : 'rgba(255,255,255,0.76)');
   const surface: ViewStyle = {
     position: 'relative', borderRadius: radius, overflow: 'hidden',
     borderWidth: 1,
-    borderColor: darkTheme ? 'rgba(182,248,252,0.33)' : 'rgba(255,255,255,0.88)',
+    borderColor: darkTheme ? OCEAFIN.button.darkBorder : OCEAFIN.button.lightBorder,
     backgroundColor,
   };
   const webStyling = Platform.OS === 'web' ? ({
@@ -92,9 +92,13 @@ export function OceanGlass({
       backdropFilter: 'blur(' + intensity + 'px) saturate(135%)',
       WebkitBackdropFilter: 'blur(' + intensity + 'px) saturate(135%)',
     } : {}),
-    boxShadow: darkTheme
-      ? 'inset 0 1px 0 rgba(228,255,255,.17), 0 14px 32px rgba(1,12,34,.20)'
-      : 'inset 0 1px 0 rgba(255,255,255,.92), 0 12px 28px rgba(10,55,82,.12)',
+    boxShadow: material === 'button'
+      ? (darkTheme
+        ? 'inset 0 1px 0 rgba(236,255,255,.25), inset 0 -2px 3px rgba(0,18,30,.20), 0 4px 9px rgba(0,12,25,.12)'
+        : 'inset 0 1px 0 rgba(255,255,255,.88), inset 0 -2px 3px rgba(50,105,120,.08), 0 4px 10px rgba(24,67,84,.09)')
+      : darkTheme
+        ? 'inset 0 1px 0 rgba(228,255,255,.17), 0 14px 32px rgba(1,12,34,.20)'
+        : 'inset 0 1px 0 rgba(255,255,255,.92), 0 12px 28px rgba(10,55,82,.12)',
   } as unknown as ViewStyle) : undefined;
   const nativeGlass = Platform.OS === 'ios' && !opaque &&
     isLiquidGlassAvailable() && isGlassEffectAPIAvailable();

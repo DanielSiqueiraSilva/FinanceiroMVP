@@ -1,69 +1,16 @@
-import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
+import { ViewStyle } from 'react-native';
 import { useNotifications } from '../../notifications/NotificationsContext';
-import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { OceanButton } from '../../design/OceanControls';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
-
-type Props = {
-  title: string;
-  onPress: () => void;
-  variant?: ButtonVariant;
-  disabled?: boolean;
-  fullWidth?: boolean;
-  style?: ViewStyle;
-};
-
-export function AppButton({
-  title,
-  onPress,
-  variant = 'primary',
-  disabled = false,
-  fullWidth = false,
-  style,
-}: Props) {
-  const styles = useAccessibleStyles(baseStyles);
+type Props = { title: string; onPress: () => void; variant?: ButtonVariant;
+  disabled?: boolean; fullWidth?: boolean; style?: ViewStyle };
+/** Backward-compatible façade so existing form handlers remain unchanged. */
+export function AppButton({ title, onPress, variant = 'primary',
+  disabled = false, fullWidth = false, style }: Props) {
   const notifications = useNotifications();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      accessibilityState={{ disabled }}
-      onPress={() => { notifications?.click(); onPress(); }}
-      disabled={disabled}
-      style={({ pressed }) => [
-        styles.base,
-        styles[variant],
-        fullWidth && styles.fullWidth,
-        pressed && !disabled && styles.pressed,
-        disabled && styles.disabled,
-        style,
-      ]}
-    >
-      <Text style={[styles.text, styles[`${variant}Text`]]}>{title}</Text>
-    </Pressable>
-  );
+  return <OceanButton label={title}
+    variant={variant === 'secondary' ? 'glass' : variant === 'ghost' ? 'quiet' : variant}
+    disabled={disabled} fullWidth={fullWidth} style={style}
+    onPress={() => { notifications?.click(); onPress(); }}/>;
 }
-
-const baseStyles = StyleSheet.create({
-  base: {
-    minHeight: 46,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  fullWidth: { width: '100%' },
-  primary: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
-  secondary: { backgroundColor: '#FFFFFF', borderColor: '#D8D2E2' },
-  danger: { backgroundColor: '#FFF1F2', borderColor: '#FECDD3' },
-  ghost: { backgroundColor: 'transparent', borderColor: 'transparent' },
-  text: { fontSize: 15, fontWeight: '800' },
-  primaryText: { color: '#FFFFFF' },
-  secondaryText: { color: '#5B21B6' },
-  dangerText: { color: '#BE123C' },
-  ghostText: { color: '#6B7280' },
-  pressed: { opacity: 0.82 },
-  disabled: { opacity: 0.5 },
-});
