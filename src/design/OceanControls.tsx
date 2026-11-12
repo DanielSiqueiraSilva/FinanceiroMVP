@@ -1,9 +1,9 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { Children, isValidElement, useEffect, useState, type ReactNode } from 'react';
 import {
   AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform,
   Pressable, StyleSheet, Text, View,
   type PressableProps, type PressableStateCallbackType,
-  type StyleProp, type ViewStyle,
+  type StyleProp, type TextStyle, type ViewStyle,
 } from 'react-native';
 import { useAccessibility } from '../accessibility/AccessibilityContext';
 import { getOceafinTheme, OCEAFIN } from './tokens';
@@ -41,7 +41,30 @@ function useReducedMotion() {
   return reduceMotion || system;
 }
 
-/** Pressable with subtle glass physics. Use this for legacy controls without changing handlers. */
+/**
+ * Only inspect a button's direct text label. Nested text inside complex list cards
+ * or a notification badge must never recolor the entire interactive card.
+ * Legacy components use explicit React Native Text colors, so inherited CSS ink
+ * cannot fix an unreadable white label by itself.
+ */
+function directButtonLabelColor(children: ReactNode): string | null {
+  for (const node of Children.toArray(children)) {
+    if (!isValidElement<{ style?: StyleProp<TextStyle> }>(node) || node.type !== Text) continue;
+    const color = StyleSheet.flatten(node.props.style)?.color;
+    if (typeof color === 'string') return color.toUpperCase();
+  }
+  return null;
+}
+function nearWhiteLabel(color: string | null): boolean {
+  if (!color) return false;
+  if (['#FFFFFF','#F8FAFC','#EFFCFF','#E8FFFF','#F2FFFF','#F5FFFF'].includes(color)) return true;
+  const match = color.match(/^#([A-F0-9]{6})$/);
+  if (!match) return false;
+  const channels = [0,2,4].map(i => parseInt(match[1].slice(i,i+2),16));
+  return channels.every(n => n >= 222);
+}
+
+/** Pressable with theme-aware glass physics; keep legacy label contrast intact. */
 export function OceanPressable({
   style, accessibilityRole, accessibilityState, disabled,
   onHoverIn, onHoverOut, onFocus, onBlur,
@@ -62,13 +85,19 @@ export function OceanPressable({
       flat.backgroundColor.toUpperCase() : '';
     const selected = accessibilityState?.selected === true ||
       accessibilityState?.checked === true;
+    const foreground = directButtonLabelColor(children);
+    const needsSolidForLegibility = !isDark && nearWhiteLabel(foreground);
     const solidDanger = ['#B91C1C','#991B1B','#A94345','#FCA5A5',
       '#A22E49','#BE123C'].includes(raw);
     const isDanger = oceanTone === 'danger' || solidDanger ||
       ['#FFF1F2','#FFF0F0','#3D2028'].includes(raw);
+    const originalPrimary = ['#7C3AED','#087F95','#0077C8','#0C879A',
+      '#0D8A9F','#5B21B6','#8557F5','#08677B','#0A7083','#0B7186'].includes(raw);
+    // Primary surfaces are only forced dark in light mode if the label is light.
+    // Dark-ink legacy chips on an ocean background must use light glass instead.
     const isPrimary = oceanTone === 'primary' ||
-      (oceanTone === 'auto' && ['#7C3AED','#087F95','#0077C8','#0C879A',
-        '#0D8A9F','#5B21B6','#8557F5','#08677B','#0A7083','#0B7186'].includes(raw));
+      (oceanTone === 'auto' && (needsSolidForLegibility && !isDanger ||
+        originalPrimary && (isDark || needsSolidForLegibility)));
     const hasBackground = !!raw && raw !== 'TRANSPARENT';
     const hasSurface = hasBackground || (typeof flat.borderWidth === 'number' && flat.borderWidth > 0);
     const reducedAlpha = disabled ? Math.min(0.65, flat.opacity ?? 1) : flat.opacity;
@@ -82,7 +111,7 @@ export function OceanPressable({
         'background-color 180ms, border-color 180ms, box-shadow 180ms, transform 220ms cubic-bezier(.25,1,.5,1)',
     } as unknown as ViewStyle) : undefined;
     // Text-only links, modal scrims, and icon actions must not become opaque pill cards.
-    if (!hasSurface && oceanTone === 'auto') {
+    if (!hasSurface && oceanTone === 'auto' && !needsSolidForLegibility) {
       return [original, {
         minHeight: Math.max(44, typeof flat.minHeight === 'number' ? flat.minHeight : 0),
         opacity: reducedAlpha, transform: pressTransform,
@@ -92,7 +121,8 @@ export function OceanPressable({
     }
     // White legacy labels require an opaque ocean/deep rose surface for WCAG contrast.
     // Selected chips keep their own palette and do not inherit another mismatched text color.
-    const base = solidDanger ? (isDark ? OCEAFIN.button.solidDangerDark : OCEAFIN.button.solidDangerLight)
+    const base = solidDanger || (isDanger && needsSolidForLegibility)
+      ? (isDark ? OCEAFIN.button.solidDangerDark : OCEAFIN.button.solidDangerLight)
       : isPrimary ? (isDark ? OCEAFIN.button.solidPrimaryDark : OCEAFIN.button.solidPrimaryLight)
       : oceanTone === 'quiet' ? 'transparent'
       : selected && hasBackground ? flat.backgroundColor
@@ -107,7 +137,7 @@ export function OceanPressable({
       : isDark ? OCEAFIN.button.darkBorder : 'rgba(119,184,196,.38)';
     const feedback: ViewStyle = {
       backgroundColor: base, borderColor: border, borderWidth: 1,
-      borderRadius: isPrimary || solidDanger ||
+      borderRadius: isPrimary || solidDanger || (isDanger && needsSolidForLegibility) ||
         (typeof flat.paddingHorizontal === 'number' && flat.paddingHorizontal >= 9 &&
           flat.width === undefined && flat.height === undefined)
           ? OCEAFIN.button.radius
