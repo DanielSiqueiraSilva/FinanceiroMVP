@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { WorkspaceIcon, type WorkspaceIconName } from '../../design/brand';

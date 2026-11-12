@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { OceanButton, OceanPressable as Pressable } from '../../design/OceanControls';
+import { OceanButton } from '../../design/OceanControls';
 import { supabaseAuth } from '../../auth/supabaseClient';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
@@ -222,7 +222,7 @@ const baseStyles = StyleSheet.create({
   headerText: { flexShrink: 1, gap: 4 },
   title: { color: '#111827', fontWeight: '900', fontSize: 26 },
   subtitle: { color: '#6B7280', fontSize: 14 },
-  section: { width: '100%', borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#ECE8F1', padding: 18, gap: 12 },
+  section: { width: '100%', borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D7E6EA', padding: 18, gap: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
   label: { fontSize: 12, color: '#6B7280', fontWeight: '700' },
   value: { fontSize: 16, color: '#111827', fontWeight: '600', flexShrink: 1 },

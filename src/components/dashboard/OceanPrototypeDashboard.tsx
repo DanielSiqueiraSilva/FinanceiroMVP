@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { OceanGlass } from '../../design/OceanGlass';
 import { OceanHero } from './OceanHero';
@@ -9,7 +10,7 @@ import { moeda } from '../workspace/FinanceVisuals';
 import { goalProgress, type PlannerData, type RecurringRule } from '../../services/finance-planner';
 import type { Lancamento, ResumoFinanceiro } from '../../types/finance';
 import { categorySpending, latestTransactions, plannerBalances, fourWeekFlow } from './dashboard-data';
-import { OceanButton } from '../../design/OceanControls';
+import { OceanButton, OceanSegmentedControl } from '../../design/OceanControls';
 
 type Destination = 'lancamentos' | 'contas' | 'automacao' | 'metas' | 'graficos' | 'planos';
 type Forecast = { rule: RecurringRule; posted: boolean };
@@ -29,7 +30,11 @@ type Props = {
 
 const sky = '#BDE9F2';
 const navy = '#082840';
-const aqua = '#08E5D8';
+const aqua = '#30B8BD';
+const FLOW_OPTIONS = [
+  { value: 'income', label: 'Receitas' },
+  { value: 'expense', label: 'Despesas' },
+] as const;
 function Panel({ title, link, onLink, children, dark = true, style }: {
   title: string; link?: string; onLink?: () => void;
   children: ReactNode; dark?: boolean; style?: ViewStyle;
@@ -82,18 +87,8 @@ function FlowBars({ transactions, hidden, dark }: {
   const data = useMemo(() => fourWeekFlow(transactions), [transactions]);
   const maximum = Math.max(1, ...data.map(x => x[selected]));
   return <Panel title="▥ Evolução do mês" dark={dark}>
-    <View style={styles.segment} accessibilityRole="tablist">
-      {([{id:'income',text:'Receitas'},{id:'expense',text:'Despesas'}] as const).map(opt=>
-        <Pressable key={opt.id} accessibilityRole="tab" accessibilityLabel={opt.text}
-          accessibilityState={{ selected: selected === opt.id }}
-          onPress={() => setSelected(opt.id)} style={[styles.segmentButton,
-            selected === opt.id && styles.segmentSelected]}>
-          <Text style={[styles.segmentText,
-            { color: selected === opt.id ? '#022D46' : dark ? '#DAF3FA' : '#456879' }]}>
-            {opt.text}
-          </Text>
-        </Pressable>)}
-    </View>
+    <OceanSegmentedControl value={selected}
+      options={FLOW_OPTIONS} onChange={setSelected}/>
     {transactions.length === 0 ?
       <Text style={[styles.empty, { color: dark ? sky : '#4D7183' }]}>
         Registre uma receita ou despesa para visualizar a evolução.
@@ -108,7 +103,7 @@ function FlowBars({ transactions, hidden, dark }: {
         <View style={[styles.chart, { borderBottomColor: dark ? '#49788C' : '#C1DCE8' }]}>
           {data.map((item, index) => <View key={item.index} style={styles.chartColumn}>
             <View style={[styles.bar, { height: Math.max(3, item[selected] / maximum * 106),
-              backgroundColor: selected === 'income' ? '#08DCCD' : '#168CC8' }]}/>
+              backgroundColor: selected === 'income' ? '#37B5B8' : '#2E94BA' }]}/>
             <Text style={[styles.tick, { color: dark ? '#A8D6E2' : '#537A89' }]}>
               Sem {index+1}</Text>
           </View>)}

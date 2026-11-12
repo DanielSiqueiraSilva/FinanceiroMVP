@@ -110,7 +110,7 @@ function SidebarLink({ page, active, collapsed, onPress, onLayout }: {
       (hovered || focused) && styles.sidebarLinkHover,
       focused && styles.sidebarLinkFocus, pressed && styles.pressState]}>
     <WorkspaceIcon name={page.id} size={collapsed ? 23 : 20}
-      color={active ? '#041C35' : '#E4F7FC'} />
+      color={active ? '#EFFFFF' : '#D5EAF1'} />
     {!collapsed && <Text numberOfLines={1} style={[styles.sidebarText,
       active && styles.sidebarTextActive]}>{page.titulo}</Text>}
   </Pressable>;
@@ -174,14 +174,14 @@ export function OceanSidebar({ pages, groups, active, onNavigate, profileName }:
         <LinearGradient id="sidebar-ambient" x1="0" y1="0" x2="1" y2="1">
           <Stop offset="0" stopColor="#081F34"/>
           <Stop offset="0.6" stopColor="#0A3C60"/>
-          <Stop offset="1" stopColor="#087FA5"/>
+          <Stop offset="1" stopColor="#17465A"/>
         </LinearGradient>
       </Defs>
       <Rect width="248" height="900" fill="url(#sidebar-ambient)" />
       <Path d="M-30 670C84 540 146 740 279 570V920H-30Z"
-        fill="#33D5D9" opacity={0.25}/>
+        fill="#33A8AF" opacity={0.08}/>
       <Path d="M-40 755C90 620 158 824 278 680"
-        fill="none" stroke="#B3FFFA" strokeWidth="3" opacity={0.43}/>
+        fill="none" stroke="#B3FFFA" strokeWidth="2" opacity={0.11}/>
     </Svg>
     <OceanGlass material="navigation" dark radius={0} style={styles.sidebarGlass}>
       <View style={[styles.brandRow, collapsed && styles.brandRowCompact]}>
@@ -202,7 +202,7 @@ export function OceanSidebar({ pages, groups, active, onNavigate, profileName }:
         <View style={styles.sidebarSections}>
           {Number.isFinite(positions[active]) && <LiquidCapsule
             front={front} rear={rear} elastic={elastic} axis="vertical"
-            itemSize={46} tint="#52EBD9" inset={2} />}
+            itemSize={46} tint="rgba(98,216,216,0.34)" inset={2} />}
           {groups.map(group => <View key={group.titulo}
             onLayout={event => updateSection(group.titulo, event.nativeEvent.layout.y)}
             style={styles.sidebarGroup}>
@@ -282,7 +282,7 @@ export function OceanBottomNavigation({ pages, active, onNavigate, onQuickAction
         <View onLayout={e => setDockWidth(e.nativeEvent.layout.width)}
           style={styles.dockInner}>
           <LiquidCapsule front={front} rear={rear} elastic={elastic}
-            axis="horizontal" itemSize={tabWidth} tint={isDark ? '#3CBEBB' : '#BDF8F1'} />
+            axis="horizontal" itemSize={tabWidth} tint={isDark ? 'rgba(105,208,208,.32)' : 'rgba(90,192,201,.30)'} />
           {tabs.map(tab => {
             const selected = tab.at === mobileIndex;
             const isPlus = tab.at === 2;
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   sidebarLinkHover: { backgroundColor: 'rgba(205,255,255,0.10)' },
   sidebarLinkFocus: { borderWidth: 2, borderColor: '#B1FFF7' },
   sidebarText: { fontSize: 13, color: '#E4F7FC', flexShrink: 1, fontWeight: '600' },
-  sidebarTextActive: { color: '#041C35', fontWeight: '900' },
+  sidebarTextActive: { color: '#F2FFFF', fontWeight: '800' },
   sidebarFoot: { fontSize: 10.5, color: '#BFE8F0', lineHeight: 16,
     paddingHorizontal: 9, paddingBottom: 20 },
   sidebarProfile: { marginHorizontal: 5, marginBottom: 12,
@@ -394,10 +394,10 @@ const styles = StyleSheet.create({
   sidebarProfileCaption: { color: '#A9D7E2', fontSize: 10 },
   liquidLens: { position: 'absolute', borderRadius: 18, borderWidth: 1,
     borderColor: 'rgba(205,255,255,0.66)',
-    shadowColor: '#00A9B6', shadowOpacity: 0.24, shadowRadius: 12,
+    shadowColor: '#34B7BE', shadowOpacity: 0.10, shadowRadius: 10,
     elevation: 1, overflow: 'hidden' },
   liquidReflection: { position: 'absolute', left: 11, top: 2, right: 11, height: 2,
-    backgroundColor: 'rgba(255,255,255,0.78)', borderRadius: 10 },
+    backgroundColor: 'rgba(255,255,255,0.37)', borderRadius: 10 },
   liquidEdge: { position: 'absolute', top: 6, right: 2, bottom: 6, width: 2,
     backgroundColor: 'rgba(0,119,200,0.20)', borderRadius: 3 },
   pressState: { opacity: 0.79, transform: [{ scale: 0.98 }] },
@@ -409,9 +409,9 @@ const styles = StyleSheet.create({
   dockTab: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center',
     minHeight: 64, gap: 3, zIndex: 1 },
   dockText: { fontSize: 10, fontWeight: '800', textAlign: 'center' },
-  plusCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#05BCD4',
-    borderWidth: 2, borderColor: '#96FFF7', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#00E5D2', shadowOpacity: 0.35, shadowRadius: 10 },
+  plusCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(57,173,183,.50)',
+    borderWidth: 1, borderColor: 'rgba(192,246,249,.65)', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#2CB4BF', shadowOpacity: 0.12, shadowRadius: 9 },
   plusText: { fontSize: 30, lineHeight: 34, color: '#FFFFFF', fontWeight: '600' },
   sheetOverlay: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 10 },
   sheetScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(2,13,26,0.55)' },
