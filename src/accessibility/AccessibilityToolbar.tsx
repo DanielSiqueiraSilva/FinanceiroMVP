@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  Modal, Platform, Pressable, ScrollView, StyleSheet, Text,
+  Modal, Platform, ScrollView, StyleSheet, Text,
   useWindowDimensions, View,
 } from 'react-native';
+import { OceanPressable as Pressable } from '../design/OceanControls';
 import Svg, { Circle, Path } from 'react-native-svg';
 import {
   useAccessibility,

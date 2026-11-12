@@ -1,4 +1,5 @@
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { useProfileSession } from './ProtectedFinance';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 

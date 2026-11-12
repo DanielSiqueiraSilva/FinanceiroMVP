@@ -3,9 +3,10 @@ import {
   type PropsWithChildren,
 } from 'react';
 import {
-  AppState, Platform, Pressable, ScrollView, StyleSheet,
+  AppState, Platform, ScrollView, StyleSheet,
   Text, TextInput, View,
 } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import type { Session } from '@supabase/supabase-js';
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
@@ -106,19 +107,19 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
         <Svg width="100%" height="100%" viewBox="0 0 950 860" preserveAspectRatio="xMidYMid slice">
           <Defs>
             <LinearGradient id="login-deep" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={isDark ? '#07182C' : '#F2F9FC'} />
-              <Stop offset="1" stopColor={isDark ? '#0B4663' : '#D6FAFF'} />
+              <Stop offset="0" stopColor={isDark ? '#0D1C29' : '#EEF5F7'} />
+              <Stop offset="1" stopColor={isDark ? '#173643' : '#E0EFF3'} />
             </LinearGradient>
             <LinearGradient id="login-wave" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0" stopColor="#0077C8" stopOpacity={isDark ? 0.20 : 0.10} />
-              <Stop offset="1" stopColor="#00E5D2" stopOpacity={isDark ? 0.33 : 0.24} />
+              <Stop offset="0" stopColor="#4A9EA7" stopOpacity={isDark ? 0.045 : 0.025} />
+              <Stop offset="1" stopColor="#75C8C8" stopOpacity={isDark ? 0.07 : 0.045} />
             </LinearGradient>
           </Defs>
           <Rect width="950" height="860" fill="url(#login-deep)" />
           <Path d="M-40 650C200 495 390 760 655 621S920 602 1000 520L1000 900H-40Z"
             fill="url(#login-wave)" />
           <Path d="M-20 690C228 540 451 799 675 664S925 628 1000 575"
-            stroke="#66F9ED" strokeOpacity={isDark ? 0.23 : 0.34}
+            stroke="#66C4C8" strokeOpacity={isDark ? 0.05 : 0.045}
             strokeWidth="2" fill="none" />
         </Svg>
       </View>
@@ -146,12 +147,12 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
         ) : null}
 
         {!cadastro && Platform.OS === 'web' ? (
-          <OceanButton variant="glass" label="Entrar com biometria"
+          <OceanButton variant="glass" fullWidth label="Entrar com biometria"
             accessibilityHint="Usa a chave de acesso segura cadastrada neste dispositivo"
             loading={busy} onPress={() => void login(false, true)} />
         ) : null}
         {!cadastro && isNativeQuickUnlock && hasQuickAccount ? (
-          <OceanButton variant="glass" label="Entrar com biometria"
+          <OceanButton variant="glass" fullWidth label="Entrar com biometria"
             loading={busy} onPress={() => void login(true)} />
         ) : null}
 
@@ -190,7 +191,7 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
             secureTextEntry
             autoComplete={cadastro ? 'new-password' : 'current-password'}
           />
-          <OceanButton variant="primary" loading={busy}
+          <OceanButton variant="primary" fullWidth loading={busy}
             label={cadastro ? 'Criar conta' : 'Entrar com e-mail e senha'}
             onPress={() => void login(false)} />
         </View>
@@ -523,12 +524,12 @@ const styles = StyleSheet.create({
 
 /** Cores explícitas do login escuro, sincronizadas com o isDark global. */
 const darkLoginStyles = StyleSheet.create({
-  loginBackground: { backgroundColor: '#07182C' },
+  loginBackground: { backgroundColor: '#0D1C29' },
   panel: { backgroundColor: '#102A3C', borderColor: '#35566A' },
   brandTitle: { color: '#FFFFFF' },
   subtitle: { color: '#CBD5E1' },
   emailTitle: { color: '#CBD5E1' },
-  input: { backgroundColor: '#183B4F', borderColor: '#426578', color: '#FFFFFF' },
+  input: { backgroundColor: '#1D3743', borderColor: '#45646D', color: '#FFFFFF' },
   passwordButton: { backgroundColor: '#102A3C', borderColor: '#475569' },
   passwordText: { color: '#FFFFFF' },
   hint: { color: '#94A3B8' },
@@ -538,12 +539,12 @@ const darkLoginStyles = StyleSheet.create({
 
 /** O login claro preserva o layout e tem contraste equivalente. */
 const lightLoginStyles = StyleSheet.create({
-  loginBackground: { backgroundColor: '#F2F9FC' },
+  loginBackground: { backgroundColor: '#EEF5F7' },
   panel: { backgroundColor: '#FFFFFF', borderColor: '#DDD6E6' },
   brandTitle: { color: '#111827' },
   subtitle: { color: '#374151' },
   emailTitle: { color: '#374151' },
-  input: { backgroundColor: '#FCFBFD', borderColor: '#D8D2E2', color: '#111827' },
+  input: { backgroundColor: '#F8FCFD', borderColor: '#B9D4DB', color: '#173442' },
   passwordButton: { backgroundColor: '#FFFFFF', borderColor: '#0B7189' },
   passwordText: { color: '#09657A' },
   hint: { color: '#4B5563' },

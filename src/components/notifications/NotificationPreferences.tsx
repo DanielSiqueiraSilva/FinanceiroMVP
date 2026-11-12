@@ -1,4 +1,5 @@
-import { Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Platform, StyleSheet, Switch, Text, View } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useNotifications, type NotificationSettings } from '../../notifications/NotificationsContext';

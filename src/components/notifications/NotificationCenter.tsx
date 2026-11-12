@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useNotifications, type NotificationKind } from '../../notifications/NotificationsContext';
 

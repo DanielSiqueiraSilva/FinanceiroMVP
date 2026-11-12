@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { OceanButton, OceanPressable as Pressable } from '../../design/OceanControls';
 import { supabaseAuth } from '../../auth/supabaseClient';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
@@ -107,9 +108,7 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
           <Text accessibilityRole="header" style={styles.title}>Configurações</Text>
           <Text style={styles.subtitle}>Gerencie seu perfil e a segurança da conta.</Text>
         </View>
-        <Pressable style={styles.backButton} accessibilityRole="button" onPress={onBack}>
-          <Text style={styles.backText}>Voltar ao início</Text>
-        </Pressable>
+        <OceanButton label="Voltar ao início" variant="glass" onPress={onBack}/>
       </View>
 
       <View style={styles.section}>
@@ -128,20 +127,17 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
               maxLength={100}
             />
             <View style={styles.actions}>
-              <Pressable style={[styles.primary, saving && styles.disabled]} disabled={saving} onPress={() => void saveName()} accessibilityRole="button">
-                <Text style={styles.primaryText}>{saving ? 'Salvando...' : 'Salvar nome'}</Text>
-              </Pressable>
-              <Pressable style={styles.secondary} disabled={saving} onPress={() => { setEditing(false); setMessage(''); }} accessibilityRole="button">
-                <Text style={styles.secondaryText}>Cancelar</Text>
-              </Pressable>
+              <OceanButton label="Salvar nome" variant="primary" loading={saving}
+                onPress={() => void saveName()}/>
+              <OceanButton label="Cancelar" variant="glass" disabled={saving}
+                onPress={() => { setEditing(false); setMessage(''); }}/>
             </View>
           </View>
         ) : (
           <View style={styles.actions}>
             <Text style={styles.value}>{current}</Text>
-            <Pressable style={styles.secondary} accessibilityRole="button" onPress={() => { setName(current); setEditing(true); setMessage(''); }}>
-              <Text style={styles.secondaryText}>Editar nome</Text>
-            </Pressable>
+            <OceanButton label="Editar nome" variant="glass"
+              onPress={() => { setName(current); setEditing(true); setMessage(''); }}/>
           </View>
         )}
         <Text style={styles.label}>E-mail</Text>
@@ -168,10 +164,8 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
       <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.sectionTitle}>Sessão</Text>
         <Text style={styles.description}>Encerre seu acesso com segurança neste dispositivo.</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Sair da conta" style={styles.secondary}
-          onPress={() => void auth.signOut()}>
-          <Text style={styles.secondaryText}>Sair da conta</Text>
-        </Pressable>
+        <OceanButton label="Sair da conta" variant="glass"
+          onPress={() => void auth.signOut()} style={styles.actionAlign}/>
       </View>
 
       <View style={styles.section}>
@@ -181,11 +175,10 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
           de notificações. Esta ação não pode ser desfeita.
         </Text>
         {!showDeletion ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Solicitar exclusão da minha conta"
+          <OceanButton label="Excluir minha conta..." variant="danger"
+            accessibilityHint="Abre as confirmações necessárias para excluir a conta"
             onPress={() => { setShowDeletion(true); setDeleteMessage(''); }}
-            style={styles.dangerOutline}>
-            <Text style={styles.dangerOutlineText}>Excluir minha conta...</Text>
-          </Pressable>
+            style={styles.actionAlign}/>
         ) : (
           <View style={styles.deletionForm}>
             <Text style={styles.warningText}>
@@ -208,21 +201,13 @@ export function AccountSettings({ onBack }: { onBack: () => void }) {
             {deleteMessage ? <Text accessibilityLiveRegion="polite"
               style={styles.warningText}>{deleteMessage}</Text> : null}
             <View style={styles.actions}>
-              <Pressable accessibilityRole="button"
-                accessibilityLabel="Confirmar exclusão definitiva da minha conta"
-                disabled={deleteBusy || deleteConfirmation !== 'EXCLUIR' || deletePassword.length < 6}
-                onPress={() => void deleteOwnAccount()}
-                style={[styles.dangerButton,
-                  (deleteBusy || deleteConfirmation !== 'EXCLUIR' || deletePassword.length < 6)
-                  && styles.disabled]}>
-                <Text style={styles.dangerButtonText}>
-                  {deleteBusy ? 'Excluindo...' : 'Excluir conta definitivamente'}
-                </Text>
-              </Pressable>
-              <Pressable accessibilityRole="button" disabled={deleteBusy} onPress={cancelDeletion}
-                style={styles.secondary}>
-                <Text style={styles.secondaryText}>Cancelar</Text>
-              </Pressable>
+              <OceanButton variant="danger" label="Excluir conta definitivamente"
+                loading={deleteBusy}
+                disabled={deleteConfirmation !== 'EXCLUIR' || deletePassword.length < 6}
+                accessibilityHint="Exclusão permanente após as confirmações de identidade"
+                onPress={() => void deleteOwnAccount()}/>
+              <OceanButton label="Cancelar" variant="glass" disabled={deleteBusy}
+                onPress={cancelDeletion}/>
             </View>
           </View>
         )}
@@ -244,6 +229,7 @@ const baseStyles = StyleSheet.create({
   description: { color: '#4B5563', fontSize: 13, lineHeight: 20 },
   securityPanel: { backgroundColor: '#142136', borderWidth: 1, borderColor: '#34435B', borderRadius: 14, padding: 14, gap: 10 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  actionAlign: { alignSelf: 'flex-start' },
   form: { gap: 12 },
   input: { minHeight: 48, color: '#111827', backgroundColor: '#FCFBFD', padding: 12, borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 12, fontSize: 16 },
   primary: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: '#7C3AED' },

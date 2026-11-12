@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { supabaseAuth } from '../../auth/supabaseClient';
 import { useProfileSession } from './ProtectedFinance';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
