@@ -68,7 +68,7 @@ export function OceanPressable({
       ['#FFF1F2','#FFF0F0','#3D2028'].includes(raw);
     const isPrimary = oceanTone === 'primary' ||
       (oceanTone === 'auto' && ['#7C3AED','#087F95','#0077C8','#0C879A',
-        '#0D8A9F','#5B21B6','#8557F5','#08677B'].includes(raw));
+        '#0D8A9F','#5B21B6','#8557F5','#08677B','#0A7083','#0B7186'].includes(raw));
     const hasBackground = !!raw && raw !== 'TRANSPARENT';
     const hasSurface = hasBackground || (typeof flat.borderWidth === 'number' && flat.borderWidth > 0);
     const reducedAlpha = disabled ? Math.min(0.65, flat.opacity ?? 1) : flat.opacity;
@@ -92,8 +92,8 @@ export function OceanPressable({
     }
     // White legacy labels require an opaque ocean/deep rose surface for WCAG contrast.
     // Selected chips keep their own palette and do not inherit another mismatched text color.
-    const base = solidDanger ? (isDark ? '#942C44' : '#A32946')
-      : isPrimary ? (isDark ? '#0A6174' : '#096276')
+    const base = solidDanger ? (isDark ? OCEAFIN.button.solidDangerDark : OCEAFIN.button.solidDangerLight)
+      : isPrimary ? (isDark ? OCEAFIN.button.solidPrimaryDark : OCEAFIN.button.solidPrimaryLight)
       : oceanTone === 'quiet' ? 'transparent'
       : selected && hasBackground ? flat.backgroundColor
       : selected ? (isDark ? 'rgba(35,115,132,.60)' : 'rgba(96,200,205,.28)')
@@ -107,8 +107,11 @@ export function OceanPressable({
       : isDark ? OCEAFIN.button.darkBorder : 'rgba(119,184,196,.38)';
     const feedback: ViewStyle = {
       backgroundColor: base, borderColor: border, borderWidth: 1,
-      borderRadius: isPrimary || solidDanger ? OCEAFIN.button.radius
-        : typeof flat.borderRadius === 'number' ? Math.max(12,flat.borderRadius) : 14,
+      borderRadius: isPrimary || solidDanger ||
+        (typeof flat.paddingHorizontal === 'number' && flat.paddingHorizontal >= 9 &&
+          flat.width === undefined && flat.height === undefined)
+          ? OCEAFIN.button.radius
+          : typeof flat.borderRadius === 'number' ? Math.max(12,flat.borderRadius) : 14,
       minHeight: Math.max(44, typeof flat.minHeight === 'number' ? flat.minHeight : 0),
       opacity: reducedAlpha, transform: pressTransform,
     };
