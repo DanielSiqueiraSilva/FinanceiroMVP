@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet,
+  ActivityIndicator, Modal, RefreshControl, ScrollView, StyleSheet,
   Text, View, useWindowDimensions, Platform,
 } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import type { Lancamento, LancamentoInput, ResumoFinanceiro } from '../../types/finance';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
@@ -328,8 +329,8 @@ export function FinanceWorkspace() {
   return (
     <>
     <View style={[s.root, {
-      backgroundColor: isDark ? '#03182B' : '#E5F5FA',
-      borderColor: isDark ? '#347E98' : '#A5CFDE',
+      backgroundColor: isDark ? '#0D1C29' : '#EEF5F7',
+      borderColor: isDark ? '#456977' : '#C9DEE3',
     }]}>
       {desktop && <OceanSidebar pages={PAGINAS} groups={grupos}
         active={aba} onNavigate={irPara} profileName={displayName} />}
@@ -463,7 +464,7 @@ const base = StyleSheet.create({
   quickCloseText: { fontSize: 27, fontWeight: '700' },
   quickScroll: { flexGrow: 0 },
   quickFormBody: { paddingBottom: 10 },
-  root: { flex: 1, flexDirection: 'row', backgroundColor: '#07182C',
+  root: { flex: 1, flexDirection: 'row', backgroundColor: '#0D1C29',
     borderWidth: 1, borderRadius: 23, overflow: 'hidden' },
   main: { flex: 1, minWidth: 0 },
   scroll: { flex: 1, minWidth: 0 },
@@ -477,8 +478,8 @@ const base = StyleSheet.create({
   mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 21,
     fontWeight: '900', letterSpacing: -0.6 },
   mobileActions: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0 },
-  mobileAvatarButton: { width: 44, height: 44, borderRadius: 14, borderColor: '#89FAF0',
-    borderWidth: 1, backgroundColor: '#0B5470', justifyContent: 'center', alignItems: 'center' },
+  mobileAvatarButton: { width: 44, height: 44, borderRadius: 14, borderColor: '#8ADAD7',
+    borderWidth: 1, backgroundColor: 'rgba(81,184,191,.20)', justifyContent: 'center', alignItems: 'center' },
   mobileAvatarText: { fontSize: 17, fontWeight: '900', color: '#FFFFFF' },
   header: { flexDirection: 'row', gap: 10, justifyContent: 'space-between',
     alignItems: 'center', flexWrap: 'wrap' },

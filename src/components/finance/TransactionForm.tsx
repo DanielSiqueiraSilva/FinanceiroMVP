@@ -1,7 +1,8 @@
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { Lancamento, LancamentoInput, TipoLancamento } from '../../types/finance';
 import { AppButton } from './AppButton';
 import type { FinanceAccount, FinanceCard } from '../../services/finance-planner';
@@ -213,7 +214,7 @@ export function TransactionForm({
                 style={[styles.categoria, ativa && styles.categoriaAtiva]}
                 onPress={() => setCategoria(opcao)}
               >
-                <Text style={[styles.categoriaTexto, ativa && styles.categoriaTextoAtiva]}>{opcao}</Text>
+                <Text style={[styles.categoriaTexto, ativa && styles.categoriaTextoAtiva, ativa && isDark && styles.activeTextDark]}>{opcao}</Text>
               </Pressable>
             );
           })}
@@ -249,17 +250,17 @@ export function TransactionForm({
         <View style={styles.categorias}>
           <Pressable accessibilityRole="button" accessibilityState={{ selected: source === '' }} onPress={() => setSource('')}
             style={[styles.categoria, !source && styles.categoriaAtiva]}>
-            <Text style={[styles.categoriaTexto, !source && styles.categoriaTextoAtiva]}>Não vincular</Text>
+            <Text style={[styles.categoriaTexto, !source && styles.categoriaTextoAtiva, !source && isDark && styles.activeTextDark]}>Não vincular</Text>
           </Pressable>
           {accounts.filter(a=>a.active).map(a=><Pressable key={a.id} accessibilityRole="button"
             accessibilityState={{ selected: source === 'a:' + a.id }} onPress={() => setSource('a:' + a.id)}
             style={[styles.categoria, source === 'a:' + a.id && styles.categoriaAtiva]}>
-            <Text style={[styles.categoriaTexto, source === 'a:' + a.id && styles.categoriaTextoAtiva]}>{a.name} · Conta</Text>
+            <Text style={[styles.categoriaTexto, source === 'a:' + a.id && styles.categoriaTextoAtiva, source === 'a:' + a.id && isDark && styles.activeTextDark]}>{a.name} · Conta</Text>
           </Pressable>)}
           {tipo === 'despesa' && cards.filter(a=>a.active).map(a=><Pressable key={a.id} accessibilityRole="button"
             accessibilityState={{ selected: source === 'c:' + a.id }} onPress={() => setSource('c:' + a.id)}
             style={[styles.categoria, source === 'c:' + a.id && styles.categoriaAtiva]}>
-            <Text style={[styles.categoriaTexto, source === 'c:' + a.id && styles.categoriaTextoAtiva]}>{a.name} · Cartão</Text>
+            <Text style={[styles.categoriaTexto, source === 'c:' + a.id && styles.categoriaTextoAtiva, source === 'c:' + a.id && isDark && styles.activeTextDark]}>{a.name} · Cartão</Text>
           </Pressable>)}
         </View>
         {!accounts.length && !cards.length && <Text style={styles.subtitulo}>Cadastre sua primeira conta ou cartão em “Contas e cartões” para vincular lançamentos.</Text>}
@@ -294,17 +295,18 @@ const baseStyles = StyleSheet.create({
   subtitulo: { color: '#6B7280', fontSize: 13, lineHeight: 19 },
   tipoContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   tipoBotao: { flexGrow: 1, minWidth: 120, minHeight: 48, borderRadius: 14, backgroundColor: '#F4F1F8', borderWidth: 1, borderColor: '#E6E0EC', alignItems: 'center', justifyContent: 'center' },
-  tipoAtivo: { backgroundColor: '#EDE9FE', borderColor: '#8B5CF6' },
+  tipoAtivo: { backgroundColor: '#D9F1F2', borderColor: '#62B9C0' },
   tipoTexto: { color: '#6B7280', fontWeight: '700', fontSize: 14 },
-  tipoTextoAtivo: { color: '#5B21B6' },
+  tipoTextoAtivo: { color: '#075B6E' },
   campo: { gap: 8 },
   rotulo: { fontSize: 13, color: '#4B5563', fontWeight: '700' },
   input: { minHeight: 48, borderWidth: 1, borderColor: '#DDD6E6', borderRadius: 14, paddingHorizontal: 14, backgroundColor: '#FCFBFD', fontSize: 16, color: '#111827' },
   categorias: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   categoria: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: '#DDD6E6', backgroundColor: '#FFFFFF' },
-  categoriaAtiva: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  categoriaAtiva: { backgroundColor: 'rgba(71,173,181,0.24)', borderColor: '#6BBAC3' },
   categoriaTexto: { color: '#4B5563', fontSize: 13, fontWeight: '700' },
-  categoriaTextoAtiva: { color: '#FFFFFF' },
+  categoriaTextoAtiva: { color: '#075B6E' },
+  activeTextDark: { color: '#E8FFFF' },
   linhaCampos: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   campoFlex: { flexGrow: 1, flexBasis: 220 },
   erro: { color: '#B91C1C', fontSize: 14 },

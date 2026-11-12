@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { loadPlanner, type PlannerData } from '../../services/finance-planner';
 import { PlannerAccounts } from './PlannerAccounts';

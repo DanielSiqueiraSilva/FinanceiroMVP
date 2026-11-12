@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { OceanPressable as Pressable } from '../../design/OceanControls';
 import type { Lancamento } from '../../types/finance';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
