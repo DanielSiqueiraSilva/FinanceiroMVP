@@ -73,6 +73,25 @@ try {
         await button.focus();
         assert.equal(await button.evaluate(el => el === document.activeElement), true,
           'Primary button cannot receive keyboard focus');
+        const primaryInk = await button.evaluate(el => {
+          const text = [...el.querySelectorAll('*')].reverse().find(node =>
+            node.childElementCount === 0 && node.textContent?.trim() ===
+            'Entrar com e-mail e senha');
+          if (!text) throw new Error('Primary button label is missing');
+          const match = getComputedStyle(text).color.match(/[0-9.]+/g);
+          if (!match || match.length < 3) throw new Error('Unreadable computed label color');
+          return match.slice(0,3).map(Number);
+        });
+        if (theme === 'light') {
+          assert.ok(Math.max(...primaryInk) < 150,
+            'Light theme button must have dark ink, got ' + primaryInk.join(','));
+        } else {
+          assert.ok(Math.min(...primaryInk) > 195,
+            'Dark theme button must have light ink, got ' + primaryInk.join(','));
+        }
+        const buttonShape = await button.evaluate(el => getComputedStyle(el).borderRadius);
+        assert.ok(parseFloat(buttonShape) >= 20,
+          'Primary button must retain a rounded liquid-glass shape, got ' + buttonShape);
         await page.screenshot({
           path: screenshots + '/login-' + label + '.png', fullPage: true,
         });
