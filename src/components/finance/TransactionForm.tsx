@@ -176,10 +176,10 @@ export function TransactionForm({
               accessibilityRole="radio"
               accessibilityLabel={opcao === 'receita' ? 'Receita' : 'Despesa'}
               accessibilityState={{ checked: ativo }}
-              style={[styles.tipoBotao, ativo && styles.tipoAtivo]}
+              style={[styles.tipoBotao, ativo && styles.tipoAtivo, ativo && isDark && styles.categoryDarkActive]}
               onPress={() => alterarTipo(opcao)}
             >
-              <Text style={[styles.tipoTexto, ativo && styles.tipoTextoAtivo]}>
+              <Text style={[styles.tipoTexto, ativo && styles.tipoTextoAtivo, ativo && isDark && styles.activeTextDark]}>
                 {opcao === 'receita' ? 'Receita' : 'Despesa'}
               </Text>
             </Pressable>
@@ -211,7 +211,7 @@ export function TransactionForm({
                 accessibilityRole="radio"
                 accessibilityLabel={`Categoria ${opcao}`}
                 accessibilityState={{ checked: ativa }}
-                style={[styles.categoria, ativa && styles.categoriaAtiva]}
+                style={[styles.categoria, ativa && styles.categoriaAtiva, ativa && isDark && styles.categoryDarkActive]}
                 onPress={() => setCategoria(opcao)}
               >
                 <Text style={[styles.categoriaTexto, ativa && styles.categoriaTextoAtiva, ativa && isDark && styles.activeTextDark]}>{opcao}</Text>
@@ -249,17 +249,17 @@ export function TransactionForm({
         <Text style={styles.subtitulo}>Conta: ajusta o saldo estimado com este lançamento. Cartão de crédito: registra uma compra pendente, sem retirar dinheiro da conta agora. Para uma receita, selecione uma conta ou deixe sem vínculo.</Text>
         <View style={styles.categorias}>
           <Pressable accessibilityRole="button" accessibilityState={{ selected: source === '' }} onPress={() => setSource('')}
-            style={[styles.categoria, !source && styles.categoriaAtiva]}>
+            style={[styles.categoria, !source && styles.categoriaAtiva, !source && isDark && styles.categoryDarkActive]}>
             <Text style={[styles.categoriaTexto, !source && styles.categoriaTextoAtiva, !source && isDark && styles.activeTextDark]}>Não vincular</Text>
           </Pressable>
           {accounts.filter(a=>a.active).map(a=><Pressable key={a.id} accessibilityRole="button"
             accessibilityState={{ selected: source === 'a:' + a.id }} onPress={() => setSource('a:' + a.id)}
-            style={[styles.categoria, source === 'a:' + a.id && styles.categoriaAtiva]}>
+            style={[styles.categoria, source === 'a:' + a.id && styles.categoriaAtiva, source === 'a:' + a.id && isDark && styles.categoryDarkActive]}>
             <Text style={[styles.categoriaTexto, source === 'a:' + a.id && styles.categoriaTextoAtiva, source === 'a:' + a.id && isDark && styles.activeTextDark]}>{a.name} · Conta</Text>
           </Pressable>)}
           {tipo === 'despesa' && cards.filter(a=>a.active).map(a=><Pressable key={a.id} accessibilityRole="button"
             accessibilityState={{ selected: source === 'c:' + a.id }} onPress={() => setSource('c:' + a.id)}
-            style={[styles.categoria, source === 'c:' + a.id && styles.categoriaAtiva]}>
+            style={[styles.categoria, source === 'c:' + a.id && styles.categoriaAtiva, source === 'c:' + a.id && isDark && styles.categoryDarkActive]}>
             <Text style={[styles.categoriaTexto, source === 'c:' + a.id && styles.categoriaTextoAtiva, source === 'c:' + a.id && isDark && styles.activeTextDark]}>{a.name} · Cartão</Text>
           </Pressable>)}
         </View>
@@ -307,6 +307,7 @@ const baseStyles = StyleSheet.create({
   categoriaTexto: { color: '#4B5563', fontSize: 13, fontWeight: '700' },
   categoriaTextoAtiva: { color: '#075B6E' },
   activeTextDark: { color: '#E8FFFF' },
+  categoryDarkActive: { backgroundColor: '#154B5A', borderColor: '#6BBAC3' },
   linhaCampos: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   campoFlex: { flexGrow: 1, flexBasis: 220 },
   erro: { color: '#B91C1C', fontSize: 14 },

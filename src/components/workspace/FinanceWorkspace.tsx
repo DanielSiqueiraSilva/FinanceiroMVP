@@ -369,14 +369,14 @@ export function FinanceWorkspace() {
             <View style={s.mobileTopBar}>
               <View style={s.mobileBrandWrap}>
                 <BrandMark size={36}/>
-                <Text style={s.mobileBrand} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{OCEAFIN.name.toLowerCase()}</Text>
+                <Text style={[s.mobileBrand, { color: theme.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{OCEAFIN.name.toLowerCase()}</Text>
               </View>
               <View style={s.mobileActions}>
                 <Pressable accessibilityRole="button"
                   accessibilityLabel={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
                   onPress={() => setTheme(isDark ? 'light' : 'dark')}
                   style={s.mobileThemeToggle}>
-                  <Text style={s.mobileThemeText}>{isDark ? '☀' : '☾'}</Text>
+                  <Text style={[s.mobileThemeText, { color: isDark ? '#C6FDF8' : '#0A6173' }]}>{isDark ? '☀' : '☾'}</Text>
                 </Pressable>
                 <NotificationCenter />
                 <Pressable
@@ -385,15 +385,15 @@ export function FinanceWorkspace() {
                   onPress={() => irPara('configuracoes')}
                   style={s.mobileAvatarButton}
                 >
-                  <Text style={s.mobileAvatarText}>{initialLetter}</Text>
+                  <Text style={[s.mobileAvatarText, { color: isDark ? '#FFFFFF' : '#07586A' }]}>{initialLetter}</Text>
                 </Pressable>
               </View>
             </View>
           )}
           {!desktop && (
             <View style={s.mobileHeading}>
-              <Text style={s.title}>{page.titulo}</Text>
-              <Text style={s.muted}>{page.detalhe}</Text>
+              <Text style={[s.title,{color:theme.text}]}>{page.titulo}</Text>
+              <Text style={[s.muted,{color:theme.muted}]}>{page.detalhe}</Text>
             </View>
           )}
           {!desktop && mostrarFiltroPeriodo && <PeriodSelector mes={mes} ano={ano} onSelecionar={selecionarPeriodo} />}

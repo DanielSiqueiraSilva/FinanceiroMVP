@@ -39,7 +39,7 @@ export function NotificationPreferences() {
               value={n.settings[key]}
               disabled={disabled}
               onValueChange={value => n.changeSettings({ [key]: value })}
-              trackColor={{ true: '#8B5CF6', false: isDark ? '#536177' : '#D8D2E2' }}
+              trackColor={{ true: isDark ? '#167F8D' : '#39ABB1', false: isDark ? '#536177' : '#C4D7DB' }}
               thumbColor="#FFFFFF"
             />
           </View>

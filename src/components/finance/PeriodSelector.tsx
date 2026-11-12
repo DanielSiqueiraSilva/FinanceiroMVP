@@ -73,7 +73,7 @@ export function PeriodSelector({ mes, ano, onSelecionar }: PeriodSelectorProps) 
           hovered ? 'rgba(51,213,217,.72)' : isDark ? '#355F74' : '#CBE2EC' },
       ]}>
       <Pressable
-        style={[s.periodo, { backgroundColor: 'transparent', borderWidth: 0 }]}
+        oceanTone="none" style={[s.periodo, { backgroundColor: 'transparent', borderWidth: 0 }]}
         onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
         onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
         accessibilityRole="button"
@@ -146,13 +146,13 @@ export function PeriodSelector({ mes, ano, onSelecionar }: PeriodSelectorProps) 
                   return (
                     <Pressable
                       key={nome}
-                      style={[s.mesBotao, ativo && s.mesAtivo]}
+                      style={[s.mesBotao, ativo && s.mesAtivo, ativo && isDark && {backgroundColor:'#174B59',borderColor:'#62B9C1'}]}
                       onPress={() => selecionar(indice)}
                       accessibilityRole="button"
                       accessibilityState={{ selected: ativo }}
                       accessibilityLabel={nome + ' de ' + anoVisivel}
                     >
-                      <Text style={[s.mesTexto, ativo && s.mesTextoAtivo]}>{nome.slice(0, 3)}</Text>
+                      <Text style={[s.mesTexto, ativo && s.mesTextoAtivo, ativo && isDark && {color:'#EFFCFF'}]}>{nome.slice(0, 3)}</Text>
                     </Pressable>
                   );
                 })}

@@ -62,41 +62,66 @@ export function OceanPressable({
       flat.backgroundColor.toUpperCase() : '';
     const selected = accessibilityState?.selected === true ||
       accessibilityState?.checked === true;
-    const isDanger = oceanTone === 'danger' ||
-      ['#B91C1C','#991B1B','#A94345','#FFF1F2','#FFF0F0'].includes(raw);
+    const solidDanger = ['#B91C1C','#991B1B','#A94345','#FCA5A5',
+      '#A22E49','#BE123C'].includes(raw);
+    const isDanger = oceanTone === 'danger' || solidDanger ||
+      ['#FFF1F2','#FFF0F0','#3D2028'].includes(raw);
     const isPrimary = oceanTone === 'primary' ||
       (oceanTone === 'auto' && ['#7C3AED','#087F95','#0077C8','#0C879A',
-        '#0D8A9F','#5B21B6','#B91C1C'].includes(raw));
-    const base = oceanTone === 'quiet'
-      ? 'transparent'
-      : isDanger ? isDark ? 'rgba(153,65,87,.38)' : 'rgba(207,92,119,.14)'
-      : isPrimary ? isDark ? 'rgba(10,112,132,.84)' : 'rgba(8,115,134,.90)'
-      : selected ? isDark ? 'rgba(69,159,168,.28)' : 'rgba(65,180,186,.25)'
-      : isDark ? OCEAFIN.button.darkGlass : OCEAFIN.button.lightGlass;
+        '#0D8A9F','#5B21B6','#8557F5','#08677B'].includes(raw));
+    const hasBackground = !!raw && raw !== 'TRANSPARENT';
+    const hasSurface = hasBackground || (typeof flat.borderWidth === 'number' && flat.borderWidth > 0);
+    const reducedAlpha = disabled ? Math.min(0.65, flat.opacity ?? 1) : flat.opacity;
+    const pressTransform = state.pressed && !reduced && !disabled
+      ? [...(Array.isArray(flat.transform) ? flat.transform : []),
+          { perspective: 600 }, { scale: OCEAFIN.button.pressScale },
+          { rotateX: OCEAFIN.button.pressTiltDegrees + 'deg' }]
+      : flat.transform;
+    const subtleTransition = Platform.OS === 'web' ? ({
+      transition: reduced ? 'none' :
+        'background-color 180ms, border-color 180ms, box-shadow 180ms, transform 220ms cubic-bezier(.25,1,.5,1)',
+    } as unknown as ViewStyle) : undefined;
+    // Text-only links, modal scrims, and icon actions must not become opaque pill cards.
+    if (!hasSurface && oceanTone === 'auto') {
+      return [original, {
+        minHeight: Math.max(44, typeof flat.minHeight === 'number' ? flat.minHeight : 0),
+        opacity: reducedAlpha, transform: pressTransform,
+        ...(focused ? { borderRadius: 12, borderWidth: 1,
+          borderColor: isDark ? '#A5F5F1' : '#167D8E' } : {}),
+      }, subtleTransition];
+    }
+    // White legacy labels require an opaque ocean/deep rose surface for WCAG contrast.
+    // Selected chips keep their own palette and do not inherit another mismatched text color.
+    const base = solidDanger ? (isDark ? '#942C44' : '#A32946')
+      : isPrimary ? (isDark ? '#0A6174' : '#096276')
+      : oceanTone === 'quiet' ? 'transparent'
+      : selected && hasBackground ? flat.backgroundColor
+      : selected ? (isDark ? 'rgba(35,115,132,.60)' : 'rgba(96,200,205,.28)')
+      : isDanger ? (isDark ? 'rgba(153,65,87,.30)' : 'rgba(207,92,119,.14)')
+      : oceanTone === 'glass' || hasSurface
+        ? (isDark ? OCEAFIN.button.darkGlass : OCEAFIN.button.lightGlass)
+        : 'transparent';
     const border = focused ? (isDark ? '#B8FFF8' : '#087D89')
-      : isDanger ? isDark ? 'rgba(254,192,204,.58)' : 'rgba(178,69,91,.42)'
-      : hovered || selected ? isDark ? 'rgba(165,248,243,.65)' : 'rgba(43,146,159,.52)'
+      : isDanger ? isDark ? 'rgba(254,192,204,.56)' : 'rgba(178,69,91,.40)'
+      : hovered || selected ? isDark ? 'rgba(165,248,243,.64)' : 'rgba(43,146,159,.50)'
       : isDark ? OCEAFIN.button.darkBorder : 'rgba(119,184,196,.38)';
     const feedback: ViewStyle = {
       backgroundColor: base, borderColor: border, borderWidth: 1,
-      borderRadius: typeof flat.borderRadius === 'number'
-        ? Math.max(14, flat.borderRadius) : OCEAFIN.button.radius,
+      borderRadius: isPrimary || solidDanger ? OCEAFIN.button.radius
+        : typeof flat.borderRadius === 'number' ? Math.max(12,flat.borderRadius) : 14,
       minHeight: Math.max(44, typeof flat.minHeight === 'number' ? flat.minHeight : 0),
-      opacity: disabled ? 0.5 : flat.opacity,
-      transform: state.pressed && !reduced && !disabled ?
-        [...(Array.isArray(flat.transform) ? flat.transform : []),
-          { perspective: 600 }, { scale: OCEAFIN.button.pressScale },
-          { rotateX: OCEAFIN.button.pressTiltDegrees + 'deg' }] : flat.transform,
+      opacity: reducedAlpha, transform: pressTransform,
     };
-    const webGlass = Platform.OS === 'web' ? {
-      backdropFilter: 'blur(' + OCEAFIN.glass.buttonBlur + 'px) saturate(130%)',
-      WebkitBackdropFilter: 'blur(' + OCEAFIN.glass.buttonBlur + 'px) saturate(130%)',
+    const webGlass = Platform.OS === 'web' ? ({
+      ...(subtleTransition || {}),
+      backdropFilter: 'blur(' + OCEAFIN.glass.buttonBlur + 'px) saturate(125%)',
+      WebkitBackdropFilter: 'blur(' + OCEAFIN.glass.buttonBlur + 'px) saturate(125%)',
       boxShadow: state.pressed ?
-        'inset 0 3px 6px rgba(0,29,39,.15)' :
-        isDark ? 'inset 0 1px 0 rgba(255,255,255,.20), 0 3px 10px rgba(0,12,25,.10)' :
-          'inset 0 1px 0 rgba(255,255,255,.90), 0 3px 10px rgba(39,89,104,.09)',
-      transition: reduced ? 'none' : 'background-color 180ms, border-color 180ms, box-shadow 180ms, transform 220ms cubic-bezier(.25,1,.5,1)',
-    } as unknown as ViewStyle : {};
+        'inset 0 3px 6px rgba(0,29,39,.13)' :
+        isDark
+          ? 'inset 0 1px 0 rgba(255,255,255,.20), inset 0 -1px 0 rgba(0,0,0,.10), 0 3px 10px rgba(0,12,25,.10)'
+          : 'inset 0 1px 0 rgba(255,255,255,.85), inset 0 -1px 0 rgba(45,95,110,.08), 0 3px 10px rgba(39,89,104,.08)',
+    } as unknown as ViewStyle) : undefined;
     return [original, feedback, webGlass];
   };
   return <Pressable {...rest} accessibilityRole={accessibilityRole}
