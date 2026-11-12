@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { OCEAFIN, OCEAFIN_THEME } from '../../src/design/tokens.ts';
+import { OCEAFIN, OCEAFIN_THEME, needsSolidOceanButtonSurface } from '../../src/design/tokens.ts';
 
 function linear(channel) {
   const n = channel / 255;
@@ -33,4 +33,16 @@ test('ocean secondary glass has dark foreground on light and light on dark', () 
   const darkInk='#EFFCFF',darkBackground='#0D1C29';
   assert.ok(contrast(lightInk,lightBackground)>=7);
   assert.ok(contrast(darkInk,darkBackground)>=7);
+});
+
+test('Ocean Glass keeps white labels readable, including old buttons without accessibility roles', () => {
+  for (const white of ['#FFFFFF','#F8FAFC','#EFFCFF','#E8FFFF','#F2FFFF','#F5FFFF','#E0F0F4']) {
+    assert.equal(needsSolidOceanButtonSurface(false,white),true,
+      'Light theme needs an opaque surface behind ' + white);
+  }
+  for (const dark of ['#0B1F4B','#103D4B','#006B80','#374151','#7C3AED',null]) {
+    assert.equal(needsSolidOceanButtonSurface(false,dark),false,
+      'Dark foreground should keep translucency: ' + dark);
+  }
+  assert.equal(needsSolidOceanButtonSurface(true,'#FFFFFF'),false);
 });

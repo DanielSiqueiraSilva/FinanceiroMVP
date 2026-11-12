@@ -36,6 +36,22 @@ export type OceafinTheme = keyof typeof OCEAFIN_THEME;
 export const getOceafinTheme = (isDark: boolean) =>
   isDark ? OCEAFIN_THEME.dark : OCEAFIN_THEME.light;
 
+/**
+ * Backward-compatible contrast guard for old labels rendered on Ocean Glass.
+ * White labels require a solid ocean surface in LIGHT mode; no pale
+ * translucent surface can reliably contrast them on every underlying image.
+ */
+export function needsSolidOceanButtonSurface(isDark: boolean, labelColor: string | null): boolean {
+  if (isDark || !labelColor) return false;
+  const color = labelColor.trim().toUpperCase();
+  if (['#FFFFFF','#F8FAFC','#EFFCFF','#E8FFFF','#F2FFFF','#F5FFFF'].includes(color))
+    return true;
+  const six = color.match(/^#([A-F0-9]{6})$/);
+  if (!six) return false;
+  const channels = [0,2,4].map(i => parseInt(six[1].slice(i,i+2),16));
+  return channels.every(v => v >= 222);
+}
+
 /** Temporary bridge for old hard-coded colors. New screens should use semantic tokens. */
 export function migrateLegacyColor(value: string, property: string, isDark: boolean): string {
   const c = value.toUpperCase(), t = getOceafinTheme(isDark);

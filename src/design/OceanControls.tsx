@@ -6,7 +6,7 @@ import {
   type StyleProp, type TextStyle, type ViewStyle,
 } from 'react-native';
 import { useAccessibility } from '../accessibility/AccessibilityContext';
-import { getOceafinTheme, OCEAFIN } from './tokens';
+import { getOceafinTheme, needsSolidOceanButtonSurface, OCEAFIN } from './tokens';
 import { OceanGlass } from './OceanGlass';
 import { WorkspaceIcon, type WorkspaceIconName } from './brand';
 
@@ -55,15 +55,6 @@ function directButtonLabelColor(children: ReactNode): string | null {
   }
   return null;
 }
-function nearWhiteLabel(color: string | null): boolean {
-  if (!color) return false;
-  if (['#FFFFFF','#F8FAFC','#EFFCFF','#E8FFFF','#F2FFFF','#F5FFFF'].includes(color)) return true;
-  const match = color.match(/^#([A-F0-9]{6})$/);
-  if (!match) return false;
-  const channels = [0,2,4].map(i => parseInt(match[1].slice(i,i+2),16));
-  return channels.every(n => n >= 222);
-}
-
 /** Pressable with theme-aware glass physics; keep legacy label contrast intact. */
 export function OceanPressable({
   style, accessibilityRole, accessibilityState, disabled,
@@ -74,8 +65,11 @@ export function OceanPressable({
   const reduced = useReducedMotion();
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
+  const needsSolidForLegibility =
+    needsSolidOceanButtonSurface(isDark, directButtonLabelColor(children));
   const interactive = accessibilityRole === 'button' ||
-    accessibilityRole === 'tab' || accessibilityRole === 'radio';
+    accessibilityRole === 'tab' || accessibilityRole === 'radio' ||
+    (typeof rest.onPress === 'function' && needsSolidForLegibility);
   const surface = (state: PressableStateCallbackType): StyleProp<ViewStyle> => {
     const original = typeof style === 'function' ? style(state) : style;
     const flat = StyleSheet.flatten(original) || {};
@@ -85,9 +79,7 @@ export function OceanPressable({
       flat.backgroundColor.toUpperCase() : '';
     const selected = accessibilityState?.selected === true ||
       accessibilityState?.checked === true;
-    const foreground = directButtonLabelColor(children);
-    const needsSolidForLegibility = !isDark && nearWhiteLabel(foreground);
-    const solidDanger = ['#B91C1C','#991B1B','#A94345','#FCA5A5',
+     const solidDanger = ['#B91C1C','#991B1B','#A94345','#FCA5A5',
       '#A22E49','#BE123C'].includes(raw);
     const isDanger = oceanTone === 'danger' || solidDanger ||
       ['#FFF1F2','#FFF0F0','#3D2028'].includes(raw);
