@@ -50,11 +50,31 @@ jobs:
           name: oceafin-login-glass-visuals
           path: visual-artifacts/
           if-no-files-found: ignore
+      - name: Create synthetic dashboard route only in CI
+        run: node tools/tests/oceafin-dashboard-fixture.mjs
+      - name: Export synthetic dashboard route for layout QA
+        run: npm run build:web
+      - name: Visual QA of dashboard cards (10 theme/device combinations)
+        run: node tools/tests/oceafin-dashboard-layout.test.mjs
+      - name: Upload dashboard alignment screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: oceafin-dashboard-alignment-visuals
+          path: visual-artifacts/dashboard-*.png
+          if-no-files-found: ignore
+      - name: Remove temporary dashboard QA route
+        if: always()
+        run: |
+          rm -f src/app/ocean-layout-qa.tsx
+          rm -f dist/ocean-layout-qa.html
+          rm -rf dist/ocean-layout-qa
       - name: Ensure no public demo-only route ships
         run: |
           test ! -e src/app/design-preview.tsx
           test ! -e dist/design-preview.html
           test ! -e dist/design-preview/index.html
+          test ! -e src/app/ocean-layout-qa.tsx
           test ! -e src/app/design-audit.tsx
           test ! -e dist/design-audit.html
           test ! -e dist/design-audit/index.html
