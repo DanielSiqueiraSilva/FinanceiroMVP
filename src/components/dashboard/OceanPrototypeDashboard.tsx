@@ -77,7 +77,7 @@ function StatCard({ type, amount, hidden, dark, compact }: {
       {income ? '↗' : '↘'} {label}
     </Text>
     <Text style={[styles.statValue, compact && styles.statValueCompact, { color: dark ? '#FFFFFF' : '#0B304B' }]}
-      adjustsFontSizeToFit minimumFontScale={0.75} numberOfLines={2}>{text}</Text>
+      adjustsFontSizeToFit minimumFontScale={0.65} numberOfLines={1}>{text}</Text>
     <Text style={[styles.statHint, { color: income ? dark ? '#7BE9D6' : '#096D61' :
       dark ? '#F6A9C4' : '#A54459' }]}>
       {income ? 'Entradas registradas' : 'Saídas registradas'}
@@ -220,7 +220,7 @@ export function OceanPrototypeDashboard({
   // Expo Web may report zero from onLayout initially; do not collapse the mobile
   // card columns or force a desktop layout in a narrow container.
   const wide = viewportWidth >= 1100 && (layoutWidth === 0 || layoutWidth >= 720);
-  const compact = (layoutWidth || viewportWidth) < 400;
+  const compact = (layoutWidth || viewportWidth) < 350;
   const dark = isDark;
   const period = String(mes).padStart(2,'0') + '/' + ano;
   const balances = useMemo(() => plannerBalances(planner), [planner]);
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12, fontWeight: '700' },
   statValue: { fontWeight: '900', fontSize: 22,
     fontFamily: Platform.OS === 'web' ? 'Manrope' : undefined },
-  statValueCompact: { fontSize: 20 },
+  statValueCompact: { fontSize: 16 },
   statHint: { fontSize: 10.5, fontWeight: '700' },
   quickActions: { flexDirection: 'row', gap: 12, flexWrap: 'wrap',
     alignItems: 'center', justifyContent: 'space-between', paddingVertical: 1 },
