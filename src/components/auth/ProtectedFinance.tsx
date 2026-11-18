@@ -98,7 +98,6 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
   const cardGlowRef = useRef<View>(null);
   const desktop = width >= 900;
   const ui = useAccessibleStyles(styles);
-  const lightText = !isDark;
   const ink = isDark ? '#EBFAFD' : '#173746';
   const secondaryInk = isDark ? '#AFCBD3' : '#617B88';
   const oceanLink = isDark ? '#94E4E1' : '#116A7B';

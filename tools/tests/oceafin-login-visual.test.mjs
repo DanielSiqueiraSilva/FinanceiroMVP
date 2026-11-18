@@ -53,7 +53,7 @@ try {
         });
         const glass = page.getByTestId('oceafin-login-glass');
         await glass.waitFor({ timeout: 22000 });
-        await page.getByRole('button', { name: 'Entrar com e-mail e senha' })
+        await page.getByRole('button', { name: 'Entrar na Oceafin' })
           .waitFor({ timeout: 5000 });
         await page.waitForTimeout(600);
         const info = await page.evaluate(() => {
@@ -68,15 +68,37 @@ try {
         });
         assert.ok(info.width <= width + 3, 'Horizontal overflow: ' + info.width);
         assert.ok(/blur\(/.test(info.blur), 'No rendered backdrop blur: ' + info.blur);
+        // The approved composition is split on desktop, one focused glass card on mobile.
+        const brand = page.getByTestId('oceafin-login-brand-panel');
+        const brandDisplay = await brand.evaluate(el => getComputedStyle(el).display);
+        const right = page.getByTestId('oceafin-login-glass');
+        if (width >= 900) {
+          assert.notEqual(brandDisplay,'none','Desktop Ocean Split branding is missing');
+          const leftBox = await brand.boundingBox();
+          const rightBox = await right.boundingBox();
+          assert.ok(leftBox && rightBox && rightBox.x > leftBox.x + leftBox.width - 3,
+            'Desktop brand and login card are not side by side');
+        } else {
+          assert.equal(brandDisplay,'none','Mobile must prioritize the Glass Central card');
+        }
+        await page.getByRole('button',{name:'Entrar com chave de acesso'}).waitFor();
+        await page.getByRole('button',{name:'Mostrar senha'}).click();
+        await page.getByRole('button',{name:'Ocultar senha'}).waitFor();
+        await page.getByRole('button',{name:'Ocultar senha'}).click();
+        await page.getByRole('button',{name:'Criar conta',exact:true}).click();
+        await page.getByTestId('oceafin-login-name').waitFor();
+        await page.getByRole('button',{name:'Criar minha conta'}).waitFor();
+        await page.getByRole('button',{name:'Entrar na conta existente'}).click();
+        await page.getByRole('button',{name:'Entrar na Oceafin'}).waitFor();
         assert.deepEqual(pageErrors, [], 'React/JS errors');
-        const button = page.getByRole('button', { name: 'Entrar com e-mail e senha' });
+        const button = page.getByRole('button', { name: 'Entrar na Oceafin' });
         await button.focus();
         assert.equal(await button.evaluate(el => el === document.activeElement), true,
           'Primary button cannot receive keyboard focus');
         const primaryInk = await button.evaluate(el => {
           const text = [...el.querySelectorAll('*')].reverse().find(node =>
             node.childElementCount === 0 && node.textContent?.trim() ===
-            'Entrar com e-mail e senha');
+            'Entrar na Oceafin');
           if (!text) throw new Error('Primary button label is missing');
           const match = getComputedStyle(text).color.match(/[0-9.]+/g);
           if (!match || match.length < 3) throw new Error('Unreadable computed label color');
