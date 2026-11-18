@@ -3,7 +3,7 @@ import { existsSync, writeFileSync } from 'node:fs';
 // This fixture exists only in the CI runner. It is never committed to src/app.
 const path = 'src/app/ocean-layout-qa.tsx';
 if (existsSync(path)) throw new Error('Temporary dashboard test route already exists');
-writeFileSync(path, \`import { ScrollView, View, useWindowDimensions } from 'react-native';
+writeFileSync(path, `import { ScrollView, View, useWindowDimensions } from 'react-native';
 import { OceanPrototypeDashboard } from '../components/dashboard/OceanPrototypeDashboard';
 import type { PlannerData } from '../services/finance-planner';
 import type { Lancamento, ResumoFinanceiro } from '../types/finance';
@@ -39,5 +39,5 @@ export default function OceanLayoutQAFixture() {
     </View>
   </ScrollView>;
 }
-\`);
+`);
 console.log('Created synthetic, test-only Ocean dashboard route');
