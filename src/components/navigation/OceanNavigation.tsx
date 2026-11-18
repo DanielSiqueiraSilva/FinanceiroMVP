@@ -193,9 +193,21 @@ export function OceanSidebar({ pages, groups, active, onNavigate, profileName }:
       </View>
       <Pressable onPress={collapse} accessibilityRole="button"
         accessibilityLabel={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+        accessibilityHint="Alterna entre o menu completo e o menu compacto"
         accessibilityState={{ expanded: !collapsed }}
-        style={[styles.collapseButton, collapsed && styles.collapseCompact]}>
-        <Text style={styles.collapseLabel}>{collapsed ? '›' : '‹'}</Text>
+        hitSlop={8}
+        style={({ pressed, hovered, focused }) => [
+          styles.collapseButton, collapsed && styles.collapseCompact,
+          (hovered || focused) && styles.collapseButtonHover,
+          focused && styles.collapseButtonFocus,
+          pressed && styles.collapseButtonPressed,
+        ]}>
+        <View pointerEvents="none" style={styles.collapseButtonShine} />
+        <Svg pointerEvents="none" width={19} height={19} viewBox="0 0 24 24">
+          <Path d={collapsed ? 'M9 5l7 7-7 7' : 'M15 5l-7 7 7 7'}
+            fill="none" stroke="#E9FFFF" strokeWidth={2.7}
+            strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
       </Pressable>
       <ScrollView style={styles.sidebarScroll} showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
@@ -360,12 +372,21 @@ const styles = StyleSheet.create({
   brandName: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.7,
     fontFamily: Platform.OS === 'web' ? 'Montserrat' : undefined },
   brandTagline: { fontSize: 8.5, letterSpacing: 1, color: '#BFE8F0', fontWeight: '700' },
-  collapseButton: { width: 42, height: 42, alignSelf: 'flex-end',
-    borderRadius: 21, borderWidth: 1,
-    borderColor: 'rgba(198,246,255,0.22)', justifyContent: 'center',
-    alignItems: 'center', marginBottom: 12, marginRight: 5 },
+  collapseButton: { width: 44, height: 44, alignSelf: 'flex-end',
+    borderRadius: 16, borderWidth: 1,
+    backgroundColor: 'rgba(108,226,238,0.13)',
+    borderColor: 'rgba(186,248,255,0.48)', justifyContent: 'center',
+    alignItems: 'center', marginBottom: 14, marginRight: 5,
+    overflow: 'hidden', shadowColor: '#42DDEB', shadowOpacity: 0.18,
+    shadowRadius: 12, elevation: 2 },
   collapseCompact: { alignSelf: 'center', marginRight: 0 },
-  collapseLabel: { fontSize: 29, lineHeight: 32, color: '#D8F8F8', fontWeight: '500' },
+  collapseButtonShine: { position: 'absolute', top: 1, left: 7, right: 7,
+    height: 1, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.64)' },
+  collapseButtonHover: { backgroundColor: 'rgba(119,237,247,0.23)',
+    borderColor: 'rgba(210,255,255,0.78)' },
+  collapseButtonFocus: { borderWidth: 2, borderColor: '#CBFFFF' },
+  collapseButtonPressed: { transform: [{ scale: 0.94 }],
+    backgroundColor: 'rgba(120,235,240,0.30)' },
   sidebarScroll: { flex: 1 },
   scrollContent: { paddingBottom: 24 },
   sidebarSections: { position: 'relative', gap: 12 },
