@@ -94,8 +94,6 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
   const { width, height } = useWindowDimensions();
   const { reduceMotion, highContrast } = useAccessibility();
   const [showPassword, setShowPassword] = useState(false);
-  const cardFrameRef = useRef<View>(null);
-  const cardGlowRef = useRef<View>(null);
   const desktop = width >= 900;
   const ui = useAccessibleStyles(styles);
   const ink = isDark ? '#EBFAFD' : '#173746';
@@ -120,8 +118,8 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
   // O fallback nativo é completamente funcional sem eventos do navegador.
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined' || highContrast) return;
-    const target = cardFrameRef.current as unknown as HTMLElement | null;
-    const light = cardGlowRef.current as unknown as HTMLElement | null;
+    const target = document.querySelector<HTMLElement>('[data-testid="oceafin-login-card-frame"]');
+    const light = document.querySelector<HTMLElement>('[data-testid="oceafin-login-card-glow"]');
     if (!target || !light) return;
     const reduced = reduceMotion || Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
     const move = (event: PointerEvent) => {
@@ -217,14 +215,14 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
               <Rect width="100" height="100" fill="url(#oceafin-login-surface-gradient)" />
             </Svg>
           </View>
-          <View ref={cardFrameRef} style={[ui.cardFrame, Platform.OS === 'web' &&
+          <View testID="oceafin-login-card-frame" style={[ui.cardFrame, Platform.OS === 'web' &&
             ({ transition: reduceMotion ? 'none' : 'transform 380ms ease' } as unknown as ViewStyle)]}>
             <OceanGlass material="floating" radius={26}
               style={[ui.loginCard, {
                 backgroundColor: cardFill, borderColor: cardBorder,
               }, cardWeb]}
               testID="oceafin-login-glass">
-              {!highContrast && <View ref={cardGlowRef} pointerEvents="none"
+              {!highContrast && <View testID="oceafin-login-card-glow" pointerEvents="none"
                 style={ui.cardPointerLight} />}
               <View pointerEvents="none" style={[
                 ui.cardTopGlint,
@@ -679,7 +677,7 @@ const styles = StyleSheet.create({
   passwordInput: { paddingRight: 75 },
   passwordVisibility: { position: 'absolute', top: 0, right: 2, bottom: 0,
     justifyContent: 'center', alignItems: 'center', minWidth: 66, minHeight: 44 },
-  showText: { fontSize: 12, fontWeight: '750' },
+  showText: { fontSize: 12, fontWeight: '700' },
   primaryAction: { paddingTop: 5 },
   quickLoginArea: { gap: 11, paddingTop: 14 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
