@@ -17,5 +17,7 @@ const getServerWidth = () => 0;
 export function useOceanViewport() {
   const { width } = useWindowDimensions();
   const browserWidth = useSyncExternalStore(subscribe, getBrowserWidth, getServerWidth);
-  return Platform.OS === 'web' && browserWidth > 0 ? browserWidth : width;
+  // Server and the client's hydration pass must render the same mobile-first
+  // structure. The real width is adopted immediately after hydration.
+  return Platform.OS === 'web' ? (browserWidth > 0 ? browserWidth : 390) : width;
 }
