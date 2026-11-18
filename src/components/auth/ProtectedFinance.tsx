@@ -4,11 +4,11 @@ import {
 } from 'react';
 import {
   AppState, Platform, ScrollView, StyleSheet,
-  Text, TextInput, View,
+  Text, TextInput, View, useWindowDimensions, type ViewStyle,
 } from 'react-native';
 import { OceanPressable as Pressable } from '../../design/OceanControls';
 import type { Session } from '@supabase/supabase-js';
-import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { BrandMark } from '../../design/brand';
@@ -91,125 +91,269 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
   }
 
 
+  const { width, height } = useWindowDimensions();
+  const { reduceMotion, highContrast } = useAccessibility();
+  const [showPassword, setShowPassword] = useState(false);
+  const cardFrameRef = useRef<View>(null);
+  const cardGlowRef = useRef<View>(null);
+  const desktop = width >= 900;
   const ui = useAccessibleStyles(styles);
-  // A tela de login utiliza exatamente o mesmo isDark do painel Aa.
-  // Aplicamos todas as superfícies e textos explicitamente para evitar
-  // diferenças de paleta na renderização inicial do Expo Web.
-  const loginTheme = isDark ? darkLoginStyles : lightLoginStyles;
+  const lightText = !isDark;
+  const ink = isDark ? '#EBFAFD' : '#173746';
+  const secondaryInk = isDark ? '#AFCBD3' : '#617B88';
+  const oceanLink = isDark ? '#94E4E1' : '#116A7B';
+  const fieldFill = isDark ? 'rgba(143,207,226,0.10)' : 'rgba(255,255,255,0.55)';
+  const fieldBorder = isDark ? 'rgba(161,224,237,0.29)' : 'rgba(67,127,144,0.29)';
+  const cardFill = highContrast ? (isDark ? '#142F3E' : '#FFFFFF') :
+    isDark ? 'rgba(112,179,197,0.14)' : 'rgba(255,255,255,0.49)';
+  const cardBorder = isDark ? 'rgba(172,229,237,0.34)' : 'rgba(255,255,255,0.90)';
+  const cardWeb = Platform.OS === 'web' ? ({
+    ...(!highContrast ? {
+      backdropFilter: 'blur(27px) saturate(140%)',
+      WebkitBackdropFilter: 'blur(27px) saturate(140%)',
+    } : {}),
+    boxShadow: isDark
+      ? 'inset 0 1px rgba(255,255,255,.17),0 19px 46px rgba(0,10,20,.20)'
+      : 'inset 0 1px rgba(255,255,255,.75),inset 0 -1px rgba(255,255,255,.20),0 19px 46px rgba(31,83,98,.12)',
+  } as unknown as ViewStyle) : undefined;
+
+  // A luz do cartão responde apenas ao ponteiro; o formulário permanece estático.
+  // O fallback nativo é completamente funcional sem eventos do navegador.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || highContrast) return;
+    const target = cardFrameRef.current as unknown as HTMLElement | null;
+    const light = cardGlowRef.current as unknown as HTMLElement | null;
+    if (!target || !light) return;
+    const reduced = reduceMotion || Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+    const move = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      const r = target.getBoundingClientRect();
+      const x = ((event.clientX - r.left) / r.width * 100).toFixed(1);
+      const y = ((event.clientY - r.top) / r.height * 100).toFixed(1);
+      light.style.backgroundImage =
+        'radial-gradient(circle at ' + x + '% ' + y + '%, ' +
+        (isDark ? 'rgba(153,243,238,.12)' : 'rgba(255,255,255,.43)') +
+        ', transparent 48%)';
+    };
+    const enter = (event: PointerEvent) => {
+      if (!reduced && event.pointerType !== 'touch') {
+        target.style.transform = 'translateY(-3px)';
+      }
+    };
+    const leave = () => {
+      target.style.transform = 'translateY(0)';
+      light.style.backgroundImage = '';
+    };
+    target.addEventListener('pointermove', move);
+    target.addEventListener('pointerenter', enter);
+    target.addEventListener('pointerleave', leave);
+    return () => {
+      target.removeEventListener('pointermove', move);
+      target.removeEventListener('pointerenter', enter);
+      target.removeEventListener('pointerleave', leave);
+    };
+  }, [isDark, highContrast, reduceMotion]);
 
   return (
     <ScrollView
-      style={[ui.loginBackground, loginTheme.loginBackground]}
-      contentContainerStyle={ui.loginScroll}
+      style={[ui.loginBackground, { backgroundColor: isDark ? '#0D2534' : '#E6EFF2' }]}
+      contentContainerStyle={[
+        ui.loginScroll, !desktop && ui.loginScrollMobile,
+        { minHeight: Math.max(height, 600) },
+      ]}
       keyboardShouldPersistTaps="handled"
+      testID="oceafin-login-page"
     >
-      <View pointerEvents="none" style={ui.loginAtmosphere}>
-        <Svg width="100%" height="100%" viewBox="0 0 950 860" preserveAspectRatio="xMidYMid slice">
-          <Defs>
-            <LinearGradient id="login-deep" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={isDark ? '#0D1C29' : '#EEF5F7'} />
-              <Stop offset="1" stopColor={isDark ? '#173643' : '#E0EFF3'} />
-            </LinearGradient>
-            <LinearGradient id="login-wave" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0" stopColor="#4A9EA7" stopOpacity={isDark ? 0.045 : 0.025} />
-              <Stop offset="1" stopColor="#75C8C8" stopOpacity={isDark ? 0.07 : 0.045} />
-            </LinearGradient>
-          </Defs>
-          <Rect width="950" height="860" fill="url(#login-deep)" />
-          <Path d="M-40 650C200 495 390 760 655 621S920 602 1000 520L1000 900H-40Z"
-            fill="url(#login-wave)" />
-          <Path d="M-20 690C228 540 451 799 675 664S925 628 1000 575"
-            stroke="#66C4C8" strokeOpacity={isDark ? 0.05 : 0.045}
-            strokeWidth="2" fill="none" />
-        </Svg>
-      </View>
-      <OceanGlass material="floating" radius={24} style={ui.panel}
-        testID="oceafin-login-glass">
-        <View style={ui.brand}>
-          <BrandMark size={42} />
-          <Text accessibilityRole="header" style={[ui.brandTitle, loginTheme.brandTitle]}>{OCEAFIN.name}</Text>
-        </View>
-        <Text style={[ui.tagline, { color: isDark ? '#8EF6EB' : '#006B8F' }]}>
-          SUAS FINANÇAS, MAIS SIMPLES.
-        </Text>
-
-        <Text style={[ui.subtitle, loginTheme.subtitle]}>{cadastro ? 'Crie sua conta com segurança' : 'Entre na sua conta com segurança'}</Text>
-
-        {!cadastro ? (
-          <View style={ui.faceArea}>
-            <Svg width={52} height={52} viewBox="0 0 48 48" fill="none" accessibilityLabel="Ícone de reconhecimento facial">
-              <Path d="M16 8h-4a4 4 0 0 0-4 4v4M32 8h4a4 4 0 0 1 4 4v4M8 32v4a4 4 0 0 0 4 4h4M40 32v4a4 4 0 0 1-4 4h-4" stroke={isDark ? "#80E7DB" : "#09657A"} strokeWidth={2.8} strokeLinecap="round" />
-              <Circle cx={18} cy={22} r={1.6} fill={isDark ? "#80E7DB" : "#09657A"} />
-              <Circle cx={30} cy={22} r={1.6} fill={isDark ? "#80E7DB" : "#09657A"} />
-              <Path d="M18 31c3.3 3.5 8.7 3.5 12 0" stroke={isDark ? "#80E7DB" : "#09657A"} strokeWidth={2.6} strokeLinecap="round" />
+      <View testID="oceafin-login-split" style={[
+        ui.loginShell, desktop ? ui.loginShellDesktop : ui.loginShellMobile,
+        { minHeight: desktop ? Math.max(630, height - 60) : Math.max(620, height - 28) },
+      ]}>
+        <View testID="oceafin-login-brand-panel" style={[
+          ui.loginBrandPanel, !desktop && ui.loginBrandHidden,
+        ]}>
+          <View pointerEvents="none" style={ui.loginGradient}>
+            <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <Defs>
+                <LinearGradient id="oceafin-login-brand-gradient" x1="0" y1="0" x2="1" y2="1">
+                  <Stop offset="0" stopColor="#0A2838" />
+                  <Stop offset="0.65" stopColor="#0E3445" />
+                  <Stop offset="1" stopColor="#17495A" />
+                </LinearGradient>
+              </Defs>
+              <Rect width="100" height="100" fill="url(#oceafin-login-brand-gradient)" />
             </Svg>
           </View>
-        ) : null}
-
-        {!cadastro && Platform.OS === 'web' ? (
-          <OceanButton variant="glass" fullWidth label="Entrar com biometria"
-            accessibilityHint="Usa a chave de acesso segura cadastrada neste dispositivo"
-            loading={busy} onPress={() => void login(false, true)} />
-        ) : null}
-        {!cadastro && isNativeQuickUnlock && hasQuickAccount ? (
-          <OceanButton variant="glass" fullWidth label="Entrar com biometria"
-            loading={busy} onPress={() => void login(true)} />
-        ) : null}
-
-        <View style={ui.emailSection}>
-          <Text style={[ui.emailTitle, loginTheme.emailTitle]}>{cadastro ? 'Dados para criar sua conta' : 'Ou entre com e-mail e senha'}</Text>
-          {cadastro ? (
-            <TextInput
-              style={[ui.input, loginTheme.input]}
-              placeholder="Nome completo"
-              placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
-              value={nome}
-              onChangeText={setNome}
-              accessibilityLabel="Nome completo"
-              autoCapitalize="words"
-              autoComplete="name"
-            />
-          ) : null}
-          <TextInput
-            style={[ui.input, loginTheme.input]}
-            placeholder="E-mail"
-            placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
-            value={email}
-            onChangeText={setEmail}
-            accessibilityLabel="E-mail"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
-          <TextInput
-            style={[ui.input, loginTheme.input]}
-            placeholder="Senha"
-            placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
-            value={senha}
-            onChangeText={setSenha}
-            accessibilityLabel="Senha"
-            secureTextEntry
-            autoComplete={cadastro ? 'new-password' : 'current-password'}
-          />
-          <OceanButton variant="primary" fullWidth loading={busy}
-            label={cadastro ? 'Criar conta' : 'Entrar com e-mail e senha'}
-            onPress={() => void login(false)} />
+          <View style={ui.leftBrand}>
+            <BrandMark size={39} tile={false}/>
+            <Text style={ui.leftBrandName}>{OCEAFIN.name}</Text>
+          </View>
+          <View style={ui.brandMessage}>
+            <Text style={ui.brandEyebrow}>BEM-VINDO À OCEAFIN</Text>
+            <Text accessibilityRole="header" style={ui.brandHeadline}>
+              Suas finanças,{"\n"}
+              <Text style={ui.brandHeadlineAccent}>mais simples.</Text>
+            </Text>
+            <Text style={ui.brandDescription}>
+              Organize seu presente, planeje o futuro e tenha mais clareza para suas decisões financeiras.
+            </Text>
+          </View>
+          <View style={ui.leftFooter}>
+            <View style={ui.footerDot}/>
+            <Text style={ui.leftFooterText}>Um lugar para cuidar do que importa.</Text>
+          </View>
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          disabled={busy}
-          style={ui.secondary}
-          onPress={() => { setCadastro(!cadastro); setMensagem(''); }}
-        >
-          <Text style={[ui.link, loginTheme.link]}>{cadastro ? 'Já tem conta? Entrar' : 'Ainda não tem conta? Criar conta'}</Text>
-        </Pressable>
+        <View style={[ui.loginRight, {
+          backgroundColor: isDark ? '#102B3A' : '#DDECF0',
+        }]}>
+          <View pointerEvents="none" style={ui.loginGradient}>
+            <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <Defs>
+                <LinearGradient id="oceafin-login-surface-gradient" x1="0" y1="0" x2="1" y2="1">
+                  <Stop offset="0" stopColor={isDark ? '#142E3D' : '#E6F1F3'} />
+                  <Stop offset="0.85" stopColor={isDark ? '#0D2534' : '#C9E1E7'} />
+                  <Stop offset="1" stopColor={isDark ? '#102B3B' : '#E0EFF0'} />
+                </LinearGradient>
+              </Defs>
+              <Rect width="100" height="100" fill="url(#oceafin-login-surface-gradient)" />
+            </Svg>
+          </View>
+          <View ref={cardFrameRef} style={[ui.cardFrame, Platform.OS === 'web' &&
+            ({ transition: reduceMotion ? 'none' : 'transform 380ms ease' } as unknown as ViewStyle)]}>
+            <OceanGlass material="floating" radius={26}
+              style={[ui.loginCard, {
+                backgroundColor: cardFill, borderColor: cardBorder,
+              }, cardWeb]}
+              testID="oceafin-login-glass">
+              {!highContrast && <View ref={cardGlowRef} pointerEvents="none"
+                style={ui.cardPointerLight} />}
+              <View pointerEvents="none" style={[
+                ui.cardTopGlint,
+                { backgroundColor: isDark ? 'rgba(200,251,248,.33)' : 'rgba(255,255,255,.86)' },
+              ]}/>
 
-        {mensagem ? <Text style={[ui.message, loginTheme.message]} accessibilityLiveRegion="polite">{mensagem}</Text> : null}
-        {!cadastro ? (
-          <Text style={[ui.hint, loginTheme.hint]}>Face ID, impressão digital ou método seguro disponível no dispositivo</Text>
-        ) : null}
-      </OceanGlass>
+              <View style={ui.cardBrand}>
+                <BrandMark size={28} tile={false}/>
+                <Text style={[ui.cardBrandName, { color: ink }]}>{OCEAFIN.name}</Text>
+              </View>
+              <View style={ui.cardIntro}>
+                <Text accessibilityRole="header" style={[ui.cardHeading, { color: ink }]}>
+                  {cadastro ? 'Comece sua jornada.' : 'Bem-vindo de volta.'}
+                </Text>
+                <Text style={[ui.cardSubtitle, { color: secondaryInk }]}>
+                  {cadastro
+                    ? 'Crie sua conta e organize suas finanças com clareza.'
+                    : 'Entre para continuar cuidando das suas finanças.'}
+                </Text>
+              </View>
+
+              <View style={ui.form}>
+                {cadastro && <View style={ui.field}>
+                  <Text style={[ui.fieldLabel, { color: ink }]}>Seu nome</Text>
+                  <TextInput
+                    testID="oceafin-login-name"
+                    style={[ui.input, { color: ink, backgroundColor: fieldFill, borderColor: fieldBorder }]}
+                    placeholder="Como podemos chamar você?"
+                    placeholderTextColor={secondaryInk}
+                    value={nome} onChangeText={setNome}
+                    accessibilityLabel="Seu nome"
+                    autoCapitalize="words" autoComplete="name"
+                  />
+                </View>}
+                <View style={ui.field}>
+                  <Text style={[ui.fieldLabel, { color: ink }]}>E-mail</Text>
+                  <TextInput
+                    testID="oceafin-login-email"
+                    style={[ui.input, { color: ink, backgroundColor: fieldFill, borderColor: fieldBorder }]}
+                    placeholder="seuemail@exemplo.com" placeholderTextColor={secondaryInk}
+                    value={email} onChangeText={setEmail}
+                    accessibilityLabel="E-mail"
+                    autoCapitalize="none" keyboardType="email-address" autoComplete="email"
+                  />
+                </View>
+                <View style={ui.field}>
+                  <Text style={[ui.fieldLabel, { color: ink }]}>Senha</Text>
+                  <View style={ui.passwordInputArea}>
+                    <TextInput
+                      testID="oceafin-login-password"
+                      style={[ui.input, ui.passwordInput, {
+                        color: ink, backgroundColor: fieldFill, borderColor: fieldBorder,
+                      }]}
+                      placeholder="Sua senha" placeholderTextColor={secondaryInk}
+                      value={senha} onChangeText={setSenha}
+                      accessibilityLabel="Senha"
+                      secureTextEntry={!showPassword}
+                      autoComplete={cadastro ? 'new-password' : 'current-password'}
+                    />
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      oceanTone="none"
+                      style={ui.passwordVisibility}
+                      onPress={() => setShowPassword(!showPassword)}>
+                      <Text style={[ui.showText, { color: oceanLink }]}>
+                        {showPassword ? 'Ocultar' : 'Mostrar'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+                <View style={ui.primaryAction}>
+                  <OceanButton variant="primary" fullWidth loading={busy}
+                    label={cadastro ? 'Criar minha conta' : 'Entrar na Oceafin'}
+                    onPress={() => void login(false)} />
+                </View>
+              </View>
+
+              {!cadastro && (Platform.OS === 'web' || (isNativeQuickUnlock && hasQuickAccount)) && (
+                <View style={ui.quickLoginArea}>
+                  <View style={ui.dividerRow}>
+                    <View style={[ui.dividerLine, { backgroundColor: fieldBorder }]}/>
+                    <Text style={[ui.dividerText, { color: secondaryInk }]}>ou</Text>
+                    <View style={[ui.dividerLine, { backgroundColor: fieldBorder }]}/>
+                  </View>
+                  {Platform.OS === 'web' ? (
+                    <OceanButton variant="glass" fullWidth loading={busy}
+                      label="Entrar com chave de acesso"
+                      accessibilityHint="Usa uma chave segura deste dispositivo quando disponível"
+                      onPress={() => void login(false, true)}/>
+                  ) : (
+                    <OceanButton variant="glass" fullWidth loading={busy}
+                      label="Entrar com biometria"
+                      onPress={() => void login(true)}/>
+                  )}
+                </View>
+              )}
+
+              <View style={ui.registerRow}>
+                <Text style={[ui.registerPrompt, { color: secondaryInk }]}>
+                  {cadastro ? 'Já tem uma conta?' : 'Ainda não tem uma conta?'}
+                </Text>
+                <Pressable accessibilityRole="button" oceanTone="none" disabled={busy}
+                  accessibilityLabel={cadastro ? 'Entrar na conta existente' : 'Criar conta'}
+                  onPress={() => {
+                    setCadastro(!cadastro);
+                    setMensagem('');
+                    setShowPassword(false);
+                  }}
+                  style={ui.registerButton}>
+                  <Text style={[ui.registerLink, { color: oceanLink }]}>
+                    {cadastro ? 'Entrar' : 'Criar conta'}
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={[ui.safeFooter, { borderTopColor: fieldBorder }]}>
+                <Text style={[ui.safeFooterIcon, { color: oceanLink }]}>◇</Text>
+                <Text style={[ui.safeFooterText, { color: secondaryInk }]}>
+                  Acesso protegido para sua tranquilidade.
+                </Text>
+              </View>
+              {!!mensagem && <Text style={[ui.message, {
+                color: isDark ? '#FFD0CB' : '#8C3443',
+              }]} accessibilityLiveRegion="polite">{mensagem}</Text>}
+            </OceanGlass>
+          </View>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -483,71 +627,75 @@ export function ProtectedFinance({ children }: PropsWithChildren) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, minHeight: 0, backgroundColor: '#0B1220' },
-  loginBackground: { flex: 1, backgroundColor: '#071727' },
+  flex: { flex: 1, minHeight: 0, backgroundColor: '#0D1C29' },
+  loginBackground: { flex: 1, backgroundColor: '#E6EFF2' },
   loginScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center',
-    paddingVertical: 34, paddingHorizontal: 16, position: 'relative' },
-  loginAtmosphere: { position: 'absolute', top: 0, right: 0, left: 0, bottom: 0 },
-  panel: {
-    width: '100%', maxWidth: 510, borderRadius: 24, padding: 26, gap: 16,
-    borderWidth: 1, borderColor: 'rgba(185,244,252,0.42)',
-  },
-  brand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
-  brandTitle: { color: '#FFFFFF', fontSize: 23, fontWeight: '800',
-    fontFamily: Platform.OS === 'web' ? 'Montserrat' : undefined },
-  tagline: { textAlign: 'center', letterSpacing: 2.2, fontSize: 10, fontWeight: '800' },
-  subtitle: { color: '#CBD5E1', fontSize: 14, textAlign: 'center', marginTop: 0 },
-  faceArea: { alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
-  quickButton: {
-    backgroundColor: '#0B7189', borderRadius: 13, alignItems: 'center',
-    justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 16, minHeight: 54,
-  },
-  primaryText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' },
-  emailSection: { gap: 10, paddingTop: 4 },
-  emailTitle: { color: '#CBD5E1', textAlign: 'center', fontSize: 13, fontWeight: '600', marginBottom: 4 },
-  input: {
-    backgroundColor: '#183B4F', color: '#FFFFFF', borderColor: '#426578',
-    borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, minHeight: 48, fontSize: 16,
-  },
-  passwordButton: {
-    borderColor: '#475569', borderWidth: 1, borderRadius: 12, minHeight: 52,
-    alignItems: 'center', justifyContent: 'center', padding: 12,
-  },
-  passwordText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15, textAlign: 'center' },
-  secondary: { alignItems: 'center', paddingVertical: 9 },
-  link: { color: '#80E7DB', fontWeight: '700', fontSize: 14 },
-  hint: { color: '#94A3B8', textAlign: 'center', fontSize: 12, lineHeight: 18 },
-  message: { color: '#FCA5A5', textAlign: 'center', fontSize: 13 },
-  disabled: { opacity: .55 },
-  banner: { color: '#DDD6FE', textAlign: 'center', padding: 10 },
-});
-
-/** Cores explícitas do login escuro, sincronizadas com o isDark global. */
-const darkLoginStyles = StyleSheet.create({
-  loginBackground: { backgroundColor: '#0D1C29' },
-  panel: { backgroundColor: '#102A3C', borderColor: '#35566A' },
-  brandTitle: { color: '#FFFFFF' },
-  subtitle: { color: '#CBD5E1' },
-  emailTitle: { color: '#CBD5E1' },
-  input: { backgroundColor: '#1D3743', borderColor: '#45646D', color: '#FFFFFF' },
-  passwordButton: { backgroundColor: '#102A3C', borderColor: '#475569' },
-  passwordText: { color: '#FFFFFF' },
-  hint: { color: '#94A3B8' },
-  message: { color: '#FCA5A5' },
-  link: { color: '#80E7DB' },
-});
-
-/** O login claro preserva o layout e tem contraste equivalente. */
-const lightLoginStyles = StyleSheet.create({
-  loginBackground: { backgroundColor: '#EEF5F7' },
-  panel: { backgroundColor: '#FFFFFF', borderColor: '#DDD6E6' },
-  brandTitle: { color: '#111827' },
-  subtitle: { color: '#374151' },
-  emailTitle: { color: '#374151' },
-  input: { backgroundColor: '#F8FCFD', borderColor: '#B9D4DB', color: '#173442' },
-  passwordButton: { backgroundColor: '#FFFFFF', borderColor: '#0B7189' },
-  passwordText: { color: '#09657A' },
-  hint: { color: '#4B5563' },
-  message: { color: '#991B1B' },
-  link: { color: '#09657A' },
+    paddingVertical: 18, paddingHorizontal: 16 },
+  loginScrollMobile: { paddingVertical: 12, paddingHorizontal: 12 },
+  loginShell: { width: '100%', overflow: 'hidden',
+    borderRadius: 22, borderWidth: 1, borderColor: 'rgba(111,160,174,.18)',
+    backgroundColor: '#E6F1F3' },
+  loginShellDesktop: { maxWidth: 1440, flexDirection: 'row' },
+  loginShellMobile: { maxWidth: 430, flexDirection: 'column', borderRadius: 27 },
+  loginBrandPanel: { width: '46%', minWidth: 0, overflow: 'hidden',
+    paddingHorizontal: 41, paddingVertical: 38,
+    justifyContent: 'space-between', backgroundColor: '#0A2838' },
+  loginBrandHidden: { display: 'none' },
+  loginGradient: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  leftBrand: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  leftBrandName: { fontSize: 23, fontWeight: '800', color: '#F0FBFC',
+    fontFamily: Platform.OS === 'web' ? 'Manrope' : undefined, letterSpacing: -0.8 },
+  brandMessage: { gap: 0, maxWidth: 420 },
+  brandEyebrow: { color: '#85D1D3', fontWeight: '800',
+    fontSize: 11, letterSpacing: 2, marginBottom: 20 },
+  brandHeadline: { color: '#F0FBFC', fontWeight: '800', fontSize: 43,
+    lineHeight: 51, letterSpacing: -1.4,
+    fontFamily: Platform.OS === 'web' ? 'Manrope' : undefined },
+  brandHeadlineAccent: { color: '#90DEDB' },
+  brandDescription: { color: '#B0CBD4', lineHeight: 23, fontSize: 14,
+    marginTop: 18, maxWidth: 320 },
+  leftFooter: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  footerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#71D7D2' },
+  leftFooterText: { color: '#98BAC6', fontSize: 11 },
+  loginRight: { flex: 1, minWidth: 0, justifyContent: 'center',
+    alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24, overflow: 'hidden' },
+  cardFrame: { width: '100%', maxWidth: 402, alignSelf: 'center' },
+  loginCard: { width: '100%', paddingHorizontal: 29, paddingVertical: 30,
+    borderRadius: 26, gap: 0, overflow: 'hidden' },
+  cardPointerLight: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  cardTopGlint: { position: 'absolute', top: 0, left: 28, right: 28, height: 1 },
+  cardBrand: { flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 23 },
+  cardBrandName: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5,
+    fontFamily: Platform.OS === 'web' ? 'Manrope' : undefined },
+  cardIntro: { marginBottom: 22 },
+  cardHeading: { fontSize: 26, fontWeight: '800', letterSpacing: -0.65,
+    fontFamily: Platform.OS === 'web' ? 'Manrope' : undefined, lineHeight: 33 },
+  cardSubtitle: { fontSize: 13, lineHeight: 21, marginTop: 7 },
+  form: { gap: 13 },
+  field: { gap: 7 },
+  fieldLabel: { fontSize: 12, fontWeight: '700' },
+  input: { minHeight: 46, width: '100%', paddingHorizontal: 13,
+    borderWidth: 1, borderRadius: 12, fontSize: 15 },
+  passwordInputArea: { position: 'relative', justifyContent: 'center' },
+  passwordInput: { paddingRight: 75 },
+  passwordVisibility: { position: 'absolute', top: 0, right: 2, bottom: 0,
+    justifyContent: 'center', alignItems: 'center', minWidth: 66, minHeight: 44 },
+  showText: { fontSize: 12, fontWeight: '750' },
+  primaryAction: { paddingTop: 5 },
+  quickLoginArea: { gap: 11, paddingTop: 14 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { fontSize: 11 },
+  registerRow: { flexDirection: 'row', justifyContent: 'center',
+    gap: 5, flexWrap: 'wrap', alignItems: 'center', paddingTop: 20 },
+  registerPrompt: { fontSize: 12, lineHeight: 22 },
+  registerButton: { minHeight: 44, justifyContent: 'center',
+    paddingHorizontal: 4 },
+  registerLink: { fontSize: 12, fontWeight: '800' },
+  safeFooter: { marginTop: 14, paddingTop: 14, borderTopWidth: 1,
+    flexDirection: 'row', gap: 7, alignItems: 'center' },
+  safeFooterIcon: { fontSize: 18 },
+  safeFooterText: { fontSize: 11, lineHeight: 18, flexShrink: 1 },
+  message: { fontSize: 12, lineHeight: 19, marginTop: 14 },
+  banner: { color: '#BDDCE4', textAlign: 'center', padding: 10 },
 });
