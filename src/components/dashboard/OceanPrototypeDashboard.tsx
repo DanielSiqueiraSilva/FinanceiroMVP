@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   quickHeading: { fontSize: 14, fontWeight: '800' },
   quickButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, alignItems: 'center' },
   quickButtonsMobile: { width: '100%', flexWrap: 'nowrap' },
-  quickActionCell: { minWidth: 110, flexGrow: 1, flexBasis: 110 },
+  quickActionCell: { minWidth: 132, flexGrow: 1, flexBasis: 132 },
   quickTextLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   twoColumns: { flexDirection: 'row', gap: 14, alignItems: 'stretch' },
   column: { flex: 1, minWidth: 0, alignSelf: 'stretch' },
