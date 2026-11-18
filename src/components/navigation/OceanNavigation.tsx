@@ -167,6 +167,26 @@ export function OceanSidebar({ pages, groups, active, onNavigate, profileName }:
     const next = !collapsed;
     setCollapsed(next); void AsyncStorage.setItem(NAV_STORAGE, String(next)).catch(() => {});
   };
+  const toggleButton = (
+      <Pressable onPress={collapse} accessibilityRole="button"
+        accessibilityLabel={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+        accessibilityHint="Alterna entre o menu completo e o menu compacto"
+        accessibilityState={{ expanded: !collapsed }}
+        hitSlop={8}
+        style={({ pressed, hovered, focused }) => [
+          styles.collapseButton, collapsed && styles.collapseCompact,
+          (hovered || focused) && styles.collapseButtonHover,
+          focused && styles.collapseButtonFocus,
+          pressed && styles.collapseButtonPressed,
+        ]}>
+        <View pointerEvents="none" style={styles.collapseButtonShine} />
+        <Svg pointerEvents="none" width={19} height={19} viewBox="0 0 24 24">
+          <Path d={collapsed ? 'M9 5l7 7-7 7' : 'M15 5l-7 7 7 7'}
+            fill="none" stroke="#E9FFFF" strokeWidth={2.7}
+            strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      </Pressable>
+  );
   return <Animated.View style={[styles.sidebarHost, { width }]}>
     <Svg pointerEvents="none" width="100%" height="100%" viewBox="0 0 248 900"
       preserveAspectRatio="xMidYMid slice" style={StyleSheet.absoluteFill}>
@@ -190,25 +210,9 @@ export function OceanSidebar({ pages, groups, active, onNavigate, profileName }:
           <Text style={styles.brandName}>Oceafin</Text>
           <Text style={styles.brandTagline}>OCEAN GLASS</Text>
         </View>}
+        {!collapsed && toggleButton}
       </View>
-      <Pressable onPress={collapse} accessibilityRole="button"
-        accessibilityLabel={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
-        accessibilityHint="Alterna entre o menu completo e o menu compacto"
-        accessibilityState={{ expanded: !collapsed }}
-        hitSlop={8}
-        style={({ pressed, hovered, focused }) => [
-          styles.collapseButton, collapsed && styles.collapseCompact,
-          (hovered || focused) && styles.collapseButtonHover,
-          focused && styles.collapseButtonFocus,
-          pressed && styles.collapseButtonPressed,
-        ]}>
-        <View pointerEvents="none" style={styles.collapseButtonShine} />
-        <Svg pointerEvents="none" width={19} height={19} viewBox="0 0 24 24">
-          <Path d={collapsed ? 'M9 5l7 7-7 7' : 'M15 5l-7 7 7 7'}
-            fill="none" stroke="#E9FFFF" strokeWidth={2.7}
-            strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-      </Pressable>
+      {collapsed && toggleButton}
       <ScrollView style={styles.sidebarScroll} showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
         <View style={styles.sidebarSections}>
@@ -365,21 +369,22 @@ const styles = StyleSheet.create({
   sidebarGlass: { flex: 1, paddingTop: 18, paddingHorizontal: 8,
     borderRightWidth: 1, borderRightColor: 'rgba(145,229,247,.28)',
     shadowColor: '#081F34', shadowOpacity: 0.13, shadowRadius: 18 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 8, marginBottom: 19 },
-  brandRowCompact: { justifyContent: 'center', paddingHorizontal: 0 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 8, marginBottom: 24, minHeight: 46 },
+  brandRowCompact: { justifyContent: 'center', paddingHorizontal: 0,
+    marginBottom: 8 },
   brandCopy: { minWidth: 0, flex: 1, gap: 2 },
   brandName: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.7,
     fontFamily: Platform.OS === 'web' ? 'Montserrat' : undefined },
   brandTagline: { fontSize: 8.5, letterSpacing: 1, color: '#BFE8F0', fontWeight: '700' },
-  collapseButton: { width: 44, height: 44, alignSelf: 'flex-end',
+  collapseButton: { width: 38, height: 38, flexShrink: 0,
     borderRadius: 16, borderWidth: 1,
     backgroundColor: 'rgba(108,226,238,0.13)',
     borderColor: 'rgba(186,248,255,0.48)', justifyContent: 'center',
-    alignItems: 'center', marginBottom: 14, marginRight: 5,
+    alignItems: 'center',
     overflow: 'hidden', shadowColor: '#42DDEB', shadowOpacity: 0.18,
     shadowRadius: 12, elevation: 2 },
-  collapseCompact: { alignSelf: 'center', marginRight: 0 },
+  collapseCompact: { alignSelf: 'center', marginBottom: 12 },
   collapseButtonShine: { position: 'absolute', top: 1, left: 7, right: 7,
     height: 1, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.64)' },
   collapseButtonHover: { backgroundColor: 'rgba(119,237,247,0.23)',
