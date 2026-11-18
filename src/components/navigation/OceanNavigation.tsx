@@ -274,7 +274,7 @@ export function OceanBottomNavigation({ pages, active, onNavigate, onQuickAction
     { title: 'Análises', icon: 'graficos', id: 'graficos', at: 1 },
     { title: '+', icon: 'lancamentos', at: 2 },
     { title: 'Planejar', icon: 'metas', id: 'metas', at: 3 },
-    { title: 'Perfil', icon: 'configuracoes', at: 4 },
+    { title: 'Mais', icon: 'configuracoes', at: 4 },
   ];
   return <>
     <View pointerEvents="box-none" style={[styles.dockHost, { marginBottom: Math.max(8, insets.bottom) }]}>
