@@ -94,7 +94,18 @@ function LoginScreen({ hasQuickAccount, onQuickLogin, onRemoteLogin, onPasskeyLo
   const { width, height } = useWindowDimensions();
   const { reduceMotion, highContrast } = useAccessibility();
   const [showPassword, setShowPassword] = useState(false);
-  const desktop = width >= 900;
+  // Expo Web's Dimensions hook can report the initial SSR viewport on desktop.
+  // Match the actual CSS viewport after hydration and whenever it is resized.
+  const [webDesktop, setWebDesktop] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const query = window.matchMedia('(min-width: 900px)');
+    const sync = () => setWebDesktop(query.matches);
+    sync();
+    query.addEventListener?.('change', sync);
+    return () => query.removeEventListener?.('change', sync);
+  }, []);
+  const desktop = Platform.OS === 'web' ? webDesktop : width >= 900;
   const ui = useAccessibleStyles(styles);
   const ink = isDark ? '#EBFAFD' : '#173746';
   const secondaryInk = isDark ? '#AFCBD3' : '#617B88';
