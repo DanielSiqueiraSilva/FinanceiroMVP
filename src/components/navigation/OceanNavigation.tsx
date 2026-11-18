@@ -277,7 +277,7 @@ export function OceanBottomNavigation({ pages, active, onNavigate, onQuickAction
     { title: 'Perfil', icon: 'configuracoes', at: 4 },
   ];
   return <>
-    <View pointerEvents="box-none" style={[styles.dockHost, { bottom: Math.max(8, insets.bottom) }]}>
+    <View pointerEvents="box-none" style={[styles.dockHost, { marginBottom: Math.max(8, insets.bottom) }]}>
       <OceanGlass material="navigation" radius={28} dark={isDark} style={styles.dockGlass}>
         <View onLayout={e => setDockWidth(e.nativeEvent.layout.width)}
           style={styles.dockInner}>
@@ -401,7 +401,8 @@ const styles = StyleSheet.create({
   liquidEdge: { position: 'absolute', top: 6, right: 2, bottom: 6, width: 2,
     backgroundColor: 'rgba(0,119,200,0.20)', borderRadius: 3 },
   pressState: { opacity: 0.79, transform: [{ scale: 0.98 }] },
-  dockHost: { position: 'absolute', left: 12, right: 12, zIndex: 30, elevation: 12 },
+  // Normal document flow reserves room for the dock: no cards hidden beneath it.
+  dockHost: { marginHorizontal: 12, marginTop: 3, zIndex: 30, elevation: 12, flexShrink: 0 },
   dockGlass: { shadowColor: '#003C68', shadowOpacity: 0.22, shadowRadius: 24,
     elevation: 12, borderColor: 'rgba(255,255,255,0.62)' },
   dockInner: { flexDirection: 'row', alignItems: 'center', minHeight: 68,

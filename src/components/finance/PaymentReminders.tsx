@@ -33,8 +33,8 @@ const money = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 /** Lembretes são independentes dos lançamentos: não criam uma despesa automaticamente. */
-export function PaymentReminders({ month, year, compact = false, hidden = false }: {
-  month: number; year: number; compact?: boolean; hidden?: boolean;
+export function PaymentReminders({ month, year, compact = false, hidden = false, stretch = false }: {
+  month: number; year: number; compact?: boolean; hidden?: boolean; stretch?: boolean;
 }) {
   const auth = useProfileSession();
   const userId = auth?.session.user.id;
@@ -141,7 +141,7 @@ export function PaymentReminders({ month, year, compact = false, hidden = false 
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
     .slice(0, 3);
   if (compact && !expanded) {
-    return <OceanGlass material="soft" radius={19} style={compactStyles.panel}>
+    return <OceanGlass material="soft" radius={19} style={[compactStyles.panel, stretch && compactStyles.fill]}>
       <View style={compactStyles.heading}>
         <Text style={[compactStyles.headingText, { color: theme.text }]}
           accessibilityRole="header">▦ Próximos vencimentos</Text>
@@ -322,7 +322,8 @@ const baseStyles = StyleSheet.create({
 });
 
 const compactStyles = StyleSheet.create({
-  panel: { padding: 18, gap: 10, minHeight: 220 },
+  panel: { padding: 18, gap: 10, minHeight: 224 },
+  fill: { flex: 1 },
   heading: { flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 },
   headingText: { fontSize: 15, fontWeight: '900' },

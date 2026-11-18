@@ -167,12 +167,15 @@ export function AccessibilityToolbar() {
 
   return (
     <>
-      <View style={[ui.floatingArea, { top: Math.max(16, Math.round(height / 2) - 100), right: 8 }]}>
+      <View style={[ui.floatingArea, {
+        // On small screens the control stays above the period selector, never over the balance card.
+        top: width < 620 ? 101 : 16, right: 8,
+      }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Abrir opções de acessibilidade"
           accessibilityHint="Configurar tema, tamanho de texto, som e tradução para Libras"
           accessibilityState={{ expanded: open }}
           onPress={() => setOpen(true)} style={ui.floatingButton}>
-          <Svg width={35} height={35} viewBox="0 0 48 48" fill="none"
+          <Svg width={30} height={30} viewBox="0 0 48 48" fill="none"
             accessibilityLabel="Símbolo de acessibilidade">
             <Circle cx={24} cy={8.5} r={3.6} fill="#FFFFFF" />
             <Path d="M9 18 24 16.5 39 18M24 17v12M24 29l-10 13M24 29l10 13"
@@ -355,7 +358,7 @@ const ui = StyleSheet.create({
     position: 'absolute', zIndex: 1000, elevation: 12, pointerEvents: 'box-none',
   },
   floatingButton: {
-    width: 56, height: 56, borderRadius: 28, alignItems: 'center',
+    width: 48, height: 48, borderRadius: 24, alignItems: 'center',
     justifyContent: 'center', backgroundColor: '#0B7189',
     borderWidth: 2, borderColor: '#FFFFFF',
     ...Platform.select({

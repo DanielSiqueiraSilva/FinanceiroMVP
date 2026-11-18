@@ -316,6 +316,7 @@ export function FinanceWorkspace() {
         salvandoLimite={savingLimit}
         onSalvarLimite={atualizarLimite}
         onNavigate={irPara} onNewTransaction={abrirNovoLancamento}
+        onQuickTransaction={kind => acaoRapida(kind)}
       />
     );
   };
@@ -366,7 +367,10 @@ export function FinanceWorkspace() {
               </View>
             </View>
           ) : (
-            <View style={s.mobileTopBar}>
+            <View style={[s.mobileTopBar, {
+              backgroundColor: isDark ? '#0B2940' : '#EDF8FA',
+              borderColor: isDark ? 'rgba(139,218,227,.24)' : '#C5DBE2',
+            }]}>
               <View style={s.mobileBrandWrap}>
                 <BrandMark size={36}/>
                 <Text style={[s.mobileBrand, { color: theme.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{OCEAFIN.name.toLowerCase()}</Text>
@@ -469,10 +473,11 @@ const base = StyleSheet.create({
   main: { flex: 1, minWidth: 0 },
   scroll: { flex: 1, minWidth: 0 },
   content: { width: '100%', alignSelf: 'center', paddingHorizontal: 24, paddingVertical: 23,
-    paddingBottom: 110, gap: 20 },
-  contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 135, gap: 18 },
+    paddingBottom: 40, gap: 18 },
+  // The mobile dock now occupies its own safe area rather than covering the scroll content.
+  contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 26, gap: 16 },
   mobileTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    gap: 8, minHeight: 66, backgroundColor: '#0B1F4B', borderRadius: 20,
+    gap: 8, minHeight: 66, borderWidth: 1, borderRadius: 18,
     paddingHorizontal: 13, paddingVertical: 9 },
   mobileBrandWrap: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: 7 },
   mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 21,
@@ -493,7 +498,7 @@ const base = StyleSheet.create({
   mobileThemeText: { color: '#C6FDF8', fontSize: 20, fontWeight: '800' },
   overline: { color: '#6D28D9', fontWeight: '900', fontSize: 10, letterSpacing: 1.5 },
   appName: { color: '#111827', fontWeight: '900', fontSize: 27, letterSpacing: -0.6 },
-  mobileHeading: { gap: 2 },
+  mobileHeading: { gap: 3, paddingHorizontal: 2 },
   section: { gap: 16 },
   forecastCard: { backgroundColor: '#FFFFFF', borderWidth: 1,
     borderColor: '#DDD6E6', borderRadius: 18, padding: 15, gap: 10 },

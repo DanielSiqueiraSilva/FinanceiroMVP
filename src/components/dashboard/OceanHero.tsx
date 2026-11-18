@@ -35,12 +35,13 @@ function HeroOceanArt() {
   </Svg>;
 }
 
-export function OceanHero({ balance, monthResult, period, hidden, onToggle, onAccounts, prototype = false }: {
+export function OceanHero({ balance, monthResult, period, hidden, onToggle, onAccounts, prototype = false, fillHeight = false }: {
   balance: number | null; monthResult: number | null; period: string;
-  hidden: boolean; onToggle: () => void; onAccounts: () => void; prototype?: boolean;
+  hidden: boolean; onToggle: () => void; onAccounts: () => void; prototype?: boolean; fillHeight?: boolean;
 }) {
   const value = balance === null ? 'Sem estimativa' : hidden ? 'R$ •••••' : moeda(balance);
-  if (prototype) return <View style={[styles.hero, styles.heroPrototype]}
+  if (prototype) return <View style={[styles.hero, styles.heroPrototype,
+    fillHeight && styles.heroFill]}
     testID="oceafin-prototype-hero">
     <HeroOceanArt />
     <View pointerEvents="none" style={styles.topLight}/>
@@ -112,6 +113,7 @@ export function OceanHero({ balance, monthResult, period, hidden, onToggle, onAc
 }
 
 const styles = StyleSheet.create({
+  heroFill: { flex: 1 },
   heroPrototype: { minHeight: 203, paddingHorizontal: 23, paddingVertical: 20,
     justifyContent: 'space-between', gap: 9, borderColor: 'rgba(173,255,251,0.73)' },
   heroPrototypeHeader: { flexDirection: 'row', alignItems: 'center',
