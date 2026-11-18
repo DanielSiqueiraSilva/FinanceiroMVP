@@ -26,6 +26,7 @@ type Props = {
   onSalvarLimite: (valor: number) => Promise<void>;
   onNavigate: (target: Destination) => void;
   onNewTransaction?: () => void;
+  onQuickTransaction?: (kind: 'receita' | 'despesa') => void;
 };
 
 const sky = '#BDE9F2';
@@ -35,12 +36,12 @@ const FLOW_OPTIONS = [
   { value: 'income', label: 'Receitas' },
   { value: 'expense', label: 'Despesas' },
 ] as const;
-function Panel({ title, link, onLink, children, dark = true, style }: {
+function Panel({ title, link, onLink, children, dark = true, style, fill = false }: {
   title: string; link?: string; onLink?: () => void;
-  children: ReactNode; dark?: boolean; style?: ViewStyle;
+  children: ReactNode; dark?: boolean; style?: ViewStyle; fill?: boolean;
 }) {
   return (
-    <OceanGlass material="soft" dark={dark} radius={19} style={[styles.panel, style]}>
+    <OceanGlass material="soft" dark={dark} radius={19} style={[styles.panel, fill && styles.panelFill, style]}>
       <View style={styles.panelHeading}>
         <Text accessibilityRole="header" style={[styles.panelTitle,
           { color: dark ? '#F2FCFF' : '#0B304B' }]}>{title}</Text>
@@ -55,15 +56,16 @@ function Panel({ title, link, onLink, children, dark = true, style }: {
     </OceanGlass>
   );
 }
-function StatCard({ type, amount, hidden, dark }: {
+function StatCard({ type, amount, hidden, dark, compact }: {
   type: 'receita' | 'despesa'; amount: number | null; hidden: boolean; dark: boolean;
+  compact: boolean;
 }) {
   const income = type === 'receita';
   const label = income ? 'Receitas do mês' : 'Despesas do mês';
   const text = amount === null ? 'Indisponível' : hidden ? 'R$ •••••' : moeda(amount);
   return <View accessible accessibilityLabel={label + ': ' +
     (amount === null ? 'indisponível' : hidden ? 'valor oculto' : moeda(amount))}
-    style={[styles.stat, {
+    style={[styles.stat, compact && styles.statCompact, {
       backgroundColor: income ?
         dark ? 'rgba(0,108,111,.32)' : '#E7FCF7' :
         dark ? 'rgba(91,48,91,.32)' : '#FFF0F3',
@@ -72,7 +74,7 @@ function StatCard({ type, amount, hidden, dark }: {
     <Text style={[styles.statLabel, { color: dark ? sky : '#527284' }]}>
       {income ? '↗' : '↘'} {label}
     </Text>
-    <Text style={[styles.statValue, { color: dark ? '#FFFFFF' : '#0B304B' }]}
+    <Text style={[styles.statValue, compact && styles.statValueCompact, { color: dark ? '#FFFFFF' : '#0B304B' }]}
       adjustsFontSizeToFit minimumFontScale={0.75} numberOfLines={2}>{text}</Text>
     <Text style={[styles.statHint, { color: income ? dark ? '#7BE9D6' : '#096D61' :
       dark ? '#F6A9C4' : '#A54459' }]}>
@@ -80,13 +82,13 @@ function StatCard({ type, amount, hidden, dark }: {
     </Text>
   </View>;
 }
-function FlowBars({ transactions, hidden, dark }: {
-  transactions: readonly Lancamento[]; hidden: boolean; dark: boolean;
+function FlowBars({ transactions, hidden, dark, fill }: {
+  transactions: readonly Lancamento[]; hidden: boolean; dark: boolean; fill: boolean;
 }) {
   const [selected, setSelected] = useState<'income' | 'expense'>('income');
   const data = useMemo(() => fourWeekFlow(transactions), [transactions]);
   const maximum = Math.max(1, ...data.map(x => x[selected]));
-  return <Panel title="▥ Evolução do mês" dark={dark}>
+  return <Panel title="Evolução do mês" dark={dark} fill={fill} style={styles.evolutionPanel}>
     <OceanSegmentedControl value={selected}
       options={FLOW_OPTIONS} onChange={setSelected}/>
     {transactions.length === 0 ?
@@ -117,13 +119,13 @@ function FlowBars({ transactions, hidden, dark }: {
     </View>
   </Panel>;
 }
-function GoalPanel({ planner, hidden, dark, onNavigate }: {
-  planner: PlannerData | null; hidden: boolean; dark: boolean; onNavigate: () => void;
+function GoalPanel({ planner, hidden, dark, onNavigate, fill }: {
+  planner: PlannerData | null; hidden: boolean; dark: boolean; onNavigate: () => void; fill: boolean;
 }) {
   const goal = planner?.goals.find(g => g.active);
   const progress = goal && planner ? goalProgress(goal, planner.contributions) : null;
-  return <Panel title="◎ Meta e planejamento" link="Ver metas"
-    onLink={onNavigate} dark={dark}>
+  return <Panel title="Meta e planejamento" link="Ver metas"
+    onLink={onNavigate} dark={dark} fill={fill}>
     {goal && progress ? <>
       <Text style={[styles.bodyBold, { color: dark ? '#F3FBFF' : '#08314A' }]}>
         {goal.name}</Text>
@@ -146,20 +148,20 @@ function GoalPanel({ planner, hidden, dark, onNavigate }: {
   </Panel>;
 }
 function BudgetPanel({ spent, limit, planner, onNavigate, hidden, dark,
-  salvandoLimite, onSalvarLimite, monthKey }: {
+  salvandoLimite, onSalvarLimite, monthKey, fill }: {
   spent: number; limit: number; planner: PlannerData | null;
   onNavigate: () => void; hidden: boolean; dark: boolean;
   salvandoLimite: boolean; onSalvarLimite: (value: number) => Promise<void>;
-  monthKey: string;
+  monthKey: string; fill: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   // The global monthly limit is distinct from category budgets.
   const categories = planner?.budgets.filter(x => x.amount > 0) ?? [];
   const allocated = categories.reduce((s, b) => s + Number(b.amount), 0);
   const used = limit > 0 ? Math.round(spent / limit * 100) : null;
-  return <Panel title="◉ Orçamento do mês"
+  return <Panel title="Orçamento do mês"
     link={expanded ? 'Fechar detalhes' : 'Ver detalhes'}
-    onLink={() => setExpanded(!expanded)} dark={dark}>
+    onLink={() => setExpanded(!expanded)} dark={dark} fill={fill}>
     {limit > 0 ? <>
       <Text style={[styles.tiny, { color: dark ? sky : '#537486' }]}>
         {hidden ? 'Valores ocultos' : moeda(spent) + ' de ' + moeda(limit)}
@@ -195,12 +197,13 @@ function BudgetPanel({ spent, limit, planner, onNavigate, hidden, dark,
 /** Real-data implementation of the supplied HTML visual model. */
 export function OceanPrototypeDashboard({
   resumo, lancamentos, planner, forecasts, mes, ano, limite,
-  salvandoLimite, onSalvarLimite, onNavigate, onNewTransaction,
+  salvandoLimite, onSalvarLimite, onNavigate, onNewTransaction, onQuickTransaction,
 }: Props) {
   const { isDark } = useAccessibility();
   const [hidden, setHidden] = useState(false);
   const [layoutWidth, setLayoutWidth] = useState(0);
   const wide = layoutWidth >= 720;
+  const compact = layoutWidth < 400;
   const dark = isDark;
   const period = String(mes).padStart(2,'0') + '/' + ano;
   const balances = useMemo(() => plannerBalances(planner), [planner]);
@@ -213,67 +216,101 @@ export function OceanPrototypeDashboard({
     hidden ? 'R$ •••••' : moeda(value);
   return <View onLayout={e => setLayoutWidth(e.nativeEvent.layout.width)}
     style={styles.root} testID="oceafin-prototype-dashboard">
-    <View style={[styles.firstRow, !wide && styles.stack]}>
-      <View style={styles.heroSpace}>
+    <View style={[styles.firstRow, !wide && styles.firstRowMobile]}
+      testID="oceafin-dashboard-summary">
+      <View style={[styles.heroSpace, !wide && styles.heroSpaceMobile]}>
         <OceanHero balance={balances.accountTotal} monthResult={resumo?.saldo ?? null}
-          prototype period={period} hidden={hidden} onToggle={() => setHidden(!hidden)}
-          onAccounts={() => onNavigate('contas')}/>
+          prototype fillHeight={wide} period={period} hidden={hidden}
+          onToggle={() => setHidden(!hidden)} onAccounts={() => onNavigate('contas')}/>
       </View>
-      <View style={[styles.statStack, !wide && styles.statsHorizontal]}>
+      <View style={[styles.statStack, !wide && styles.statStackMobile]}>
         <StatCard type="receita" amount={resumo?.totalReceitas ?? null}
-          hidden={hidden} dark={dark}/>
+          hidden={hidden} dark={dark} compact={compact}/>
         <StatCard type="despesa" amount={resumo?.totalDespesas ?? null}
-          hidden={hidden} dark={dark}/>
+          hidden={hidden} dark={dark} compact={compact}/>
       </View>
     </View>
-    <View style={[styles.twoColumns, !wide && styles.stack]}>
-      <View style={styles.column}>
-        <FlowBars transactions={lancamentos} hidden={hidden} dark={dark}/>
+    <View style={styles.quickActions} testID="oceafin-dashboard-quick-actions">
+      <View style={styles.quickCopy}>
+        <Text style={[styles.quickHeading,{color:dark?'#F3FBFF':'#0B304B'}]}>
+          Ações rápidas
+        </Text>
+        {wide && <Text style={[styles.tiny,{color:dark?sky:'#527486'}]}>
+          Registre suas movimentações sem sair da visão geral.
+        </Text>}
       </View>
-      <View style={styles.column}>
-        <PaymentReminders month={mes} year={ano} compact hidden={hidden} />
+      <View style={[styles.quickButtons,!wide && styles.quickButtonsMobile]}>
+        <View style={styles.quickActionCell}>
+          <OceanButton fullWidth variant="glass" label="+ Receita"
+            onPress={() => onQuickTransaction ?
+              onQuickTransaction('receita') : onNavigate('lancamentos')}/>
+        </View>
+        <View style={styles.quickActionCell}>
+          <OceanButton fullWidth variant="glass" label="− Despesa"
+            onPress={() => onQuickTransaction ?
+              onQuickTransaction('despesa') : (onNewTransaction ?
+                onNewTransaction() : onNavigate('lancamentos'))}/>
+        </View>
+        {wide && <Pressable accessibilityRole="button" onPress={() => onNavigate('lancamentos')}
+          style={styles.quickTextLink}>
+          <Text style={[styles.panelLink,{color:dark?'#8AF0E8':'#087488'}]}>
+            Ver lançamentos ›
+          </Text>
+        </Pressable>}
       </View>
     </View>
-    <View style={[styles.twoColumns, !wide && styles.stack]}>
-      <View style={styles.column}><GoalPanel planner={planner} hidden={hidden}
-        dark={dark} onNavigate={() => onNavigate('metas')}/></View>
-      <View style={styles.column}><BudgetPanel
-        spent={resumo?.totalDespesas ?? 0} limit={limite} planner={planner}
-        dark={dark} hidden={hidden} monthKey={period}
-        salvandoLimite={salvandoLimite} onSalvarLimite={onSalvarLimite}
-        onNavigate={() => onNavigate('metas')}/></View>
+    <View style={[styles.twoColumns,!wide && styles.stack]}
+      testID="oceafin-dashboard-flow-reminders">
+      <View style={[styles.column,!wide && styles.columnMobile]}>
+        <FlowBars transactions={lancamentos} hidden={hidden} dark={dark} fill={wide}/>
+      </View>
+      <View style={[styles.column,!wide && styles.columnMobile]}>
+        <PaymentReminders month={mes} year={ano} compact hidden={hidden} stretch={wide}/>
+      </View>
     </View>
-    <View style={[styles.twoColumns, !wide && styles.stack]}>
-      <View style={styles.column}>
-        <Panel title="▣ Contas e cartões" link="Ver contas"
+    <View style={[styles.twoColumns,!wide && styles.stack]}>
+      <View style={[styles.column,!wide && styles.columnMobile]}>
+        <GoalPanel planner={planner} hidden={hidden} dark={dark}
+          fill={wide} onNavigate={() => onNavigate('metas')}/>
+      </View>
+      <View style={[styles.column,!wide && styles.columnMobile]}>
+        <BudgetPanel spent={resumo?.totalDespesas ?? 0} limit={limite} planner={planner}
+          dark={dark} hidden={hidden} monthKey={period} fill={wide}
+          salvandoLimite={salvandoLimite} onSalvarLimite={onSalvarLimite}
+          onNavigate={() => onNavigate('metas')}/>
+      </View>
+    </View>
+    <View style={[styles.twoColumns,!wide && styles.stack]}>
+      <View style={[styles.column,!wide && styles.columnMobile]}>
+        <Panel title="Contas e cartões" link="Ver contas" fill={wide}
           onLink={() => onNavigate('contas')} dark={dark}>
           <View style={styles.miniRow}>
-            <Text style={[styles.tiny, { color: dark ? sky : '#527486' }]}>
+            <Text style={[styles.tiny,{color:dark?sky:'#527486'}]}>
               Compras pendentes nos cartões</Text>
-            <Text style={[styles.miniValue, { color: dark ? '#E3FFFF' : '#07324A' }]}>
+            <Text style={[styles.miniValue,{color:dark?'#E3FFFF':'#07324A'}]}>
               {show(outstanding)}</Text>
           </View>
-          <Text style={[styles.tiny, { color: dark ? sky : '#527486' }]}>
+          <Text style={[styles.tiny,{color:dark?sky:'#527486'}]}>
             Valor registrado no app; não é a fatura oficial do banco.
           </Text>
         </Panel>
       </View>
-      <View style={styles.column}>
-        <Panel title="⟳ Automações" link="Abrir calendário"
+      <View style={[styles.column,!wide && styles.columnMobile]}>
+        <Panel title="Automações" link="Abrir calendário" fill={wide}
           onLink={() => onNavigate('automacao')} dark={dark}>
           {upcoming.length ? upcoming.map(({rule}) => <View key={rule.id}
             style={styles.miniRow}>
-            <Text style={[styles.tiny, { color: dark ? sky : '#527486', flex: 1 }]}>
+            <Text style={[styles.tiny,{color:dark?sky:'#527486',flex:1}]}>
               Dia {rule.day_of_month} · {rule.description}</Text>
-            <Text style={[styles.miniValue, { color: dark ? '#E3FFFF' : '#07324A' }]}>
+            <Text style={[styles.miniValue,{color:dark?'#E3FFFF':'#07324A'}]}>
               {show(rule.amount)}</Text>
-          </View>) : <Text style={[styles.empty, { color: dark ? sky : '#527486' }]}>
+          </View>) : <Text style={[styles.empty,{color:dark?sky:'#527486'}]}>
             Nenhuma recorrência prevista para este mês.
           </Text>}
         </Panel>
       </View>
     </View>
-    <Panel title="▤ Últimos lançamentos" dark={dark}
+    <Panel title="Últimos lançamentos" dark={dark}
       link="Ver todos" onLink={() => onNavigate('lancamentos')}>
       {recent.length ? recent.map(tx => <View key={tx.id} style={styles.transaction}>
         <View style={[styles.transactionIcon, { backgroundColor:
@@ -297,10 +334,6 @@ export function OceanPrototypeDashboard({
         Maior categoria de gastos: {categories[0].categoria} · {moeda(categories[0].valor)}
       </Text>}
     </Panel>
-    <View style={styles.addRow}>
-      <OceanButton variant="primary" label="Novo lançamento" icon="lancamentos"
-        onPress={onNewTransaction || (() => onNavigate('lancamentos'))}/>
-    </View>
     <Text style={[styles.disclaimer,{color:dark?sky:'#527486'}]}>
       Dados do período {period}. O saldo de contas é estimado a partir dos registros;
       pagamentos, recorrências previstas e metas não representam transações bancárias.
@@ -308,27 +341,44 @@ export function OceanPrototypeDashboard({
   </View>;
 }
 const styles = StyleSheet.create({
-  root: { gap: 15, width: '100%', paddingBottom: 8 },
-  addRow: { alignItems: 'flex-start' },
-  firstRow: { flexDirection: 'row', gap: 15, alignItems: 'stretch' },
+  root: { gap: 16, width: '100%', paddingBottom: 10 },
+  firstRow: { flexDirection: 'row', gap: 14, alignItems: 'stretch' },
+  firstRowMobile: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
   heroSpace: { flex: 1.65, minWidth: 0 },
+  heroSpaceMobile: { flex: 0, width: '100%' },
   statStack: { flex: 0.9, minWidth: 0, gap: 12 },
-  statsHorizontal: { flexDirection: 'row', flex: 0, flexWrap: 'wrap' },
-  stack: { flexDirection: 'column' },
-  stat: { minWidth: 0, flex: 1, borderRadius: 20, borderWidth: 1,
-    padding: 18, gap: 7, justifyContent: 'space-between' },
+  statStackMobile: { flex: 0, flexDirection: 'row',
+    width: '100%', alignItems: 'stretch', gap: 10 },
+  stack: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
+  stat: { minWidth: 0, flex: 1, borderRadius: 18, borderWidth: 1,
+    paddingHorizontal: 17, paddingVertical: 15, gap: 6,
+    justifyContent: 'space-between', minHeight: 98 },
+  statCompact: { paddingHorizontal: 12, paddingVertical: 13, minHeight: 110 },
   statLabel: { fontSize: 12, fontWeight: '700' },
   statValue: { fontWeight: '900', fontSize: 22,
     fontFamily: Platform.OS === 'web' ? 'Manrope' : undefined },
+  statValueCompact: { fontSize: 20 },
   statHint: { fontSize: 10.5, fontWeight: '700' },
-  twoColumns: { flexDirection: 'row', gap: 15 },
-  column: { flex: 1, minWidth: 0 },
-  panel: { padding: 18, gap: 12, minHeight: 138 },
+  quickActions: { flexDirection: 'row', gap: 12, flexWrap: 'wrap',
+    alignItems: 'center', justifyContent: 'space-between', paddingVertical: 1 },
+  quickCopy: { gap: 4, flexGrow: 0, minWidth: 0 },
+  quickHeading: { fontSize: 14, fontWeight: '800' },
+  quickButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, alignItems: 'center' },
+  quickButtonsMobile: { width: '100%', flexWrap: 'nowrap' },
+  quickActionCell: { minWidth: 110, flexGrow: 1, flexBasis: 110 },
+  quickTextLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  twoColumns: { flexDirection: 'row', gap: 14, alignItems: 'stretch' },
+  column: { flex: 1, minWidth: 0, alignSelf: 'stretch' },
+  columnMobile: { flex: 0, width: '100%' },
+  panel: { padding: 18, gap: 10, minHeight: 155 },
+  panelFill: { flex: 1 },
+  evolutionPanel: { minHeight: 224 },
   panelHeading: { flexDirection: 'row', flexWrap: 'wrap', gap: 7,
     alignItems: 'center', justifyContent: 'space-between' },
-  panelTitle: { fontSize: 15, fontWeight: '900',
+  panelTitle: { fontSize: 15, fontWeight: '800',
     fontFamily: Platform.OS === 'web' ? 'Manrope' : undefined },
-  linkButton: { paddingHorizontal: 4, minHeight: 42, justifyContent: 'center' },
+  linkButton: { paddingHorizontal: 6, minHeight: 38, justifyContent: 'center',
+    borderRadius: 10 },
   panelLink: { fontSize: 11, fontWeight: '800' },
   segment: { flexDirection: 'row', gap: 2, alignSelf: 'flex-end',
     borderRadius: 20, backgroundColor: 'rgba(14,61,84,.48)',
