@@ -81,6 +81,27 @@ try {
         } else {
           assert.equal(brandDisplay,'none','Mobile must prioritize the Glass Central card');
         }
+        // Oceafin's O-wave logo must be visible and every SVG gradient must be
+        // resolvable without collisions between mobile, sidebar, and login copies.
+        const logoCheck = await page.locator('[data-testid="oceafin-login-glass"] svg')
+          .first().evaluate(svg => {
+            const bounds = svg.getBoundingClientRect();
+            const ownIds = Array.from(svg.querySelectorAll('linearGradient[id]'))
+              .map(node => node.id);
+            const fills = Array.from(svg.querySelectorAll('path'))
+              .map(node => node.getAttribute('fill') || '')
+              .filter(fill => fill.startsWith('url(#'))
+              .map(fill => fill.slice(5,-1));
+            const all = Array.from(document.querySelectorAll('linearGradient[id]'));
+            return { size: [bounds.width,bounds.height], gradients: ownIds.length,
+              fills: fills.length,
+              valid: fills.every(id => ownIds.includes(id) &&
+                all.filter(node => node.id === id).length === 1) };
+          });
+        assert.ok(logoCheck.size[0] >= 20 && logoCheck.size[1] >= 20,
+          'Oceafin O-wave mark is invisible');
+        assert.ok(logoCheck.gradients >= 3 && logoCheck.fills >= 3 && logoCheck.valid,
+          'Oceafin logo gradient references are missing or duplicated');
         await page.getByRole('button',{name:'Entrar com chave de acesso'}).waitFor();
         await page.getByRole('button',{name:'Mostrar senha'}).click();
         await page.getByRole('button',{name:'Ocultar senha'}).waitFor();
