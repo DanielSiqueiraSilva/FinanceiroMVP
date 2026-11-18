@@ -26,7 +26,7 @@ const transactions: Lancamento[] = [
 ];
 export default function OceanLayoutQAFixture() {
   const { width } = useWindowDimensions();
-  const available = Math.max(280, width - (width >= 900 ? 275 : 24));
+  const available = Math.max(280, width - (width >= 1100 ? 275 : 24));
   return <ScrollView style={{ flex: 1, backgroundColor: '#0D1C29' }}
     contentContainerStyle={{ padding: 12, alignItems: 'center' }}>
     <View style={{ width: '100%', maxWidth: Math.min(1250,available) }}>

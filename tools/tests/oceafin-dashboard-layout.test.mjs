@@ -61,7 +61,8 @@ try {
         const actualWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
         assert.ok(actualWidth<=width+3,
           'Horizontal overflow '+actualWidth+' at '+width);
-        const wide=rootBox.width>=720;
+        // Tablet and desktop switch follows the actual application chrome breakpoint.
+        const wide=width>=1100;
         if(wide) {
           assert.ok(receipts.x>=hero.x+hero.width-3,
             'Desktop receipt card must be beside the balance');
