@@ -195,7 +195,7 @@ export function OceanSidebar({ pages, groups, active, onNavigate, profileName }:
         accessibilityLabel={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
         accessibilityState={{ expanded: !collapsed }}
         style={[styles.collapseButton, collapsed && styles.collapseCompact]}>
-        <Text style={styles.collapseLabel}>{collapsed ? '›' : '‹   Recolher'}</Text>
+        <Text style={styles.collapseLabel}>{collapsed ? '›' : '‹'}</Text>
       </Pressable>
       <ScrollView style={styles.sidebarScroll} showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
@@ -360,11 +360,12 @@ const styles = StyleSheet.create({
   brandName: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.7,
     fontFamily: Platform.OS === 'web' ? 'Montserrat' : undefined },
   brandTagline: { fontSize: 8.5, letterSpacing: 1, color: '#BFE8F0', fontWeight: '700' },
-  collapseButton: { height: 44, borderRadius: 14, borderWidth: 1,
+  collapseButton: { width: 42, height: 42, alignSelf: 'flex-end',
+    borderRadius: 21, borderWidth: 1,
     borderColor: 'rgba(198,246,255,0.22)', justifyContent: 'center',
-    alignItems: 'center', marginBottom: 10 },
-  collapseCompact: { paddingHorizontal: 0 },
-  collapseLabel: { fontSize: 13, color: '#E1F9FD', fontWeight: '700' },
+    alignItems: 'center', marginBottom: 12, marginRight: 5 },
+  collapseCompact: { alignSelf: 'center', marginRight: 0 },
+  collapseLabel: { fontSize: 29, lineHeight: 32, color: '#D8F8F8', fontWeight: '500' },
   sidebarScroll: { flex: 1 },
   scrollContent: { paddingBottom: 24 },
   sidebarSections: { position: 'relative', gap: 12 },

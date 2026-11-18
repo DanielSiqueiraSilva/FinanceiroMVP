@@ -3,7 +3,9 @@ import { existsSync, writeFileSync } from 'node:fs';
 // This fixture exists only in the CI runner. It is never committed to src/app.
 const path = 'src/app/ocean-layout-qa.tsx';
 if (existsSync(path)) throw new Error('Temporary dashboard test route already exists');
-writeFileSync(path, `import { ScrollView, View, useWindowDimensions } from 'react-native';
+writeFileSync(path, `import { ScrollView, View } from 'react-native';
+import { useOceanViewport } from '../design/useOceanViewport';
+import { useAccessibility } from '../accessibility/AccessibilityContext';
 import { OceanPrototypeDashboard } from '../components/dashboard/OceanPrototypeDashboard';
 import type { PlannerData } from '../services/finance-planner';
 import type { Lancamento, ResumoFinanceiro } from '../types/finance';
@@ -25,9 +27,11 @@ const transactions: Lancamento[] = [
     data: '2026-11-08', tipo: 'despesa', valor: 300 },
 ];
 export default function OceanLayoutQAFixture() {
-  const { width } = useWindowDimensions();
-  const available = Math.max(280, width - (width >= 900 ? 275 : 24));
-  return <ScrollView style={{ flex: 1, backgroundColor: '#0D1C29' }}
+  const width = useOceanViewport();
+  const { isDark } = useAccessibility();
+  const available = Math.max(280, width - (width >= 1100 ? 275 : 24));
+  return <ScrollView style={{ flex: 1,
+    backgroundColor: isDark ? '#0D1C29' : '#EEF5F7' }}
     contentContainerStyle={{ padding: 12, alignItems: 'center' }}>
     <View style={{ width: '100%', maxWidth: Math.min(1250,available) }}>
       <OceanPrototypeDashboard

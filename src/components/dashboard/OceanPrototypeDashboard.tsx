@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { useOceanViewport } from '../../design/useOceanViewport';
 import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { OceanGlass } from '../../design/OceanGlass';
@@ -76,7 +77,7 @@ function StatCard({ type, amount, hidden, dark, compact }: {
       {income ? '↗' : '↘'} {label}
     </Text>
     <Text style={[styles.statValue, compact && styles.statValueCompact, { color: dark ? '#FFFFFF' : '#0B304B' }]}
-      adjustsFontSizeToFit minimumFontScale={0.75} numberOfLines={2}>{text}</Text>
+      adjustsFontSizeToFit minimumFontScale={0.65} numberOfLines={1}>{text}</Text>
     <Text style={[styles.statHint, { color: income ? dark ? '#7BE9D6' : '#096D61' :
       dark ? '#F6A9C4' : '#A54459' }]}>
       {income ? 'Entradas registradas' : 'Saídas registradas'}
@@ -215,8 +216,11 @@ export function OceanPrototypeDashboard({
   const { isDark } = useAccessibility();
   const [hidden, setHidden] = useState(false);
   const [layoutWidth, setLayoutWidth] = useState(0);
-  const wide = layoutWidth >= 720;
-  const compact = layoutWidth < 400;
+  const viewportWidth = useOceanViewport();
+  // Expo Web may report zero from onLayout initially; do not collapse the mobile
+  // card columns or force a desktop layout in a narrow container.
+  const wide = viewportWidth >= 1100 && (layoutWidth === 0 || layoutWidth >= 720);
+  const compact = (layoutWidth || viewportWidth) < 350;
   const dark = isDark;
   const period = String(mes).padStart(2,'0') + '/' + ano;
   const balances = useMemo(() => plannerBalances(planner), [planner]);
@@ -231,12 +235,12 @@ export function OceanPrototypeDashboard({
     style={styles.root} testID="oceafin-prototype-dashboard">
     <View style={[styles.firstRow, !wide && styles.firstRowMobile]}
       testID="oceafin-dashboard-summary">
-      <View style={[styles.heroSpace, !wide && styles.heroSpaceMobile]}>
+      <View style={wide ? styles.heroSpace : styles.heroSpaceMobile}>
         <OceanHero balance={balances.accountTotal} monthResult={resumo?.saldo ?? null}
           prototype fillHeight={wide} period={period} hidden={hidden}
           onToggle={() => setHidden(!hidden)} onAccounts={() => onNavigate('contas')}/>
       </View>
-      <View style={[styles.statStack, !wide && styles.statStackMobile]}>
+      <View style={wide ? styles.statStack : styles.statStackMobile}>
         <StatCard type="receita" amount={resumo?.totalReceitas ?? null}
           hidden={hidden} dark={dark} compact={compact}/>
         <StatCard type="despesa" amount={resumo?.totalDespesas ?? null}
@@ -274,19 +278,19 @@ export function OceanPrototypeDashboard({
     </View>
     <View style={[styles.twoColumns,!wide && styles.stack]}
       testID="oceafin-dashboard-flow-reminders">
-      <View style={[styles.column,!wide && styles.columnMobile]}>
+      <View style={wide ? styles.column : styles.columnMobile}>
         <FlowBars transactions={lancamentos} hidden={hidden} dark={dark} fill={wide}/>
       </View>
-      <View style={[styles.column,!wide && styles.columnMobile]}>
+      <View style={wide ? styles.column : styles.columnMobile}>
         <PaymentReminders month={mes} year={ano} compact hidden={hidden} stretch={wide}/>
       </View>
     </View>
     <View style={[styles.twoColumns,!wide && styles.stack]}>
-      <View style={[styles.column,!wide && styles.columnMobile]}>
+      <View style={wide ? styles.column : styles.columnMobile}>
         <GoalPanel planner={planner} hidden={hidden} dark={dark}
           fill={wide} onNavigate={() => onNavigate('metas')}/>
       </View>
-      <View style={[styles.column,!wide && styles.columnMobile]}>
+      <View style={wide ? styles.column : styles.columnMobile}>
         <BudgetPanel spent={resumo?.totalDespesas ?? 0} limit={limite} planner={planner}
           dark={dark} hidden={hidden} monthKey={period} fill={wide}
           salvandoLimite={salvandoLimite} onSalvarLimite={onSalvarLimite}
@@ -294,7 +298,7 @@ export function OceanPrototypeDashboard({
       </View>
     </View>
     <View style={[styles.twoColumns,!wide && styles.stack]}>
-      <View style={[styles.column,!wide && styles.columnMobile]}>
+      <View style={wide ? styles.column : styles.columnMobile}>
         <Panel title="Contas e cartões" link="Ver contas" fill={wide}
           onLink={() => onNavigate('contas')} dark={dark}>
           <View style={styles.miniRow}>
@@ -308,7 +312,7 @@ export function OceanPrototypeDashboard({
           </Text>
         </Panel>
       </View>
-      <View style={[styles.column,!wide && styles.columnMobile]}>
+      <View style={wide ? styles.column : styles.columnMobile}>
         <Panel title="Automações" link="Abrir calendário" fill={wide}
           onLink={() => onNavigate('automacao')} dark={dark}>
           {upcoming.length ? upcoming.map(({rule}) => <View key={rule.id}
@@ -356,11 +360,12 @@ export function OceanPrototypeDashboard({
 const styles = StyleSheet.create({
   root: { gap: 16, width: '100%', paddingBottom: 10 },
   firstRow: { flexDirection: 'row', gap: 14, alignItems: 'stretch' },
-  firstRowMobile: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
+  firstRowMobile: { flexDirection: 'column', alignItems: 'stretch', gap: 12,
+    flexGrow: 0, flexShrink: 0 },
   heroSpace: { flex: 1.65, minWidth: 0 },
-  heroSpaceMobile: { flex: 0, width: '100%' },
+  heroSpaceMobile: { width: '100%', flexGrow: 0, flexShrink: 0 },
   statStack: { flex: 0.9, minWidth: 0, gap: 12 },
-  statStackMobile: { flex: 0, flexDirection: 'row',
+  statStackMobile: { flexDirection: 'row', flexGrow: 0, flexShrink: 0,
     width: '100%', alignItems: 'stretch', gap: 10 },
   stack: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
   stat: { minWidth: 0, flex: 1, borderRadius: 18, borderWidth: 1,
@@ -370,7 +375,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12, fontWeight: '700' },
   statValue: { fontWeight: '900', fontSize: 22,
     fontFamily: Platform.OS === 'web' ? 'Manrope' : undefined },
-  statValueCompact: { fontSize: 20 },
+  statValueCompact: { fontSize: 16 },
   statHint: { fontSize: 10.5, fontWeight: '700' },
   quickActions: { flexDirection: 'row', gap: 12, flexWrap: 'wrap',
     alignItems: 'center', justifyContent: 'space-between', paddingVertical: 1 },
@@ -378,11 +383,11 @@ const styles = StyleSheet.create({
   quickHeading: { fontSize: 14, fontWeight: '800' },
   quickButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, alignItems: 'center' },
   quickButtonsMobile: { width: '100%', flexWrap: 'nowrap' },
-  quickActionCell: { minWidth: 110, flexGrow: 1, flexBasis: 110 },
+  quickActionCell: { minWidth: 132, flexGrow: 1, flexBasis: 132 },
   quickTextLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   twoColumns: { flexDirection: 'row', gap: 14, alignItems: 'stretch' },
   column: { flex: 1, minWidth: 0, alignSelf: 'stretch' },
-  columnMobile: { flex: 0, width: '100%' },
+  columnMobile: { width: '100%', flexGrow: 0, flexShrink: 0 },
   panel: { padding: 18, gap: 10, minHeight: 155 },
   panelFill: { flex: 1 },
   evolutionPanel: { minHeight: 224 },

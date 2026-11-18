@@ -8,7 +8,6 @@ import type { Lancamento, LancamentoInput, ResumoFinanceiro } from '../../types/
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
 import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useNotifications } from '../../notifications/NotificationsContext';
-import { ProfileCard } from '../auth/ProfileCard';
 import { useProfileSession } from '../auth/ProtectedFinance';
 import { AccountSettings } from '../auth/AccountSettings';
 import { NotificationCenter } from '../notifications/NotificationCenter';
@@ -28,6 +27,8 @@ import { BrandMark } from '../../design/brand';
 import { OceanPrototypeDashboard } from '../dashboard/OceanPrototypeDashboard';
 import { OceanSegmentedControl } from '../../design/OceanControls';
 import { OceanGlass } from '../../design/OceanGlass';
+import { useOceanViewport } from '../../design/useOceanViewport';
+import { WorkspaceIcon } from '../../design/brand';
 import { OceanBottomNavigation, OceanSidebar, type QuickAction } from '../navigation/OceanNavigation';
 import { OCEAFIN, getOceafinTheme } from '../../design/tokens';
 import { applyMonthlyRecurring, loadPlanner } from '../../services/finance-planner';
@@ -66,8 +67,9 @@ export function FinanceWorkspace() {
   const accountName = account?.session.user.user_metadata?.full_name;
   const displayName = typeof accountName === 'string' && accountName.trim() ? accountName.trim() : (account?.session.user.email?.split('@')[0] || 'Usuário');
   const initialLetter = Array.from(displayName)[0]?.toLocaleUpperCase('pt-BR') || 'U';
-  const { width, height } = useWindowDimensions();
-  const desktop = width >= 900;
+  const { height } = useWindowDimensions();
+  const viewportWidth = useOceanViewport();
+  const desktop = viewportWidth >= 1100;
   const initial = useMemo(hoje, []);
   const [aba, setAba] = useState<Aba>('painel');
   const [mes, setMes] = useState(initial.mes);
@@ -339,41 +341,75 @@ export function FinanceWorkspace() {
         <ScrollView style={s.scroll} contentContainerStyle={[s.content, { maxWidth: desktop ? 1350 : 740 }, !desktop && s.contentMobile]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void carregar(true)} />}>
           {desktop ? (
-            <View style={s.header}>
-              <View style={s.headerCopy}>
-                <Text style={[s.overline, { color: isDark ? '#64F5E9' : '#0077C8' }]}>
-                  OCEAFIN / {MONTH_NAMES[mes-1].toLocaleUpperCase('pt-BR')} {ano}
-                </Text>
-                <Text style={[s.appName,{ color: theme.text }]}>
-                  {aba === 'painel' ? 'Visão geral' : page.titulo}
-                </Text>
-                <Text style={[s.muted, { color: theme.muted }]}>
-                  Suas finanças em equilíbrio, com tudo em um só lugar.
-                </Text>
-              </View>
-              <View style={s.headerActions}>
-                {mostrarFiltroPeriodo &&
-                  <PeriodSelector mes={mes} ano={ano} onSelecionar={selecionarPeriodo} />}
-                <Pressable accessibilityRole="button"
-                  accessibilityLabel={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
-                  onPress={() => setTheme(isDark ? 'light' : 'dark')}
-                  style={[s.themeToggle, { borderColor: theme.border }]}>
-                  <Text style={[s.themeToggleText, { color: theme.text }]}>
-                    {isDark ? '☀ Tema claro' : '☾ Tema escuro'}
+            <OceanGlass material="soft" radius={23} style={s.desktopHeader}
+              testID="oceafin-desktop-header">
+              <View style={s.headerTop}>
+                <View style={s.headerCopy}>
+                  <Text style={[s.overline, { color: isDark ? '#77E6E0' : '#08758A' }]}>
+                    OCEAFIN  /  {MONTH_NAMES[mes-1].toLocaleUpperCase('pt-BR')} {ano}
                   </Text>
+                  <Text accessibilityRole="header" style={[s.appName, {color:theme.text}]}>
+                    {aba === 'painel' ? 'Visão geral' : page.titulo}
+                  </Text>
+                  <Text style={[s.muted, {color:theme.muted}]}>
+                    {aba === 'painel' ? 'Seu dinheiro em um só lugar, com clareza.' : page.detalhe}
+                  </Text>
+                </View>
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel="Abrir meu perfil e configurações"
+                  onPress={() => irPara('configuracoes')}
+                  style={[s.headerProfile, {
+                    backgroundColor: isDark ? 'rgba(69,157,178,.16)' : 'rgba(239,252,254,.78)',
+                    borderColor: theme.border,
+                  }]}>
+                  <View style={s.profileInitial}>
+                    <Text style={s.profileInitialText}>{initialLetter}</Text>
+                  </View>
+                  <View style={s.profileCopy}>
+                    <Text numberOfLines={1} style={[s.profileName, {color:theme.text}]}>
+                      {displayName}
+                    </Text>
+                    <Text numberOfLines={1} style={[s.profileHint,{color:theme.muted}]}>
+                      Minha conta e preferências
+                    </Text>
+                  </View>
+                  <WorkspaceIcon name="configuracoes" size={18} color={theme.link}/>
                 </Pressable>
-                <NotificationCenter />
-                <ProfileCard onOpenSettings={() => irPara('configuracoes')} />
               </View>
-            </View>
+              <View style={[s.headerBottom, {borderTopColor:theme.border}]}>
+                <View style={s.headerPeriod}>
+                  {mostrarFiltroPeriodo
+                    ? <PeriodSelector mes={mes} ano={ano} onSelecionar={selecionarPeriodo}/>
+                    : <Text style={[s.muted,{color:theme.muted}]}>
+                      Ajuste suas preferências com segurança.
+                    </Text>}
+                </View>
+                <View style={s.headerUtilities}>
+                  <Pressable accessibilityRole="button"
+                    accessibilityLabel={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                    onPress={() => setTheme(isDark ? 'light' : 'dark')}
+                    style={[s.themeToggle, {
+                      borderColor: theme.border,
+                      backgroundColor: isDark ? 'rgba(112,184,204,.13)' : 'rgba(255,255,255,.56)',
+                    }]}>
+                    <Text style={[s.themeToggleText,{color:theme.text}]}>
+                      {isDark ? '☀  Tema claro' : '☾  Tema escuro'}
+                    </Text>
+                  </Pressable>
+                  <NotificationCenter/>
+                </View>
+              </View>
+            </OceanGlass>
           ) : (
-            <View style={[s.mobileTopBar, {
-              backgroundColor: isDark ? '#0B2940' : '#EDF8FA',
-              borderColor: isDark ? 'rgba(139,218,227,.24)' : '#C5DBE2',
+            <View testID="oceafin-mobile-header" style={[s.mobileTopBar, {
+              backgroundColor: isDark ? 'rgba(10,49,72,.93)' : 'rgba(245,252,254,.91)',
+              borderColor: isDark ? 'rgba(139,218,227,.30)' : '#BFDDE6',
             }]}>
               <View style={s.mobileBrandWrap}>
-                <BrandMark size={36}/>
-                <Text style={[s.mobileBrand, { color: theme.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{OCEAFIN.name.toLowerCase()}</Text>
+                <View testID="oceafin-mobile-logo" style={s.mobileLogo}>
+                  <BrandMark size={36} tile={false}/>
+                </View>
+                <Text style={[s.mobileBrand, { color: theme.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{OCEAFIN.name}</Text>
               </View>
               <View style={s.mobileActions}>
                 <Pressable accessibilityRole="button"
@@ -477,23 +513,42 @@ const base = StyleSheet.create({
   // The mobile dock now occupies its own safe area rather than covering the scroll content.
   contentMobile: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 26, gap: 16 },
   mobileTopBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    gap: 8, minHeight: 66, borderWidth: 1, borderRadius: 18,
-    paddingHorizontal: 13, paddingVertical: 9 },
+    gap: 6, minHeight: 64, borderWidth: 1, borderRadius: 19,
+    paddingHorizontal: 10, paddingVertical: 8 },
   mobileBrandWrap: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: 7 },
-  mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 21,
+  mobileLogo: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center',
+    flexShrink: 0 },
+  mobileBrand: { flexShrink: 1, color: '#FFFFFF', fontSize: 18,
     fontWeight: '900', letterSpacing: -0.6 },
-  mobileActions: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0 },
-  mobileAvatarButton: { width: 44, height: 44, borderRadius: 14, borderColor: '#8ADAD7',
+  mobileActions: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 0 },
+  mobileAvatarButton: { width: 40, height: 40, borderRadius: 13, borderColor: '#8ADAD7',
     borderWidth: 1, backgroundColor: 'rgba(81,184,191,.20)', justifyContent: 'center', alignItems: 'center' },
   mobileAvatarText: { fontSize: 17, fontWeight: '900', color: '#FFFFFF' },
-  header: { flexDirection: 'row', gap: 10, justifyContent: 'space-between',
-    alignItems: 'center', flexWrap: 'wrap' },
-  headerCopy: { gap: 3, flexShrink: 1 },
-  headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
-  themeToggle: { minHeight: 42, paddingHorizontal: 12,
-    borderWidth: 1, borderRadius: 14, justifyContent: 'center' },
+  desktopHeader: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 15,
+    gap: 15, borderWidth: 1 },
+  headerTop: { flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', gap: 16 },
+  headerCopy: { flex: 1, minWidth: 0, gap: 5 },
+  header: { flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' },
+  headerProfile: { flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderWidth: 1, borderRadius: 18, paddingHorizontal: 12,
+    paddingVertical: 9, minHeight: 55, maxWidth: 282, flexShrink: 1 },
+  profileInitial: { width: 37, height: 37, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: '#0A829A' },
+  profileInitialText: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
+  profileCopy: { flex: 1, minWidth: 0, gap: 3 },
+  profileName: { fontSize: 13, fontWeight: '800' },
+  profileHint: { fontSize: 10 },
+  headerBottom: { flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', gap: 14, flexWrap: 'wrap',
+    borderTopWidth: 1, paddingTop: 15 },
+  headerPeriod: { minWidth: 0, flexShrink: 1 },
+  headerUtilities: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  themeToggle: { minHeight: 42, paddingHorizontal: 15,
+    borderWidth: 1, borderRadius: 999, justifyContent: 'center' },
   themeToggleText: { fontWeight: '800', fontSize: 12 },
-  mobileThemeToggle: { width: 44, height: 44, borderRadius: 14, borderWidth: 1,
+  mobileThemeToggle: { width: 40, height: 40, borderRadius: 13, borderWidth: 1,
     borderColor: '#4D99B4', alignItems: 'center', justifyContent: 'center' },
   mobileThemeText: { color: '#C6FDF8', fontSize: 20, fontWeight: '800' },
   overline: { color: '#6D28D9', fontWeight: '900', fontSize: 10, letterSpacing: 1.5 },
