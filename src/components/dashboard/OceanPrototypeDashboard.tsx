@@ -63,7 +63,8 @@ function StatCard({ type, amount, hidden, dark, compact }: {
   const income = type === 'receita';
   const label = income ? 'Receitas do mês' : 'Despesas do mês';
   const text = amount === null ? 'Indisponível' : hidden ? 'R$ •••••' : moeda(amount);
-  return <View accessible accessibilityLabel={label + ': ' +
+  return <View accessible testID={'oceafin-stat-'+type}
+    accessibilityLabel={label + ': ' +
     (amount === null ? 'indisponível' : hidden ? 'valor oculto' : moeda(amount))}
     style={[styles.stat, compact && styles.statCompact, {
       backgroundColor: income ?
@@ -139,12 +140,18 @@ function GoalPanel({ planner, hidden, dark, onNavigate, fill }: {
           {hidden ? '—' : Math.round(progress.percent) + '%'}
         </Text>
       </View>
-    </> : <Pressable onPress={onNavigate} accessibilityRole="button">
-      <Text style={[styles.empty, { color: dark ? sky : '#537486' }]}>
-        {planner ? 'Crie uma meta para acompanhar seu progresso.' :
-          'As metas ainda não foram carregadas.'}
+    </> : <View style={styles.emptyState}>
+      <Text style={[styles.tiny, { color: dark ? sky : '#537486' }]}>
+        {planner ? 'Acompanhe seus objetivos em um só lugar.' :
+          'Suas metas aparecerão aqui quando estiverem disponíveis.'}
       </Text>
-    </Pressable>}
+      <Pressable onPress={onNavigate} accessibilityRole="button"
+        style={[styles.emptyCta, {borderColor:dark?'rgba(135,234,228,.30)':'#B1DCE2'}]}>
+        <Text style={[styles.emptyActionText,{color:dark?'#8AF0E8':'#087488'}]}>
+          {planner ? '+ Criar primeira meta  ›' : 'Ver planejamento  ›'}
+        </Text>
+      </Pressable>
+    </View>}
   </Panel>;
 }
 function BudgetPanel({ spent, limit, planner, onNavigate, hidden, dark,
@@ -175,11 +182,17 @@ function BudgetPanel({ spent, limit, planner, onNavigate, hidden, dark,
       {allocated > 0 && <Text style={[styles.tiny, { color: dark ? sky : '#537486' }]}>
         {categories.length} categorias com orçamento definido
       </Text>}
-    </> : <Pressable accessibilityRole="button" onPress={onNavigate}>
-      <Text style={[styles.empty, { color: dark ? sky : '#537486' }]}>
-        Defina um orçamento mensal para acompanhar seus gastos.
+    </> : <View style={styles.emptyState}>
+      <Text style={[styles.tiny, {color:dark?sky:'#537486'}]}>
+        Defina um limite para saber quanto ainda pode gastar neste mês.
       </Text>
-    </Pressable>}
+      <Pressable accessibilityRole="button" onPress={() => setExpanded(true)}
+        style={[styles.emptyCta,{borderColor:dark?'rgba(135,234,228,.30)':'#B1DCE2'}]}>
+        <Text style={[styles.emptyActionText,{color:dark?'#8AF0E8':'#087488'}]}>
+          + Definir limite mensal  ›
+        </Text>
+      </Pressable>
+    </View>}
     {expanded && <View style={styles.budgetEditor}>
       <MonthlyOverview key={monthKey} totalDespesas={spent}
         limite={limit} salvando={salvandoLimite}
@@ -405,6 +418,10 @@ const styles = StyleSheet.create({
   between: { flexDirection: 'row', justifyContent: 'space-between',
     gap: 9, flexWrap: 'wrap' },
   empty: { fontSize: 12, lineHeight: 19, paddingVertical: 12 },
+  emptyState: { gap: 10, paddingVertical: 5 },
+  emptyCta: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 999,
+    minHeight: 38, paddingHorizontal: 12, justifyContent: 'center' },
+  emptyActionText: { fontSize: 11, fontWeight: '800' },
   emptyGraph: { height: 150, justifyContent: 'center', alignItems: 'center' },
   budgetEditor: { paddingTop: 8 },
   budgetCategoriesLink: { minHeight: 40, alignSelf: 'flex-start', justifyContent: 'center' },
