@@ -529,6 +529,8 @@ const base = StyleSheet.create({
   headerTop: { flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', gap: 16 },
   headerCopy: { flex: 1, minWidth: 0, gap: 5 },
+  header: { flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' },
   headerProfile: { flexDirection: 'row', alignItems: 'center', gap: 10,
     borderWidth: 1, borderRadius: 18, paddingHorizontal: 12,
     paddingVertical: 9, minHeight: 55, maxWidth: 282, flexShrink: 1 },
