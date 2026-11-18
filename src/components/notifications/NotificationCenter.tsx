@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { OceanPressable as Pressable } from '../../design/OceanControls';
 import { useAccessibleStyles } from '../../accessibility/useAccessibleStyles';
+import { useAccessibility } from '../../accessibility/AccessibilityContext';
 import { useNotifications, type NotificationKind } from '../../notifications/NotificationsContext';
 
 const LABELS: Record<NotificationKind, string> = {
@@ -16,6 +17,7 @@ function formatDate(date: string) {
 export function NotificationCenter() {
   const n = useNotifications();
   const styles = useAccessibleStyles(baseStyles);
+  const { isDark } = useAccessibility();
   const { width, height } = useWindowDimensions();
   const [open, setOpen] = useState(false);
   if (!n) return null;
@@ -24,7 +26,10 @@ export function NotificationCenter() {
     <View>
       <Pressable accessibilityRole="button" accessibilityLabel={`Notificações, ${n.unread} não lidas`}
         accessibilityHint="Abrir central de notificações" onPress={() => { n.click(); setOpen(true); }}
-        style={styles.bell}>
+        style={[styles.bell, {
+          backgroundColor: isDark ? 'rgba(101,178,194,.12)' : 'rgba(255,255,255,.58)',
+          borderColor: isDark ? 'rgba(171,237,244,.34)' : 'rgba(108,166,183,.35)',
+        }]}>
         <Text style={styles.bellIcon}>🔔</Text>
         {n.unread > 0 && (
           <View style={styles.badge}>
@@ -97,11 +102,11 @@ export function NotificationCenter() {
 }
 
 const baseStyles = StyleSheet.create({
-  bell: { width: 46, height: 46, borderRadius: 12, backgroundColor: '#FFFFFF', borderColor: '#DDD6E6',
-    borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  bell: { width: 42, height: 42, borderRadius: 14, borderWidth: 1,
+    justifyContent: 'center', alignItems: 'center' },
   bellIcon: { fontSize: 22 },
   badge: { position: 'absolute', top: -5, right: -5, borderRadius: 10,
-    minWidth: 20, height: 20, paddingHorizontal: 3, backgroundColor: '#7C3AED', alignItems: 'center', justifyContent: 'center' },
+    minWidth: 20, height: 20, paddingHorizontal: 3, backgroundColor: '#087F91', alignItems: 'center', justifyContent: 'center' },
   badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
   overlay: { flex: 1, alignItems: 'flex-end', justifyContent: 'flex-start', padding: 12 },
   backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.40)' },
